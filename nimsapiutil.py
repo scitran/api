@@ -57,7 +57,7 @@ class NIMSRequestHandler(webapp2.RequestHandler):
 
     def __init__(self, request=None, response=None):
         self.initialize(request, response)
-        self.target_id = self.request.get('iid', None)
+        self.target_id = self.request.get('site', None)
         self.access_token = self.request.headers.get('Authorization', None)
 
         # CORS header
@@ -109,7 +109,7 @@ class NIMSRequestHandler(webapp2.RequestHandler):
             # adjust params
             self.params = self.request.params.mixed()
             if self.params.get('user'): del self.params['user']
-            del self.params['iid']
+            del self.params['site']
 
             # assemble msg, hash, and signature
             msg = self.request.method + self.request.path + str(self.params) + self.request.body + self.headers.get('Date')
@@ -149,7 +149,7 @@ class NIMSRequestHandler(webapp2.RequestHandler):
                 return self.options()
             r = requests.request(self.request.method, self.target_uri, params=self.params, data=self.request.body, headers=self.headers, verify=False)
             if r.status_code != 200:
-                self.abort(r.status_code, 'internims p2p err: ' + r.reason)
+                self.abort(r.status_code, 'InterNIMS p2p err: ' + r.reason)
             self.response.write(r.content)
 
     def abort(self, code, *args, **kwargs):
