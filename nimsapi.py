@@ -167,7 +167,7 @@ class NIMSAPI(nimsapiutil.NIMSRequestHandler):
         except IOError as e:
             if 'Permission denied' in e:
                 body_template = '${explanation}<br /><br />${detail}<br /><br />${comment}'
-                comment = 'To fix permissions, run the following command: chmod o+r ' + logfile
+                comment = 'To fix permissions, run the following command: chmod o+r ' + app.config['log_path']
                 self.abort(500, detail=str(e), comment=comment, body_template=body_template)
             else:
                 self.abort(500, e) # file does not exist
@@ -240,7 +240,7 @@ def dispatcher(router, request, response):
 
 app = webapp2.WSGIApplication(routes, debug=True)
 app.router.set_dispatcher(dispatcher)
-app.config = dict(stage_path='', site_id='local', ssl_key=None, insecure=False, log_path='')
+app.config = dict(stage_path='', site_id='local', site_name='Local', ssl_key=None, insecure=False, log_path='')
 
 
 if __name__ == '__main__':
@@ -257,6 +257,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--log_path', help='path to API log file')
     arg_parser.add_argument('--ssl_key', help='path to private SSL key file')
     arg_parser.add_argument('--site_id', help='InterNIMS site ID')
+    arg_parser.add_argument('--site_name', help='InterNIMS site name')
     arg_parser.add_argument('--oauth2_id_endpoint', help='OAuth2 provider ID endpoint')
     args = arg_parser.parse_args()
 
@@ -275,9 +276,10 @@ if __name__ == '__main__':
             log.debug('successfully loaded private SSL key from ' + args.ssl_key)
             app.config['ssl_key'] = ssl_key
     else:
-        log.warning('private SSL key not specified, internims functionality disabled')
+        log.warning('private SSL key not specified, InterNIMS functionality disabled')
 
     app.config['site_id'] = args.site_id or app.config['site_id']
+    app.config['site_name'] = args.site_name or app.config['site_name']
     app.config['stage_path'] = args.stage_path or config.get('nims', 'stage_path')
     app.config['log_path'] = args.log_path or app.config['log_path']
     app.config['oauth2_id_endpoint'] = args.oauth2_id_endpoint or config.get('oauth2', 'id_endpoint')
