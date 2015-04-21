@@ -72,8 +72,8 @@ class RequestHandler(webapp2.RequestHandler):
                         '_id': self.uid,
                         'email': self.uid,
                         'email_hash': hashlib.md5(self.uid).hexdigest(),
-                        'firstname': identity.get('given_name', 'Firstname'),
-                        'lastname': identity.get('family_name', 'Lastname'),
+                        'firstname': 'Firstname',
+                        'lastname': 'Lastname',
                         'wheel': True,
                         'root': True,
                     })
