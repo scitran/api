@@ -24,6 +24,7 @@ class RequestHandler(webapp2.RequestHandler):
         self.uid = None
         self.source_site = None
         self.drone_request = False
+        identity = {}
         access_token = self.request.headers.get('Authorization', None)
         if access_token and self.app.config['oauth2_id_endpoint']:
             token_request_time = datetime.datetime.now()
@@ -72,8 +73,8 @@ class RequestHandler(webapp2.RequestHandler):
                         '_id': self.uid,
                         'email': self.uid,
                         'email_hash': hashlib.md5(self.uid).hexdigest(),
-                        'firstname': 'Firstname',
-                        'lastname': 'Lastname',
+                        'firstname': identity.get('given_name', 'Firstname'),
+                        'lastname': identity.get('family_name', 'Lastname'),
                         'wheel': True,
                         'root': True,
                     })
