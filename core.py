@@ -6,6 +6,7 @@ log = logging.getLogger('scitran.api')
 import os
 import re
 import json
+import shutil
 import hashlib
 import tarfile
 import zipfile
@@ -53,6 +54,20 @@ DOWNLOAD_SCHEMA = {
     'additionalProperties': False
 }
 
+RESET_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': 'Reset',
+    'type': 'object',
+    'properties': {
+        'reset': {
+            'type': 'boolean',
+        },
+    },
+    'required': ['reset'],
+    'additionalProperties': False
+}
+
+
 class Core(base.RequestHandler):
 
     """/api """
@@ -62,7 +77,19 @@ class Core(base.RequestHandler):
         pass
 
     def post(self):
-        log.error(self.request.body)
+        try:
+            payload = self.request.json_body
+            jsonschema.validate(payload, RESET_SCHEMA)
+        except (ValueError, jsonschema.ValidationError) as e:
+            self.abort(400, str(e))
+        if payload.get('reset', False):
+            self.app.db.projects.delete_many({})
+            self.app.db.sessions.delete_many({})
+            self.app.db.acquisitions.delete_many({})
+            self.app.db.collections.delete_many({})
+            for p in (self.app.config['data_path'] + '/' + d for d in os.listdir(self.app.config['data_path'])):
+                if p not in [self.app.config['upload_path'], self.app.config['quarantine_path']]:
+                    shutil.rmtree(p)
 
     def get(self):
         """Return API documentation"""
