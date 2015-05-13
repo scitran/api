@@ -224,6 +224,76 @@ class Container(base.RequestHandler):
         metadata, nor does it try to parse the file to determine sorting information. The uploaded file(s)
         will always get uploaded to the specificied container.
 
+        Accepts a multipart request that contains the following form fields:
+        - 'metadata': list of dicts, each dict contains metadata for a file
+        - filename: file object
+        - 'sha': list of dicts, each dict contains 'name' and 'sha1'.
+
+        """
+        # TODO read self.request.body, using '------WebKitFormBoundary' as divider
+        # first line is 'content-disposition' line, extract filename
+        # second line is content-type, determine how to write to a file, as bytes or as string
+        # third linedata_path = self.app.config['data_path'], just a separator, useless
+        def receive_stream_and_validate(stream, digest, filename):
+            # FIXME pull this out to also be used from core.Core.put() and also replace the duplicated code below
+            hash_ = hashlib.sha1()
+            filepath = os.path.join(tempdir_path, filename)
+            with open(filepath, 'wb') as fd:
+                for chunk in iter(lambda: stream.read(2**20), ''):
+                    hash_.update(chunk)
+                    fd.write(chunk)
+            if hash_.hexdigest() != digest:
+                self.abort(400, 'Content-MD5 mismatch.')
+            return filepath
+
+        if self.request.content_type != 'multipart/form-data':
+            self.abort(400, 'content-type must be "multipart/form-data"')
+        # TODO: metadata validation
+        _id = bson.ObjectId(cid)
+        container, _ = self._get(_id, 'rw')
+        data_path = self.app.config['data_path']
+        quarantine_path = self.app.config['quarantine_path']
+        hashes = []
+        with tempfile.TemporaryDirectory(prefix='.tmp', dir=self.app.config['data_path']) as tempdir_path:
+            # get and hash the metadata
+            metahash = hashlib.sha1()
+            metastr = self.request.POST.get('metadata').file.read()  # returns a string?
+            metadata = json.loads(metastr)
+            metahash.update(metastr)
+            hashes.append({'name': 'metadata', 'sha1': metahash.hexdigest()})
+
+            sha1s = json.loads(self.request.POST.get('sha').file.read())
+            for finfo in metadata:
+                fname = finfo.get('name') + finfo.get('ext')  # finfo['ext'] will always be empty
+                fhash = hashlib.sha1()
+                fobj = self.request.POST.get(fname).file
+                filepath = os.path.join(tempdir_path, fname)
+                with open(filepath, 'wb') as fd:
+                    for chunk in iter(lambda: fobj.read(2**20), ''):
+                        fhash.update(chunk)
+                        fd.write(chunk)
+                for s in sha1s:
+                    if fname == s.get('name'):
+                        if fhash.hexdigest() != s.get('sha1'):
+                            self.abort(400, 'Content-MD5 mismatch %s vs %s' % (fhash.hexdigest(), s.get('sha1')))
+                        else:
+                            finfo['sha1'] = s.get('sha1')
+                            status, detail = util.insert_file(self.dbc, _id, finfo, filepath, s.get('sha1'), data_path, quarantine_path, flavor=flavor)
+                        if status != 200:
+                            self.abort(400, 'upload failed')
+                        break
+                else:
+                    self.abort(400, '%s is not listed in the sha1s' % fname)
+
+    def _fdm_put(self, cid=None, flavor='file'):
+        """
+        Receive a targeted processor or user upload for an attachment or file.
+
+        This PUT route is used to add a file to an existing container, not for creating new containers.
+        This upload is different from the main PUT route, because this does not update the main container
+        metadata, nor does it try to parse the file to determine sorting information. The uploaded file(s)
+        will always get uploaded to the specificied container.
+
         Accepts a multipart request that uploads each file to an array form field 'file'.
 
         Example uploading one file:
@@ -284,9 +354,10 @@ class Container(base.RequestHandler):
                     if expectedHash != actualHash:
                         log.info('HASH MISMATCH %s vs %s' % (expectedHash, actualHash))
 
+                    fn, ext = os.splitext(filename)
                     info = dict(
-                        name=filename,
-                        ext='',
+                        name=fn,
+                        ext=ext,
                         size=os.path.getsize(filepath),
                         sha1=actualHash,
                     )
@@ -299,11 +370,17 @@ class Container(base.RequestHandler):
 
     def put_file(self, cid=None):
         """Receive a targeted upload of a dataset file."""
-        self._put(cid, flavor='file')
+        if self.request.get('fdm').lower() in ('1', 'true'):
+            self._fdm_put(cid, flavor='file')
+        else:
+            self._put(cid, flavor='file')
 
     def put_attachment(self, cid):
         """Recieve a targetted upload of an attachment file."""
-        self._put(cid, flavor='attachment')
+        if self.request.get('fdm').lower() in ('1', 'true'):
+            self._put(cid, flavor='attachment')
+        else:
+            self._fdm_put(cid, flavor='attachment')
 
     def get_tile(self, cid):
         """fetch info about a tiled tiff, or retrieve a specific tile."""
