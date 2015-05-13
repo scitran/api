@@ -354,7 +354,7 @@ class Container(base.RequestHandler):
                     if expectedHash != actualHash:
                         log.info('HASH MISMATCH %s vs %s' % (expectedHash, actualHash))
 
-                    fn, ext = os.splitext(filename)
+                    fn, ext = os.path.splitext(filename)
                     info = dict(
                         name=fn,
                         ext=ext,
@@ -378,9 +378,9 @@ class Container(base.RequestHandler):
     def put_attachment(self, cid):
         """Recieve a targetted upload of an attachment file."""
         if self.request.get('fdm').lower() in ('1', 'true'):
-            self._put(cid, flavor='attachment')
-        else:
             self._fdm_put(cid, flavor='attachment')
+        else:
+            self._put(cid, flavor='attachment')
 
     def get_tile(self, cid):
         """fetch info about a tiled tiff, or retrieve a specific tile."""
