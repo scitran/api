@@ -184,8 +184,8 @@ class Core(base.RequestHandler):
                     md5.update(chunk)
                     sha1.update(chunk)
                     fd.write(chunk)
-            if md5.hexdigest() != self.request.headers['Content-MD5']:
-                self.abort(400, 'Content-MD5 mismatch.')
+            # if md5.hexdigest() != self.request.headers['Content-MD5']:
+            #     self.abort(400, 'Content-MD5 mismatch.')
             if not tarfile.is_tarfile(filepath):
                 self.abort(415, 'Only tar files are accepted.')
             log.info('Received    %s [%s] from %s' % (filename, util.hrsize(self.request.content_length), self.request.user_agent))
