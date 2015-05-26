@@ -87,6 +87,7 @@ class Core(base.RequestHandler):
             self.app.db.sessions.delete_many({})
             self.app.db.acquisitions.delete_many({})
             self.app.db.collections.delete_many({})
+            self.app.db.jobs.delete_many({})
             for p in (self.app.config['data_path'] + '/' + d for d in os.listdir(self.app.config['data_path'])):
                 if p not in [self.app.config['upload_path'], self.app.config['quarantine_path']]:
                     shutil.rmtree(p)
