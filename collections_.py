@@ -3,6 +3,7 @@
 import logging
 log = logging.getLogger('scitran.api')
 
+import datetime
 import jsonschema
 import bson.json_util
 
@@ -193,6 +194,7 @@ class Collections(containers.ContainerList):
         except (ValueError, jsonschema.ValidationError) as e:
             self.abort(400, str(e))
         json_body['curator'] = self.uid
+        json_body['timestamp'] = datetime.datetime.utcnow()
         return {'_id': str(self.dbc.insert(json_body))}
 
     def get(self):
