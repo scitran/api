@@ -19,6 +19,7 @@ import bson
 
 import base
 import util
+import users
 import zipstream
 import tempdir as tempfile
 
@@ -293,13 +294,14 @@ class Core(base.RequestHandler):
             filetype = metadata['filetype']
             overwrite = metadata['overwrite']
             # check project and group permissions before proceeding
-            perms = self.app.db.projects.find_one({
-                    'name': overwrite.get('project_name'),
-                    'group': overwrite.get('group_name'),
-                    'permissions': {'$elemMatch': {'_id': self.uid}},
-                    }, ['permissions'])
-            if not perms and not self.superuser_request:
-                self.abort(403)
+            query = {'name': overwrite['project_name'], 'group': overwrite['group_name']}
+            project = self.app.db.projects.find_one(query) # verify permissions
+            if not self.superuser_request:
+                user_perm = util.user_perm(project['permissions'], self.uid)
+                if not user_perm:
+                    self.abort(403, self.uid + ' does not have permissions on this project')
+                if users.INTEGER_ROLES[user_perm['access']] < users.INTEGER_ROLES['rw']:
+                    self.abort(403, self.uid + ' does not have at least ' + min_role + ' permissions on this project')
             # give the interior directory the same name the reaper would give
             acq_no = overwrite.get('acq_no', 1) if overwrite.get('manufacturer', '').upper() != 'SIEMENS' else None
             arcname = overwrite.get('series_uid', '') + ('_' + str(acq_no) if acq_no is not None else '') + '_' + filetype
