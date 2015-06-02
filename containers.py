@@ -184,6 +184,10 @@ class Container(base.RequestHandler):
         return json_body
 
     def update_db(self, _id, json_body):
+        for note in json_body.get('notes', []):
+            note.setdefault('author', self.uid)
+            if 'timestamp' not in note:
+                note['timestamp'], _ = util.format_timestamp()
         self.dbc.update({'_id': _id}, {'$set': util.mongo_dict(json_body)})
 
     def get_file(self, cid):

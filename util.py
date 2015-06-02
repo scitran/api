@@ -7,6 +7,7 @@ import os
 import json
 import bson
 import copy
+import pytz
 import shutil
 import difflib
 import tarfile
@@ -307,3 +308,9 @@ def download_ticket(type_, target, filename, size):
             'filename': filename,
             'size': size,
             }
+
+
+def format_timestamp(timestamp=None, tzname=None):
+    timestamp = timestamp or datetime.datetime.utcnow()
+    timezone = pytz.timezone(tzname or 'UTC')
+    return timezone.localize(timestamp).isoformat(), timezone.zone

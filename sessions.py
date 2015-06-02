@@ -20,8 +20,24 @@ SESSION_PUT_SCHEMA = {
             'maxLength': 32,
         },
         'notes': {
-            'title': 'Notes',
-            'type': 'string',
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'author': {
+                        'type': 'string',
+                    },
+                    'timestamp': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'text': {
+                        'type': 'string',
+                    },
+                },
+                'required': ['text'],
+                'additionalProperties': False,
+            },
         },
         'project': {
             'type': 'string',
@@ -33,15 +49,9 @@ SESSION_PUT_SCHEMA = {
             'properties': {
                 'code': {
                     'title': 'Code',
-                    'type': 'string'
-                }
-            }
-        },
-        'files': {
-            'title': 'Files',
-            'type': 'array',
-            'items': containers.FILE_SCHEMA,
-            'uniqueItems': True,
+                    'type': 'string',
+                },
+            },
         },
     },
     'minProperties': 1,
@@ -125,6 +135,9 @@ class Session(containers.Container):
         self.dbc = self.app.db.sessions
 
     def schema(self, *args, **kwargs):
+        method =self.request.get('method').lower()
+        if method == 'put':
+            return SESSION_PUT_SCHEMA
         return super(Session, self).schema(scitran.data.medimg.medimg.MedImgReader.session_properties)
 
     def get(self, sid):
