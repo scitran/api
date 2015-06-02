@@ -438,8 +438,8 @@ class Container(base.RequestHandler):
         else:
             self.abort(404, 'no such file')
 
-        name, ext = os.path.splitext(fname)
-        success = self.dbc.update({'_id': _id, 'attachments.name': fname}, {'$pull': {'attachments': {'name': fname}}})
+        name, _ = os.path.splitext(fname)
+        success = self.dbc.update({'_id': _id, 'attachments.name': name}, {'$pull': {'attachments': {'name': name}}})
         if not success['updatedExisting']:
             log.info('could not remove database entry.')
         if os.path.exists(fpath):
