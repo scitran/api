@@ -299,11 +299,10 @@ class CollectionSessions(sessions.Sessions):
                 ])
         query = {'_id': {'$in': [ar['_id'] for ar in agg_res]}}
         projection = {'label': 1, 'subject.code': 1, 'notes': 1, 'project': 1, 'group': 1, 'timestamp': 1, 'timezone': 1}
-        projection['permissions'] = {'$elemMatch': {'_id': self.uid, 'site': self.source_site}}
-        sessions = list(self.dbc.find(query, projection))
+        sessions = self._get(query, projection, self.request.get('admin').lower() in ('1', 'true'))
         for sess in sessions:
             sess['site'] = self.app.config['site_id']
-            sess['_id'] = str(sess['_id'])
+            sess['project'] = str(sess['project'])
         if self.debug:
             for sess in sessions:
                 sid = str(sess['_id'])
