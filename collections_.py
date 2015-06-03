@@ -298,7 +298,7 @@ class CollectionSessions(sessions.Sessions):
                 {'$group': {'_id': '$session'}},
                 ])
         query = {'_id': {'$in': [ar['_id'] for ar in agg_res]}}
-        projection = {'label': 1, 'subject.code': 1, 'notes': 1, 'timestamp': 1, 'timezone': 1}
+        projection = {'label': 1, 'subject.code': 1, 'notes': 1, 'project': 1, 'group': 1, 'timestamp': 1, 'timezone': 1}
         projection['permissions'] = {'$elemMatch': {'_id': self.uid, 'site': self.source_site}}
         sessions = list(self.dbc.find(query, projection))
         for sess in sessions:
