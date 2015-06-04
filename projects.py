@@ -25,10 +25,6 @@ PROJECT_POST_SCHEMA = {
             'type': 'string',
             'maxLength': 32,
         },
-        'notes': {
-            'title': 'Notes',
-            'type': 'string',
-        },
     },
     'required': ['group', 'name'],
     'additionalProperties': False,
@@ -45,8 +41,24 @@ PROJECT_PUT_SCHEMA = {
             'maxLength': 32,
         },
         'notes': {
-            'title': 'Notes',
-            'type': 'string',
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'author': {
+                        'type': 'string',
+                    },
+                    'timestamp': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'text': {
+                        'type': 'string',
+                    },
+                },
+                'required': ['text'],
+                'additionalProperties': False,
+            },
         },
         'permissions': {
             'title': 'Permissions',
@@ -61,6 +73,9 @@ PROJECT_PUT_SCHEMA = {
                     '_id': {
                         'type': 'string',
                     },
+                    'site': {
+                        'type': 'string',
+                    },
                 },
                 'required': ['access', '_id'],
                 'additionalProperties': False,
@@ -69,12 +84,6 @@ PROJECT_PUT_SCHEMA = {
         'public': {
             'title': 'Public',
             'type': 'boolean',
-        },
-        'files': {
-            'title': 'Files',
-            'type': 'array',
-            'items': containers.FILE_SCHEMA,
-            'uniqueItems': True,
         },
     },
     'minProperties': 1,

@@ -23,10 +23,6 @@ COLLECTION_POST_SCHEMA = {
             'type': 'string',
             'maxLength': 32,
         },
-        'notes': {
-            'title': 'Notes',
-            'type': 'string',
-        },
         'permissions': {
             'title': 'Permissions',
             'type': 'array',
@@ -61,8 +57,24 @@ COLLECTION_PUT_SCHEMA = {
             'maxLength': 32,
         },
         'notes': {
-            'title': 'Notes',
-            'type': 'string',
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'author': {
+                        'type': 'string',
+                    },
+                    'timestamp': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'text': {
+                        'type': 'string',
+                    },
+                },
+                'required': ['text'],
+                'additionalProperties': False,
+            },
         },
         'permissions': {
             'title': 'Permissions',
@@ -81,12 +93,6 @@ COLLECTION_PUT_SCHEMA = {
                 'required': ['access', '_id'],
                 'additionalProperties': False,
             },
-        },
-        'files': {
-            'title': 'Files',
-            'type': 'array',
-            'items': containers.FILE_SCHEMA,
-            'uniqueItems': True,
         },
         'contents': {
             'type': 'object',

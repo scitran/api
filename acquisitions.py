@@ -21,18 +21,28 @@ ACQUISITION_PUT_SCHEMA = {
             'maxLength': 32,
         },
         'notes': {
-            'title': 'Notes',
-            'type': 'string',
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'author': {
+                        'type': 'string',
+                    },
+                    'timestamp': {
+                        'type': 'string',
+                        'format': 'date-time',
+                    },
+                    'text': {
+                        'type': 'string',
+                    },
+                },
+                'required': ['text'],
+                'additionalProperties': False,
+            },
         },
         'description': {
             'title': 'Description',
             'type': 'string'
-        },
-        'files': {
-            'title': 'Files',
-            'type': 'array',
-            'items': containers.FILE_SCHEMA,
-            'uniqueItems': True,
         },
     },
     'minProperties': 1,
