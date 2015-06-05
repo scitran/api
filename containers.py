@@ -268,7 +268,6 @@ class Container(base.RequestHandler):
 
             sha1s = json.loads(self.request.POST.get('sha').file.read())
             for finfo in metadata:
-                finfo['name'], finfo['ext'] = os.path.splitext(finfo.get('name'))
                 fname = finfo.get('name') + finfo.get('ext')  # finfo['ext'] will always be empty
                 fhash = hashlib.sha1()
                 fobj = self.request.POST.get(fname).file
