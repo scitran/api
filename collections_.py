@@ -301,14 +301,16 @@ class CollectionSessions(sessions.Sessions):
                 {'$group': {'_id': '$session'}},
                 ])
         query = {'_id': {'$in': [ar['_id'] for ar in agg_res]}}
-        projection = {'label': 1, 'subject.code': 1, 'notes': 1, 'timestamp': 1, 'timezone': 1}
-        projection['permissions'] = {'$elemMatch': {'_id': self.uid, 'site': self.source_site}}
-        sessions = list(self.dbc.find(query, projection))
+        projection = {'label': 1, 'subject.code': 1, 'notes': 1, 'project': 1, 'group': 1, 'timestamp': 1, 'timezone': 1}
+        sessions = self._get(query, projection, self.request.get('admin').lower() in ('1', 'true'))
         for sess in sessions:
             sess['_id'] = str(sess['_id']) # do this manually, since not going through ContainerList._get()
             sess['subject_code'] = sess.pop('subject', {}).get('code', '') # FIXME when subject is pulled out of session
             sess.setdefault('timestamp', datetime.datetime.utcnow())
             sess['timestamp'], sess['timezone'] = util.format_timestamp(sess['timestamp'], sess.get('timezone'))
+            sess['site'] = self.app.config['site_id']
+            sess['project'] = str(sess['project'])
+
         if self.debug:
             for sess in sessions:
                 sid = str(sess['_id'])

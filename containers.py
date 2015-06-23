@@ -207,7 +207,7 @@ class Container(base.RequestHandler):
             if 'timestamp' in note:
                 note['timestamp'] = util.parse_timestamp(note['timestamp'])
             else:
-                note['timestamp'] = datetime.datetime.utcnow()
+                note['timestamp'], _ = util.format_timestamp()
         self.dbc.update({'_id': _id}, {'$set': util.mongo_dict(json_body)})
 
     def file(self, cid, filename):
@@ -274,6 +274,7 @@ class Container(base.RequestHandler):
             success, sha1sum = util.receive_stream_and_validate(self.request.body_file, filepath, self.request.headers['Content-MD5'])
             if not success:
                 self.abort(400, 'Content-MD5 mismatch.')
+
             filesize = os.path.getsize(filepath)
             mimetype = util.guess_mimetype(filepath)
             filetype = util.guess_filetype(filepath, mimetype)
@@ -289,6 +290,105 @@ class Container(base.RequestHandler):
                     }
             log.info('Received    %s [%s] from %s' % (filename, util.hrsize(filesize), self.request.client_addr))
             util.commit_file(self.dbc, _id, datainfo, filepath, self.app.config['data_path'])
+
+            return filepath
+
+    def _fdm_put(self, cid=None, flavor='file'):
+        """
+        Receive a targeted processor or user upload for an attachment or file.
+
+        This PUT route is used to add a file to an existing container, not for creating new containers.
+        This upload is different from the main PUT route, because this does not update the main container
+        metadata, nor does it try to parse the file to determine sorting information. The uploaded file(s)
+        will always get uploaded to the specificied container.
+
+        Accepts a multipart request that uploads each file to an array form field 'file'.
+
+        Example uploading one file:
+
+          ------WebKitFormBoundaryAVH8u1QBLfm51vbT
+          Content-Disposition: form-data; name="file[0]"; filename="someFile.png"
+          Content-Type: image/png
+
+          ------WebKitFormBoundaryAVH8u1QBLfm51vbT--
+
+        Example uploading multiple files:
+
+          ------WebKitFormBoundarylC41xBs7QiJ85YEX
+          Content-Disposition: form-data; name="file[0]"; filename="anotherFile.jpg"
+          Content-Type: image/jpeg
+
+          ------WebKitFormBoundarylC41xBs7QiJ85YEX
+          Content-Disposition: form-data; name="file[1]"; filename="aYetThirdFile.png"
+          Content-Type: image/png
+
+          ------WebKitFormBoundarylC41xBs7QiJ85YEX--
+
+        """
+
+        if self.request.content_type != 'multipart/form-data':
+            self.abort(400, 'content-type must be "multipart/form-data"')
+
+        # TODO: metadata validation
+        _id = bson.ObjectId(cid)
+        container, _ = self._get(_id, 'rw')
+        data_path = self.app.config['data_path']
+        quarantine_path = self.app.config['quarantine_path']
+
+        with tempfile.TemporaryDirectory(prefix='.tmp', dir=self.app.config['data_path']) as tempdir_path:
+            # metadata = json.loads(self.request.POST.get('metadata'))
+
+            # Process one, or many files
+            for fieldName, fieldContent in self.request.POST.items():
+
+                # If this is a file field
+                if fieldName.startswith('file'):
+                    fobj = fieldContent.file
+                    filename = fieldContent.filename
+                    filepath = os.path.join(tempdir_path, filename)
+
+                    log.info('Adding ' + filename + ' to ' + cid)
+
+                    # Save and hash the file
+                    fhash = hashlib.sha1()
+                    with open(filepath, 'wb') as fd:
+                        for chunk in iter(lambda: fobj.read(2**20), ''):
+                            fhash.update(chunk)
+                            fd.write(chunk)
+
+                    expectedHash = 'pants'
+                    actualHash = fhash.hexdigest()
+
+                    if expectedHash != actualHash:
+                        log.info('HASH MISMATCH %s vs %s' % (expectedHash, actualHash))
+
+                    fn, ext = os.path.splitext(filename)
+                    info = dict(
+                        name=fn,
+                        ext=ext,
+                        size=os.path.getsize(filepath),
+                        sha1=actualHash,
+                    )
+
+                    # Attach file to object
+                    status, detail = util.insert_file(self.dbc, _id, info, filepath, actualHash, data_path, quarantine_path, flavor=flavor)
+
+                    if status != 200:
+                        self.abort(400, 'upload failed')
+
+    def put_file(self, cid=None):
+        """Receive a targeted upload of a dataset file."""
+        if self.request.get('fdm').lower() in ('1', 'true'):
+            self._fdm_put(cid, flavor='file')
+        else:
+            self._put(cid, flavor='file')
+
+    def put_attachment(self, cid):
+        """Recieve a targetted upload of an attachment file."""
+        if self.request.get('fdm').lower() in ('1', 'true'):
+            self._fdm_put(cid, flavor='attachment')
+        else:
+            self._put(cid, flavor='attachment')
 
     def get_tile(self, cid):
         """fetch info about a tiled tiff, or retrieve a specific tile."""
@@ -313,3 +413,46 @@ class Container(base.RequestHandler):
             tile = util.get_tile(fp, int(z), int(x), int(y))
             if tile:
                 self.response.write(tile)
+
+    def get_attachment(self, cid):
+        """Download one attachment."""
+        fname = self.request.get('name')
+        _id = bson.ObjectId(cid)
+        container, _ = self._get(_id, 'ro')
+        fpath = os.path.join(self.app.config['data_path'], str(_id)[-3:] + '/' + str(_id), fname)
+        for a_info in container['attachments']:
+            if (a_info['name'] + a_info['ext']) == fname:
+                break
+        else:
+            self.abort(404, 'no such file')
+        if self.request.method == 'GET':
+            self.response.app_iter = open(fpath, 'rb')
+            self.response.headers['Content-Length'] = str(a_info['size']) # must be set after setting app_iter
+            self.response.headers['Content-Type'] = 'application/octet-stream'
+        else:
+            ticket = util.download_ticket('single', fpath, fname, a_info['size'])
+            tkt_id = self.app.db.downloads.insert(ticket)
+            return {'url': self.uri_for('named_download', fn=fname, _scheme='https', ticket=tkt_id)}
+
+    def delete_attachment(self, cid):
+        """Delete one attachment."""
+        fname = self.request.get('name')
+        _id = bson.ObjectId(cid)
+        container, _ = self._get(_id, 'rw')
+        fpath = os.path.join(self.app.config['data_path'], str(_id)[-3:] + '/' + str(_id), fname)
+        for a_info in container['attachments']:
+            if (a_info['name'] + a_info['ext']) == fname:
+                break
+        else:
+            self.abort(404, 'no such file')
+
+        name, _ = os.path.splitext(fname)
+        success = self.dbc.update({'_id': _id, 'attachments.name': name}, {'$pull': {'attachments': {'name': name}}})
+        if not success['updatedExisting']:
+            log.info('could not remove database entry.')
+        if os.path.exists(fpath):
+            os.remove(fpath)
+            log.info('removed file %s' % fpath)
+        else:
+            log.info('could not remove file, file %s does not exist' % fpath)
+

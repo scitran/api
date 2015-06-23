@@ -343,3 +343,8 @@ def format_timestamp(timestamp, tzname=None):
 
 def parse_timestamp(iso_timestamp):
     return dateutil.parser.parse(iso_timestamp)
+
+def format_timestamp(timestamp=None, tzname=None):
+    timestamp = timestamp or datetime.datetime.utcnow()
+    timezone = pytz.timezone(tzname or 'UTC')
+    return timezone.localize(timestamp).isoformat(), timezone.zone

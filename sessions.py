@@ -67,6 +67,16 @@ SESSION_PUT_SCHEMA = {
         'subject_code': {
             'type': 'string',
         },
+        'subject': {
+            'title': 'Subject',
+            'type': 'object',
+            'properties': {
+                'code': {
+                    'title': 'Code',
+                    'type': 'string',
+                },
+            },
+        },
     },
     'minProperties': 1,
     'additionalProperties': False,

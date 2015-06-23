@@ -7,6 +7,7 @@ import os
 import re
 import gzip
 import json
+import shutil
 import hashlib
 import tarfile
 import datetime
@@ -85,6 +86,20 @@ DOWNLOAD_SCHEMA = {
     'additionalProperties': False
 }
 
+RESET_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': 'Reset',
+    'type': 'object',
+    'properties': {
+        'reset': {
+            'type': 'boolean',
+        },
+    },
+    'required': ['reset'],
+    'additionalProperties': False
+}
+
+
 class Core(base.RequestHandler):
 
     """/api """
@@ -94,7 +109,20 @@ class Core(base.RequestHandler):
         pass
 
     def post(self):
-        log.error(self.request.body)
+        try:
+            payload = self.request.json_body
+            jsonschema.validate(payload, RESET_SCHEMA)
+        except (ValueError, jsonschema.ValidationError) as e:
+            self.abort(400, str(e))
+        if payload.get('reset', False):
+            self.app.db.projects.delete_many({})
+            self.app.db.sessions.delete_many({})
+            self.app.db.acquisitions.delete_many({})
+            self.app.db.collections.delete_many({})
+            self.app.db.jobs.delete_many({})
+            for p in (self.app.config['data_path'] + '/' + d for d in os.listdir(self.app.config['data_path'])):
+                if p not in [self.app.config['upload_path'], self.app.config['quarantine_path']]:
+                    shutil.rmtree(p)
 
     def get(self):
         """Return API documentation"""
@@ -240,43 +268,49 @@ class Core(base.RequestHandler):
                 if users.INTEGER_ROLES[user_perm['access']] < users.INTEGER_ROLES['rw']:
                     self.abort(403, self.uid + ' does not have at least ' + min_role + ' permissions on this project')
 
-            acq_no = overwrites.get('acq_no')
-            arcname = overwrites['series_uid'] + ('_' + str(acq_no) if acq_no is not None else '') + '_' + filetype
-            ticket = util.upload_ticket(arcname=arcname) # store arcname for later reference
-            self.app.db.uploads.insert_one(ticket)
-            arcpath = os.path.join(self.app.config['upload_path'], ticket['_id'] + '.tar')
-            store_file(self.request.body_file, filename, self.request.headers['Content-MD5'], arcpath, arcname)
-            return {'ticket': ticket['_id']}
+            # give the interior directory the same name the reaper would give
+            acq_no = overwrite.get('acq_no', 1) if overwrite.get('manufacturer', '').upper() != 'SIEMENS' else None
+            arcname = overwrite.get('series_uid', '') + ('_' + str(acq_no) if acq_no is not None else '') + '_' + filetype
+            upload_id = str(bson.ObjectId())
+            log.debug('creating new temporary file %s' % upload_id)
+            fp = os.path.join(upload_path, upload_id + '.tar')
+            status, detail = write_to_tar(fp, 'w', 'METADATA.json', self.request.body_file, content_md5, arcname)
+            if status != 200:
+                self.abort(status, detail)
+            else:
+                return upload_id
 
-        ticket = self.app.db.uploads.find_one({'_id': ticket_id})
-        if not ticket:
-            self.abort(404, 'no such ticket')
-        arcpath = os.path.join(self.app.config['upload_path'], ticket_id + '.tar')
+        elif upload_id and filename and not complete:
+            log.debug('appending to %s' % upload_id)
+            fp = os.path.join(upload_path, upload_id + '.tar')
+            status, detail = write_to_tar(fp, 'a', filename, self.request.body_file, content_md5)  # don't know arcname anymore...
+            if status != 200:
+                self.abort(status, detail)
 
-        if self.request.get('complete').lower() not in ['1', 'true']:
-            if 'Content-MD5' not in self.request.headers:
-                self.app.db.uploads.remove({'_id': ticket_id}) # delete ticket
-                self.abort(400, 'Request must contain a valid "Content-MD5" header.')
-            if not filename:
-                self.app.db.uploads.remove({'_id': ticket_id}) # delete ticket
-                self.abort(400, 'Request must contain a filename query parameter.')
-            self.app.db.uploads.update_one({'_id': ticket_id}, {'$set': {'timestamp': datetime.datetime.utcnow()}}) # refresh ticket
-            store_file(self.request.body_file, filename, self.request.headers['Content-MD5'], arcpath, ticket['arcname'])
-        else: # complete -> zip, hash, commit
-            filepath = arcpath[:-2] + 'gz'
-            with gzip.open(filepath, 'wb', compresslevel=6) as gzfile:
-                with open(arcpath) as rawfile:
-                    gzfile.writelines(rawfile)
-            os.remove(arcpath)
-            sha1 = hashlib.sha1()
-            with open(filepath, 'rb') as fd:
-                for chunk in iter(lambda: fd.read(2**20), ''):
-                    sha1.update(chunk)
-            fileinfo = util.parse_file(filepath, sha1.hexdigest())
-            if fileinfo is None:
-                util.quarantine_file(filepath, self.app.config['quarantine_path'])
-                self.abort(202, 'Quarantining %s (unparsable)' % filename)
-            util.commit_file(self.app.db.acquisitions, None, fileinfo, filepath, self.app.config['data_path'])
+        elif upload_id and complete:
+            fp = os.path.join(upload_path, upload_id + '.tar')
+            log.debug('completing %s' % fp)
+            with tempfile.TemporaryDirectory() as tempdir_path:
+                log.debug('working in tempdir %s' % tempdir_path)
+                zip_fp = os.path.join(tempdir_path, upload_id + '.tgz')
+                with tarfile.open(zip_fp,'w:gz', compresslevel=6) as zf: # zip of tarfile was not being recognized by scitran.data
+                    with tarfile.open(fp, 'r') as tf:
+                        for ti in tf.getmembers():
+                            zf.addfile(ti, tf.extractfile(ti))
+                hash_ = hashlib.sha1()
+                with open(zip_fp, 'rb') as fd:
+                    while True:
+                        chunk = fd.read(2**20)
+                        if not chunk:
+                            break
+                        hash_.update(chunk)
+                log.debug('inserting')
+                status, detail = util.insert_file(self.app.db.acquisitions, None, None, zip_fp, hash_.hexdigest(), self.app.config['data_path'], self.app.config['quarantine_path'])
+                if status != 200:
+                    self.abort(status, detail)
+                os.remove(fp)  # always remove the original tar upon 'complete'. complete file is sorted or quarantined.
+        else:
+            self.abort(400, 'Expected _id (str), filename (str), and/or complete (bool) parameters and binary file content as body')
 
     def _preflight_archivestream(self, req_spec):
         data_path = self.app.config['data_path']
