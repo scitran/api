@@ -73,8 +73,9 @@ def dbinit(args):
     db.acquisitions.create_index('session')
     db.acquisitions.create_index('uid')
     db.acquisitions.create_index('collections')
-    db.authtokens.create_index('timestamp', expireAfterSeconds=600)
     db.uploads.create_index('timestamp', expireAfterSeconds=60)
+    db.authtokens.create_index('timestamp', expireAfterSeconds=72000)
+
     db.downloads.create_index('timestamp', expireAfterSeconds=60)
     # TODO: apps and jobs indexes (indicies?)
 
@@ -162,7 +163,7 @@ def sort(args):
     print 'found %d files to sort (ignoring symlinks and dotfiles)' % file_cnt
     for i, filepath in enumerate(files):
         print 'sorting     %s [%s] (%d/%d)' % (os.path.basename(filepath), util.hrsize(os.path.getsize(filepath)), i+1, file_cnt)
-        hash_ = hashlib.sha1()
+        hash_ = hashlib.md5()
         if not args.quick:
             with open(filepath, 'rb') as fd:
                 for chunk in iter(lambda: fd.read(2**20), ''):
@@ -195,7 +196,7 @@ def upload(args):
     for filepath in files:
         filename = os.path.basename(filepath)
         print 'hashing     %s' % filename
-        hash_ = hashlib.sha1()
+        hash_ = hashlib.md5()
         with open(filepath, 'rb') as fd:
             for chunk in iter(lambda: fd.read(2**20), ''):
                 hash_.update(chunk)
