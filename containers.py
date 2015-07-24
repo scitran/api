@@ -335,7 +335,13 @@ class Container(base.RequestHandler):
                     }
             throughput = filesize / duration.total_seconds()
             log.info('Received    %s [%s, %s/s] from %s' % (filename, util.hrsize(filesize), util.hrsize(throughput), self.request.client_addr))
-            util.commit_file(self.dbc, _id, datainfo, filepath, self.app.config['data_path'])
+            force = self.request.GET.get('force', '').lower() in ('1', 'true')
+            success = util.commit_file(self.dbc, _id, datainfo, filepath, self.app.config['data_path'], force)
+            if success is None:
+                self.abort(202, 'identical file exists')
+            elif success == False:
+                self.abort(409, 'file exists; use force to overwrite')
+
 
     def get_tile(self, cid):
         """fetch info about a tiled tiff, or retrieve a specific tile."""

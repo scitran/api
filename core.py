@@ -203,10 +203,10 @@ class Core(base.RequestHandler):
         self.response.write('</body>\n')
         self.response.write('</html>\n')
 
-    def put(self):
-        """Receive a sortable reaper or user upload."""
-        #if not self.uid and not self.drone_request:
-        #    self.abort(402, 'uploads must be from an authorized user or drone')
+    def reaper(self):
+        """Receive a sortable reaper upload."""
+        if not self.superuser_request:
+            self.abort(402, 'uploads must be from an authorized drone')
         if 'Content-MD5' not in self.request.headers:
             self.abort(400, 'Request must contain a valid "Content-MD5" header.')
         filename = self.request.headers.get('Content-Disposition', '').partition('filename=')[2].strip('"')
@@ -224,8 +224,9 @@ class Core(base.RequestHandler):
             if datainfo is None:
                 util.quarantine_file(filepath, self.app.config['quarantine_path'])
                 self.abort(202, 'Quarantining %s (unparsable)' % filename)
-            util.commit_file(self.app.db.acquisitions, None, datainfo, filepath, self.app.config['data_path'])
-            util.create_job(self.app.db.acquisitions, datainfo) # FIXME we should only mark files as new and let engine take it from there
+            success = util.commit_file(self.app.db.acquisitions, None, datainfo, filepath, self.app.config['data_path'], True)
+            if not success:
+                self.abort(202, 'Identical file exists')
             throughput = filesize / duration.total_seconds()
             log.info('Received    %s [%s, %s/s] from %s' % (filename, util.hrsize(filesize), util.hrsize(throughput), self.request.client_addr))
 

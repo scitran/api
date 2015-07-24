@@ -12,7 +12,7 @@ import uuid
 import shutil
 import difflib
 import hashlib
-import tarfile
+import zipfile
 import datetime
 import mimetypes
 import dateutil.parser
@@ -54,7 +54,6 @@ def parse_file(filepath, digest):
             'filesize': os.path.getsize(filepath),
             'filetype': dataset.nims_file_type,
             'filehash': digest,
-            'datahash': None, #dataset.nims_hash, TODO: datasets should be able to hash themselves (but not here)
             'modality': dataset.nims_file_domain,
             'datatypes': dataset.nims_file_kinds,
             'flavor': 'data',
@@ -83,7 +82,7 @@ def quarantine_file(filepath, quarantine_path):
     shutil.move(filepath, q_path)
 
 
-def commit_file(dbc, _id, datainfo, filepath, data_path):
+def commit_file(dbc, _id, datainfo, filepath, data_path, force=False):
     """Insert a file as an attachment or as a file."""
     filename = os.path.basename(filepath)
     fileinfo = datainfo['fileinfo']
@@ -91,14 +90,33 @@ def commit_file(dbc, _id, datainfo, filepath, data_path):
     if _id is None:
         _id = _update_db(dbc.database, datainfo)
     container_path = os.path.join(data_path, str(_id)[-3:] + '/' + str(_id))
+    target_filepath = container_path + '/' + fileinfo['filename']
     if not os.path.exists(container_path):
         os.makedirs(container_path)
-    r = dbc.update_one({'_id':_id, 'files.filename': fileinfo['filename']}, {'$set': {'files.$': fileinfo}})
-    #TODO figure out if file was actually updated and return that fact
-    if r.matched_count != 1:
-        dbc.update({'_id': _id}, {'$push': {'files': fileinfo}})
-    shutil.move(filepath, container_path + '/' + fileinfo['filename'])
+    container = dbc.find_one_and_update({'_id':_id, 'files.filename': fileinfo['filename']}, {'$set': {'files.$': fileinfo}})
+    if container: # file already exists
+        for f in container['files']:
+            if f['filename'] == fileinfo['filename']:
+                if not force:
+                    updated = False
+                elif identical_content(target_filepath, f['filehash'], filepath, fileinfo['filehash']): # existing file has identical content
+                    log.debug('Dropping    %s (identical)' % filename)
+                    os.remove(filepath)
+                    updated = None
+                else: # existing file has different content
+                    log.debug('Replacing   %s' % filename)
+                    shutil.move(filepath, target_filepath)
+                    dbc.update_one({'_id':_id, 'files.filename': fileinfo['filename']}, {'$set': {'files.$.dirty': True}})
+                    updated = True
+                break
+    else:         # file does not exist
+        log.debug('Adding      %s' % filename)
+        fileinfo['dirty'] = True
+        shutil.move(filepath, target_filepath)
+        dbc.update_one({'_id': _id}, {'$push': {'files': fileinfo}})
+        updated = True
     log.debug('Done        %s' % filename)
+    return updated
 
 
 def _update_db(db, datainfo):
@@ -170,102 +188,22 @@ def _entity_metadata(dataset, properties, metadata={}, parent_key=''):
     return metadata
 
 
-# TODO: create job should be use-able from bootstrap.py with only database information
-def create_job(dbc, datainfo):
-    fileinfo = datainfo['fileinfo']
-    db = dbc.database
-    type_ = fileinfo['filetype']
-    kinds_ = fileinfo['datatypes']
-    state_ = ['orig'] # dataset.nims_file_state ### WHAT IS THIS AND WHY DO WE CARE?
-    app = None
-    # TODO: check if there are 'default apps' set for this project/session/acquisition
-    acquisition = db.acquisitions.find_one({'uid': datainfo['acquisition_id']})
-    session = db.sessions.find_one({'_id': acquisition.get('session')})
-    project = db.projects.find_one({'_id': session.get('project')})
-    aid = acquisition.get('_id')
-
-    # XXX: if an input kinds = None, then that job is meant to work on any file kinds
-    app = db.apps.find_one({
-        '$or': [
-            {'inputs': {'$elemMatch': {'type': type_, 'state': state_, 'kinds': kinds_}}, 'default': True},
-            {'inputs': {'$elemMatch': {'type': type_, 'state': state_, 'kinds': None}}, 'default': True},
-        ],
-    })
-    # TODO: this has to move...
-    # force acquisition dicom file to be marked as 'optional = True'
-    db.acquisitions.find_and_modify(
-        {'uid': datainfo['acquisition_id'], 'files.type': 'dicom'},
-        {'$set': {'files.$.optional': True}},
-        )
-
-    if not app:
-        log.info('no app for type=%s, state=%s, kinds=%s, default=True. no job created.' % (type_, state_, kinds_))
+def identical_content(filepath1, digest1, filepath2, digest2):
+    if zipfile.is_zipfile(filepath1) and zipfile.is_zipfile(filepath2):
+        with zipfile.ZipFile(filepath1) as zf1, zipfile.ZipFile(filepath2) as zf2:
+            zf1_infolist = sorted(zf1.infolist(), key=lambda zi: zi.filename)
+            zf2_infolist = sorted(zf2.infolist(), key=lambda zi: zi.filename)
+            if zf1.comment != zf2.comment:
+                return False
+            if len(zf1_infolist) != len(zf2_infolist):
+                return False
+            for zii, zij in zip(zf1_infolist, zf2_infolist):
+                if zii.CRC != zij.CRC:
+                    return False
+            else:
+                return True
     else:
-        # XXX: outputs can specify to __INHERIT__ a value from the parent input file, for ex: kinds
-        for output in app['outputs']:
-            if output['kinds'] == '__INHERIT__':
-                output['kinds'] = kinds_
-
-        # TODO: job description needs more metadata to be searchable in a useful way
-        output_url = '%s/%s/%s' % ('acquisitions', aid, 'file')
-        job = db.jobs.find_and_modify(
-            {
-                '_id': db.jobs.count() + 1,
-            },
-            {
-                '_id': db.jobs.count() + 1,
-                'group': project.get('group'),
-                'project': {
-                    '_id': project.get('_id'),
-                    'name': project.get('name'),
-                },
-                'exam': session.get('exam'),
-                'app': {
-                    '_id': app['_id'],
-                    'type': 'docker',
-                },
-                'inputs': [
-                    {
-                        'filename': fileinfo['filename'],
-                        'url': '%s/%s/%s' % ('acquisitions', aid, 'file'),
-                        'payload': {
-                            'type': type_,
-                            'state': state_,
-                            'kinds': kinds_,
-                        },
-                    }
-                ],
-                'outputs': [{'url': output_url, 'payload': i} for i in app['outputs']],
-                'status': 'pending',
-                'activity': None,
-                'added': datetime.datetime.now(),
-                'timestamp': datetime.datetime.now(),
-            },
-            upsert=True,
-            new=True,
-        )
-        log.info('created job %d, group: %s, project %s' % (job['_id'], job['group'], job['project']))
-
-
-def insert_app(db, fp, apps_path, app_meta=None):
-    """Validate and insert an application tar into the filesystem and database."""
-    # download, md-5 check, and json validation are handled elsewhere
-    if not app_meta:
-        with tarfile.open(fp) as tf:
-            for ti in tf:
-                if ti.name.endswith('description.json'):
-                    app_meta = json.load(tf.extractfile(ti))
-                    break
-
-    name, version = app_meta.get('_id').split(':')
-    app_dir = os.path.join(apps_path, name)
-    if not os.path.exists(app_dir):
-        os.makedirs(app_dir)
-    app_tar = os.path.join(app_dir, '%s-%s.tar' % (name, version))
-
-    app_meta.update({'asset_url': 'apps/%s' % app_meta.get('_id')})
-    db.apps.update({'_id': app_meta.get('_id')}, app_meta, upsert=True)
-    shutil.move(fp, app_tar)
+        return digest1 == digest2
 
 
 def hrsize(size):
