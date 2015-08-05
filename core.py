@@ -6,11 +6,13 @@ logging.getLogger('MARKDOWN').setLevel(logging.WARNING) # silence Markdown libra
 
 import os
 import re
+import cgi
 import bson
 import gzip
 import json
 import hashlib
 import tarfile
+import zipfile
 import datetime
 import lockfile
 import markdown
@@ -194,7 +196,7 @@ class Core(base.RequestHandler):
             self.abort(402, 'uploads must be from an authorized drone')
         if 'Content-MD5' not in self.request.headers:
             self.abort(400, 'Request must contain a valid "Content-MD5" header.')
-        filename = self.request.headers.get('Content-Disposition', '').partition('filename=')[2].strip('"')
+        filename = cgi.parse_header(self.request.headers.get('Content-Disposition', ''))[1].get('filename')
         if not filename:
             self.abort(400, 'Request must contain a valid "Content-Disposition" header.')
         with tempfile.TemporaryDirectory(prefix='.tmp', dir=self.app.config['upload_path']) as tempdir_path:
@@ -202,8 +204,8 @@ class Core(base.RequestHandler):
             success, digest, filesize, duration = util.receive_stream_and_validate(self.request.body_file, filepath, self.request.headers['Content-MD5'])
             if not success:
                 self.abort(400, 'Content-MD5 mismatch.')
-            if not tarfile.is_tarfile(filepath):
-                self.abort(415, 'Only tar files are accepted.')
+            if not zipfile.is_zipfile(filepath):
+                self.abort(415, 'Only ZIP files are accepted.')
             log.info('Received    %s [%s] from %s' % (filename, util.hrsize(self.request.content_length), self.request.user_agent))
             datainfo = util.parse_file(filepath, digest)
             if datainfo is None:
