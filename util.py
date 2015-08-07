@@ -4,9 +4,7 @@ import logging
 log = logging.getLogger('scitran.api')
 
 import os
-import bson
 import copy
-import json
 import pytz
 import uuid
 import shutil
@@ -19,7 +17,6 @@ import dateutil.parser
 import tempdir as tempfile
 
 import scitran.data
-import scitran.data.medimg.montage
 
 MIMETYPES = [
     ('.bvec', 'text', 'bvec'),
@@ -30,9 +27,6 @@ MIMETYPES = [
 ]
 for mt in MIMETYPES:
     mimetypes.types_map.update({mt[0]: mt[1] + '/' + mt[2]})
-
-get_info = scitran.data.medimg.montage.get_info
-get_tile = scitran.data.medimg.montage.get_tile
 
 valid_timezones = pytz.all_timezones
 
