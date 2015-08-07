@@ -8,6 +8,7 @@ import cgi
 import bson
 import json
 import shutil
+import zipfile
 import datetime
 import jsonschema
 
@@ -247,13 +248,36 @@ class Container(base.RequestHandler):
             ticket = util.download_ticket(self.request.client_addr, 'file', _id, filename, fileinfo['filesize'])
             return {'ticket': self.app.db.downloads.insert(ticket)}
         else:                                       # authenticated or ticketed (unauthenticated) download
-            self.response.app_iter = open(filepath, 'rb')
-            self.response.headers['Content-Length'] = str(fileinfo['filesize']) # must be set after setting app_iter
-            if self.request.GET.get('view', '').lower() in ('1', 'true'):
-                self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
+            zip_member = self.request.GET.get('member')
+            if self.request.GET.get('info', '').lower() in ('1', 'true'):
+                try:
+                    with zipfile.ZipFile(filepath) as zf:
+                        return [(zi.filename, zi.file_size, util.format_timestamp(datetime.datetime(*zi.date_time))[0]) for zi in zf.infolist()]
+                except zipfile.BadZipfile:
+                    self.abort(400, 'not a zip file')
+            elif self.request.GET.get('comment', '').lower() in ('1', 'true'):
+                try:
+                    with zipfile.ZipFile(filepath) as zf:
+                        self.response.write(zf.comment)
+                except zipfile.BadZipfile:
+                    self.abort(400, 'not a zip file')
+            elif zip_member:
+                try:
+                    with zipfile.ZipFile(filepath) as zf:
+                        self.response.headers['Content-Type'] = util.guess_mimetype(zip_member)
+                        self.response.write(zf.open(zip_member).read())
+                except zipfile.BadZipfile:
+                    self.abort(400, 'not a zip file')
+                except KeyError:
+                    self.abort(400, 'zip file contains no such member')
             else:
-                self.response.headers['Content-Type'] = 'application/octet-stream'
-                self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+                self.response.app_iter = open(filepath, 'rb')
+                self.response.headers['Content-Length'] = str(fileinfo['filesize']) # must be set after setting app_iter
+                if self.request.GET.get('view', '').lower() in ('1', 'true'):
+                    self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
+                else:
+                    self.response.headers['Content-Type'] = 'application/octet-stream'
+                    self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
 
     def _delete_file(self, _id, container, filename):
         """Delete one file."""
@@ -355,27 +379,3 @@ class Container(base.RequestHandler):
                 self.abort(202, 'identical file exists')
             elif success == False:
                 self.abort(409, 'file exists; use force to overwrite')
-
-    def get_tile(self, cid):
-        """fetch info about a tiled tiff, or retrieve a specific tile."""
-        _id = bson.ObjectId(cid)
-        container, _ = self._get(_id, 'ro')  # need at least read access to view tiles
-        montage_info = None
-        for f in container.get('files'):
-            if f['filetype'] == 'montage':
-                montage_info = f
-                break
-        if not montage_info:
-            self.abort(404, 'montage zip not found')
-        fn = montage_info['filename']
-        fp = os.path.join(self.app.config['data_path'], cid[-3:], cid, fn)
-        z = self.request.GET.get('z')
-        x = self.request.GET.get('x')
-        y = self.request.GET.get('y')
-        if not (z and x and y):
-            return util.get_info(fp)
-        else:
-            self.response.content_type = 'image/jpeg'
-            tile = util.get_tile(fp, int(z), int(x), int(y))
-            if tile:
-                self.response.write(tile)
