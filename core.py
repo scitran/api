@@ -8,7 +8,6 @@ import os
 import re
 import cgi
 import bson
-import gzip
 import json
 import hashlib
 import tarfile
@@ -234,8 +233,8 @@ class Core(base.RequestHandler):
                 if not success:
                     self.abort(400, 'Content-MD5 mismatch.')
                 with lockfile.LockFile(arcpath):
-                    with tarfile.open(arcpath, 'a') as archive:
-                        archive.add(filepath, os.path.join(arcname, filename))
+                    with zipfile.ZipFile(arcpath, 'a', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                        archive.write(filepath, os.path.join(arcname, filename))
 
         if self.public_request:
             self.abort(403, 'must be logged in to upload data')
@@ -267,8 +266,9 @@ class Core(base.RequestHandler):
             arcname = overwrites['series_uid'] + ('_' + str(acq_no) if acq_no is not None else '') + '_' + filetype
             ticket = util.upload_ticket(self.request.client_addr, arcname=arcname) # store arcname for later reference
             self.app.db.uploads.insert_one(ticket)
-            arcpath = os.path.join(self.app.config['upload_path'], ticket['_id'] + '.tar')
-            store_file(self.request.body_file, filename, self.request.headers['Content-MD5'], arcpath, arcname)
+            arcpath = os.path.join(self.app.config['upload_path'], ticket['_id'] + '.zip')
+            with zipfile.ZipFile(arcpath, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                archive.comment = json.dumps(json_body)
             return {'ticket': ticket['_id']}
 
         ticket = self.app.db.uploads.find_one({'_id': ticket_id})
@@ -276,7 +276,7 @@ class Core(base.RequestHandler):
             self.abort(404, 'no such ticket')
         if ticket['ip'] != self.request.client_addr:
             self.abort(400, 'ticket not for this source IP')
-        arcpath = os.path.join(self.app.config['upload_path'], ticket_id + '.tar')
+        arcpath = os.path.join(self.app.config['upload_path'], ticket_id + '.zip')
 
         if self.request.GET.get('complete', '').lower() not in ('1', 'true'):
             if 'Content-MD5' not in self.request.headers:
@@ -287,21 +287,16 @@ class Core(base.RequestHandler):
                 self.abort(400, 'Request must contain a filename query parameter.')
             self.app.db.uploads.update_one({'_id': ticket_id}, {'$set': {'timestamp': datetime.datetime.utcnow()}}) # refresh ticket
             store_file(self.request.body_file, filename, self.request.headers['Content-MD5'], arcpath, ticket['arcname'])
-        else: # complete -> zip, hash, commit
-            filepath = arcpath[:-2] + 'gz'
-            with gzip.open(filepath, 'wb', compresslevel=6) as gzfile:
-                with open(arcpath) as rawfile:
-                    gzfile.writelines(rawfile)
-            os.remove(arcpath)
+        else: # complete -> hash, commit
             sha1 = hashlib.sha1()
-            with open(filepath, 'rb') as fd:
+            with open(arcpath, 'rb') as fd:
                 for chunk in iter(lambda: fd.read(2**20), ''):
                     sha1.update(chunk)
-            datainfo = util.parse_file(filepath, sha1.hexdigest())
+            datainfo = util.parse_file(arcpath, sha1.hexdigest())
             if datainfo is None:
-                util.quarantine_file(filepath, self.app.config['quarantine_path'])
+                util.quarantine_file(arcpath, self.app.config['quarantine_path'])
                 self.abort(202, 'Quarantining %s (unparsable)' % filename)
-            util.commit_file(self.app.db.acquisitions, None, datainfo, filepath, self.app.config['data_path'])
+            util.commit_file(self.app.db.acquisitions, None, datainfo, arcpath, self.app.config['data_path'])
 
     def _preflight_archivestream(self, req_spec):
         data_path = self.app.config['data_path']
