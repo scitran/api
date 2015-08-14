@@ -38,8 +38,8 @@ def parse_file(filepath, digest):
     try:
         log.info('Parsing     %s' % filename)
         dataset = scitran.data.parse(filepath)
-    except scitran.data.DataError:
-        log.info('Unparsable  %s' % filename)
+    except scitran.data.DataError as exp:
+        log.info('Unparsable  %s (%s)' % (filename, exp))
         return None
     filename = dataset.nims_file_name + dataset.nims_file_ext
     fileinfo = {
