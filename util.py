@@ -15,6 +15,7 @@ import datetime
 import mimetypes
 import dateutil.parser
 import tempdir as tempfile
+from pymongo.collection import ReturnDocument
 
 import scitran.data
 
@@ -132,14 +133,15 @@ def _update_db(db, datainfo):
             project_name = datainfo['group_id'] + ('/' + datainfo['project_name'] if datainfo['project_name'] else '')
         group = db.groups.find_one({'_id': group_id})
         project_spec = {'group': group['_id'], 'name': project_name}
-        project = db.projects.find_and_modify(
+        project = db.projects.find_one_and_update(
                 project_spec,
                 {'$setOnInsert': {'permissions': group['roles'], 'public': False, 'files': []}},
                 upsert=True,
                 new=True,
                 projection=PROJECTION_FIELDS,
+                return_document=ReturnDocument.AFTER,
                 )
-    session = db.sessions.find_and_modify(
+    session = db.sessions.find_one_and_update(
             session_spec,
             {
                 '$setOnInsert': dict(group=project['group'], project=project['_id'], permissions=project['permissions'], public=project['public'], files=[]),
@@ -149,9 +151,10 @@ def _update_db(db, datainfo):
             upsert=True,
             new=True,
             projection=PROJECTION_FIELDS,
+            return_document=ReturnDocument.AFTER,
             )
     acquisition_spec = {'uid': datainfo['acquisition_id']}
-    acquisition = db.acquisitions.find_and_modify(
+    acquisition = db.acquisitions.find_one_and_update(
             acquisition_spec,
             {
                 '$setOnInsert': dict(session=session['_id'], permissions=session['permissions'], public=session['public'], files=[]),
@@ -161,6 +164,7 @@ def _update_db(db, datainfo):
             upsert=True,
             new=True,
             projection=[],
+            return_document=ReturnDocument.AFTER,
             )
     if datainfo['timestamp']:
         db.projects.update({'_id': project['_id']}, {'$max': dict(timestamp=datainfo['timestamp']), '$set': dict(timezone=datainfo['timezone'])})
