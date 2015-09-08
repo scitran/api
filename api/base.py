@@ -2,6 +2,8 @@
 
 import copy
 import json
+import time
+import random
 import logging
 import webapp2
 import datetime
@@ -15,8 +17,52 @@ logging.getLogger('requests').setLevel(logging.WARNING)
 
 
 class RequestHandler(webapp2.RequestHandler):
+    OAUTH_RETRY_LIMIT_SECONDS = 16  # Using exponential backoff and limits as recommended by Google
+                            # https://developers.google.com/drive/web/handle-errors
 
     json_schema = None
+
+    def resolve_token(self, access_token, request_start):
+        current_retry_timeout = 1
+        while (current_retry_timeout <= self.OAUTH_RETRY_LIMIT_SECONDS):
+            r = requests.get(self.app.config['oauth2_id_endpoint'], headers={'Authorization': 'Bearer ' + access_token})
+
+            #This condition results in a retry
+            if r.status_code == 403:
+                log.debug('OAuth provider reported 403 status, will retry. (Retry limit is %d)' % (r, current_retry_timeout))
+                time.sleep(current_retry_timeout + random.random())
+                current_retry_timeout *= 2
+
+            #These conditions break out of the retry loop
+            elif r.status_code == 200:
+                identity = json.loads(r.content)
+                self.uid = identity.get('email')
+                if not self.uid:
+                    self.abort(400, 'OAuth2 token resolution did not return email address')
+                self.app.db.authtokens.replace_one({'_id': access_token}, {'uid': self.uid, 'timestamp': request_start}, upsert=True)
+                log.debug('looked up remote token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
+
+                # Opportunistically set user's avatar based on their auth provider
+                # TODO: after api starts reading toml config, switch on
+                # auth.provider rather than manually comparing endpoint URL.
+                if self.app.config['oauth2_id_endpoint'] == 'https://www.googleapis.com/plus/v1/people/me/openIdConnect':
+                    avatar = identity.get('picture')
+                    # NOTE: Google URLs have a size attached. This code removes that parameter.
+                    # One could also set the size explicitly.
+                    # from urllib import urlencode
+                    # from urlparse import urlparse, urlunparse, parse_qs
+                    # u = urlparse(avatar)
+                    # query = parse_qs(u.query)
+                    # query.pop('sz', None)
+                    # u = u._replace(query=urlencode(query, True))
+                    # avatar = urlunparse(u)
+                    if avatar:
+                        r = self.app.db.users.update_one({'_id': self.uid, 'avatar': {'$ne': avatar}}, {'$set':{'avatar': avatar, 'modified': request_start}})
+                    break
+            else:
+                headers = {'WWW-Authenticate': 'Bearer realm="%s", error="invalid_token", error_description="Invalid OAuth2 token."' % self.app.config['site_id']}
+                self.abort(401, 'invalid oauth2 token', headers=headers)
+                break
 
     def __init__(self, request=None, response=None):
         self.initialize(request, response)
@@ -38,34 +84,7 @@ class RequestHandler(webapp2.RequestHandler):
                 self.uid = cached_token['uid']
                 log.debug('looked up cached token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
             else:
-                r = requests.get(self.app.config['oauth2_id_endpoint'], headers={'Authorization': 'Bearer ' + access_token})
-                if r.status_code == 200:
-                    identity = json.loads(r.content)
-                    self.uid = identity.get('email')
-                    if not self.uid:
-                        self.abort(400, 'OAuth2 token resolution did not return email address')
-                    self.app.db.authtokens.replace_one({'_id': access_token}, {'uid': self.uid, 'timestamp': request_start}, upsert=True)
-                    log.debug('looked up remote token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
-
-                    # Opportunistically set user's avatar based on their auth provider
-                    # TODO: after api starts reading toml config, switch on
-                    # auth.provider rather than manually comparing endpoint URL.
-                    if self.app.config['oauth2_id_endpoint'] == 'https://www.googleapis.com/plus/v1/people/me/openIdConnect':
-                        avatar = identity.get('picture')
-                        # NOTE: Google URLs have a size attached. This code removes that parameter.
-                        # One could also set the size explicitly.
-                        # from urllib import urlencode
-                        # from urlparse import urlparse, urlunparse, parse_qs
-                        # u = urlparse(avatar)
-                        # query = parse_qs(u.query)
-                        # query.pop('sz', None)
-                        # u = u._replace(query=urlencode(query, True))
-                        # avatar = urlunparse(u)
-                        if avatar:
-                            r = self.app.db.users.update_one({'_id': self.uid, 'avatar': {'$ne': avatar}}, {'$set':{'avatar': avatar, 'modified': request_start}})
-                else:
-                    headers = {'WWW-Authenticate': 'Bearer realm="%s", error="invalid_token", error_description="Invalid OAuth2 token."' % self.app.config['site_id']}
-                    self.abort(401, 'invalid oauth2 token', headers=headers)
+                self.resolve_token(access_token, request_start)
 
         # 'Debug' (insecure) setting: allow request to act as requested user
         elif self.debug and self.request.GET.get('user'):
