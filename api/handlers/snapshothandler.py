@@ -1,0 +1,93 @@
+import bson
+import datetime
+
+from .. import base
+from .. import util
+from .. import config
+from .. import debuginfo
+from .. import validators
+from ..auth import containerauth, always_ok
+from ..dao import APIStorageException, containerstorage, snapshot
+from containerhandler import ContainerHandler
+
+log = config.log
+
+class SnapshotHandler(ContainerHandler):
+    use_object_id = {
+        'projects': True,
+        'sessions': True,
+        'acquisitions': True
+    }
+
+    # This configurations are used by the SnapshotHandler class to load the storage and
+    # the permissions checker to handle a request.
+    #
+    # "children_cont" represents the children container.
+    # "list projection" is used to filter data in mongo.
+    # "use_object_id" implies that the container ids are converted to ObjectId
+    container_handler_configurations = {
+        'projects': {
+            'storage': containerstorage.ContainerStorage('project_snapshots', use_object_id=use_object_id['projects']),
+            'permchecker': containerauth.default_container,
+            'list_projection': {'metadata': 0},
+            'children_cont': 'session_snapshots'
+        },
+        'sessions': {
+            'storage': containerstorage.ContainerStorage('session_snapshots', use_object_id=use_object_id['sessions']),
+            'permchecker': containerauth.default_container,
+            'parent_storage': containerstorage.ContainerStorage('project_snapshots', use_object_id=use_object_id['projects']),
+            'list_projection': {'metadata': 0},
+            'children_cont': 'acquisition_snapshots'
+        },
+        'acquisitions': {
+            'storage': containerstorage.ContainerStorage('acquisition_snapshots', use_object_id=use_object_id['acquisitions']),
+            'permchecker': containerauth.default_container,
+            'parent_storage': containerstorage.ContainerStorage('sessions', use_object_id=use_object_id['sessions']),
+            'list_projection': {'metadata': 0}
+        }
+    }
+
+    def post(self, *args, **kwargs):
+        self.abort(500, 'method not supported on snapshots')
+
+    def put(self, *args, **kwargs):
+        self.abort(500, 'method not supported on snapshots')
+
+    def delete(self, *args, **kwargs):
+        self.abort(500, 'method not supported on snapshots')
+
+    def create(self, **kwargs):
+        origin_storage = containerstorage.ContainerStorage('projects', use_object_id=True)
+        origin_id = self.get_param('project')
+        if not origin_id:
+            self.abort(404, 'project is required to create a snapshot')
+        container = origin_storage.get_container(origin_id)
+        permchecker = self._get_permchecker(container, container)
+        result = permchecker(snapshot.create)('POST', _id=origin_id)
+        return {'_id': result.inserted_id}
+
+    def remove(self, cont_name, **kwargs):
+        if cont_name != 'projects':
+            self.abort(500, 'method supported only on project snapshots')
+        snap_id = kwargs.pop('cid')
+        self.config = self.container_handler_configurations[cont_name]
+        self.storage = self.config['storage']
+        container = self._get_container(snap_id)
+        permchecker = self._get_permchecker(container, container)
+        if not container:
+            self.abort(404, 'snapshot does not exist')
+        result = permchecker(snapshot.remove)('POST', _id=snap_id)
+        return result
+
+    def publish(self, cont_name, **kwargs):
+        if cont_name != 'projects':
+            self.abort(500, 'method supported only on project snapshots')
+        snap_id = kwargs.pop('cid')
+        self.config = self.container_handler_configurations[cont_name]
+        self.storage = self.config['storage']
+        container = self._get_container(snap_id)
+        if not container:
+            self.abort(404, 'snapshot does not exist')
+        permchecker = self._get_permchecker(container, container)
+        result = permchecker(snapshot.make_public)('PUT', _id=snap_id)
+        return result
