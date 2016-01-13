@@ -123,6 +123,8 @@ routes = [
     webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>'),                             snapshothandler.SnapshotHandler, name='snap_get', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<par_cont_name:projects>/<par_id:{cid_re}>/<cont_name:sessions>'),       snapshothandler.SnapshotHandler, name='snap_proj_ses', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<par_cont_name:sessions>/<par_id:{cid_re}>/<cont_name:acquisitions>'),   snapshothandler.SnapshotHandler, name='snap_ses_acq', handler_method='get_all', methods=['GET']),
+    webapp2.Route(_format(r'/api/projects/<cid:{cid_re}>/snapshots'),                                               snapshothandler.SnapshotHandler, name='snap_for_proj', handler_method='get_all_for_project', methods=['GET']),
+
 ]
 
 
