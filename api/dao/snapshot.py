@@ -61,10 +61,10 @@ def remove(method, _id):
     return result
 
 
-def make_public(method, _id):
+def make_public(method, _id, public=True):
     snapshot_id = bson.objectid.ObjectId(_id)
-    result = config.db.project_snapshots.find_one_and_update({'_id': snapshot_id}, {'$set':{'public': True}})
+    result = config.db.project_snapshots.find_one_and_update({'_id': snapshot_id}, {'$set':{'public': public}})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': snapshot_id})]
-    config.db.session_snapshots.update_many({'_id': {'$in': session_snapshot_ids}}, {'$set':{'public': True}})
-    config.db.acquisition_snapshots.update_many({'session': {'$in': session_snapshot_ids}}, {'$set':{'public': True}})
+    config.db.session_snapshots.update_many({'_id': {'$in': session_snapshot_ids}}, {'$set':{'public': public}})
+    config.db.acquisition_snapshots.update_many({'session': {'$in': session_snapshot_ids}}, {'$set':{'public': public}})
     return result

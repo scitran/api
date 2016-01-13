@@ -83,13 +83,17 @@ class SnapshotHandler(ContainerHandler):
         if cont_name != 'projects':
             self.abort(500, 'method supported only on project snapshots')
         snap_id = kwargs.pop('cid')
+        payload_validator = validators.payload_from_schema_file(self, 'input/public.json')
+        payload = self.request.json_body
+        # use the validator for the POST route as the key 'value' is required
+        payload_validator(payload, 'POST')
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
         container = self._get_container(snap_id)
         if not container:
             self.abort(404, 'snapshot does not exist')
         permchecker = self._get_permchecker(container, container)
-        result = permchecker(snapshot.make_public)('PUT', _id=snap_id)
+        result = permchecker(snapshot.make_public)('PUT', _id=snap_id, public=payload['value'])
         return result
 
     def get_all_for_project(self, **kwargs):

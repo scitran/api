@@ -135,7 +135,7 @@ routes = [
     webapp2.Route(_format(r'/api/snapshots'),                                                                       snapshothandler.SnapshotHandler, name='snap_post', handler_method='create', methods=['POST']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>'),                                                  snapshothandler.SnapshotHandler, name='snap_proj', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>'),                                   snapshothandler.SnapshotHandler, name='snap_delete', handler_method='remove', methods=['DELETE']),
-    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/publish'),                           snapshothandler.SnapshotHandler, name='snap_publish', handler_method='publish', methods=['PUT']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/public'),                            snapshothandler.SnapshotHandler, name='snap_publish', handler_method='publish', methods=['PUT']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>'),                             snapshothandler.SnapshotHandler, name='snap_get', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<par_cont_name:projects>/<par_id:{cid_re}>/<cont_name:sessions>'),       snapshothandler.SnapshotHandler, name='snap_proj_ses', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<par_cont_name:sessions>/<par_id:{cid_re}>/<cont_name:acquisitions>'),   snapshothandler.SnapshotHandler, name='snap_ses_acq', handler_method='get_all', methods=['GET']),
