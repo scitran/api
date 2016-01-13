@@ -91,3 +91,26 @@ class SnapshotHandler(ContainerHandler):
         permchecker = self._get_permchecker(container, container)
         result = permchecker(snapshot.make_public)('PUT', _id=snap_id)
         return result
+
+    def get_all_for_project(self, **kwargs):
+        proj_id = kwargs.pop('cid')
+        self.config = self.container_handler_configurations['projects']
+        self.storage = self.config['storage']
+        projection = self.config['list_projection']
+        # select which permission filter will be applied to the list of results.
+        if self.superuser_request:
+            permchecker = always_ok
+        elif self.public_request:
+            self.abort(403, 'this request is not allowed')
+        else:
+            permchecker = containerauth.list_permission_checker(self)
+        query = {
+            'original': bson.ObjectId(proj_id)
+        }
+        try:
+            results = permchecker(self.storage.exec_op)('GET', query=query, projection=projection)
+        except APIStorageException as e:
+            self.abort(400, e.message)
+        if results is None:
+            self.abort(404, 'Element not found in container {} {}'.format(storage.cont_name, _id))
+        return results
