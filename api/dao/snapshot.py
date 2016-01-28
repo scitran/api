@@ -47,7 +47,7 @@ def _store(hierarchy):
     return result
 
 
-def create(method, _id):
+def create(method, _id, payload):
     hierarchy = _new_version(_id)
     return _store(hierarchy)
 
