@@ -61,6 +61,7 @@ class SnapshotHandler(ContainerHandler):
         origin_id = self.get_param('project')
         if not origin_id:
             self.abort(404, 'project is required to create a snapshot')
+        self.config = self.container_handler_configurations['projects']
         container = origin_storage.get_container(origin_id)
         permchecker = self._get_permchecker(container, container)
         result = permchecker(snapshot.create)('POST', _id=origin_id)
