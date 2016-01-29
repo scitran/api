@@ -138,10 +138,7 @@ class ListHandler(base.RequestHandler):
             result = keycheck(mongo_validator(permchecker(storage.exec_op)))('PUT', _id=_id, query_params=kwargs, payload=payload)
         except APIStorageException as e:
             self.abort(400, e.message)
-        if result.modified_count == 1:
-            return {'modified':result.modified_count}
-        else:
-            self.abort(404, 'Element not updated in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
+        return {'modified':result.modified_count}
 
     def delete(self, cont_name, list_name, **kwargs):
         _id = kwargs.pop('cid')

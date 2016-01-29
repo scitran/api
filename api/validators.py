@@ -137,22 +137,12 @@ def key_check(handler, schema_file):
             else:
                 _check_query_params(schema.get('key_fields'), query_params)
                 if method == 'PUT' and schema.get('key_fields'):
-                    exclude_params = _put_exclude_params(schema['key_fields'], query_params, payload)
+                    for k in schema['key_fields']:
+                        if payload.get(k):
+                            handler.abort(400, 'key {} not allowed in PUT payload'.format(k))
             return exec_op(method, _id=_id, query_params=query_params, payload=payload, exclude_params=exclude_params)
         return f
     return g
-
-def _put_exclude_params(keys, query_params, payload):
-    exclude_params = None
-    _eqp = {}
-    for k in keys:
-        value_p = payload.get(k)
-        if value_p and value_p != query_params.get(k):
-            _eqp[k] = value_p
-            exclude_params = _eqp
-        else:
-            _eqp[k] = query_params.get(k)
-    return exclude_params
 
 def _post_exclude_params(keys, payload):
     return {
