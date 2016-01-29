@@ -78,13 +78,7 @@ class ListStorage(object):
         for k,v in payload.items():
             mod_elem[self.list_name + '.$.' + k] = v
         query = {'_id': _id }
-        if exclude_params is None:
-            query[self.list_name] = {'$elemMatch': query_params}
-        else:
-            query['$and'] = [
-                {self.list_name: {'$elemMatch': query_params}},
-                {self.list_name: {'$not': {'$elemMatch': exclude_params} }}
-            ]
+        query[self.list_name] = {'$elemMatch': query_params}
         update = {
             '$set': mod_elem
         }
@@ -162,7 +156,12 @@ class StringListStorage(ListStorage):
         update = {'$set': {self.list_name + '.$': payload}}
         log.debug('query {}'.format(query))
         log.debug('update {}'.format(update))
-        return self.dbc.update_one(query, update)
+        result = self.dbc.update_one(query, update)
+        if result.modified_count == 0:
+            raise APIStorageException(
+                "the update was unsuccesful. Can't change {} to {}".format(query_params, payload)
+            )
+        return result
 
     def _get_el(self, _id, query_params):
         log.debug('query_params {}'.format(query_params))
