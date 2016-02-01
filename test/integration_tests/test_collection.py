@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 import logging
 
 log = logging.getLogger(__name__)
@@ -7,27 +8,36 @@ sh = logging.StreamHandler()
 log.addHandler(sh)
 log.setLevel(logging.INFO)
 
-import warnings
-
-warnings.filterwarnings('ignore')
-
 from nose.tools import with_setup
 import pymongo
 from bson.objectid import ObjectId
 
-db = pymongo.MongoClient('mongodb://localhost/scitran').get_default_database()
-
-base_url = 'https://localhost:8443/api'
+db = pymongo.MongoClient('mongodb://localhost:9001/scitran').get_default_database()
+adm_user = 'test@user.com'
+base_url = 'http://localhost:8080/api'
 test_data = type('',(object,),{})()
 
 def setup_db():
+    global session
+    session = requests.Session()
+    session.params = {
+        'user': adm_user,
+        'root': True
+    }
+    test_data.group_id = 'test_group_' + str(int(time.time()*1000))
     payload = {
-        'group': 'unknown',
-        'label': 'SciTran/Testing',
+        '_id': test_data.group_id
+    }
+    payload = json.dumps(payload)
+    r = session.post(base_url + '/groups', data=payload)
+    assert r.ok
+    payload = {
+        'group': test_data.group_id,
+        'label': 'test_project',
         'public': False
     }
     payload = json.dumps(payload)
-    r = requests.post(base_url + '/projects?user=admin@user.com&root=true', data=payload, verify=False)
+    r = session.post(base_url + '/projects', data=payload)
     test_data.pid = json.loads(r.content)['_id']
     assert r.ok
     log.debug('pid = \'{}\''.format(test_data.pid))
@@ -38,7 +48,7 @@ def setup_db():
         'public': False
     }
     payload = json.dumps(payload)
-    r = requests.post(base_url + '/sessions?user=admin@user.com&root=true', data=payload, verify=False)
+    r = session.post(base_url + '/sessions', data=payload)
     assert r.ok
     test_data.sid = json.loads(r.content)['_id']
     log.debug('sid = \'{}\''.format(test_data.sid))
@@ -49,32 +59,34 @@ def setup_db():
         'public': False
     }
     payload = json.dumps(payload)
-    r = requests.post(base_url + '/acquisitions?user=admin@user.com&root=true', data=payload, verify=False)
+    r = session.post(base_url + '/acquisitions', data=payload)
     assert r.ok
     test_data.aid = json.loads(r.content)['_id']
     log.debug('aid = \'{}\''.format(test_data.aid))
 
 def teardown_db():
-    r = requests.delete(base_url + '/acquisitions/' + test_data.aid + '?user=admin@user.com&root=true', verify=False)
+    session.params['root'] = True
+    r = session.delete(base_url + '/acquisitions/' + test_data.aid)
     assert r.ok
-    r = requests.delete(base_url + '/sessions/' + test_data.sid + '?user=admin@user.com&root=true', verify=False)
+    r = session.delete(base_url + '/sessions/' + test_data.sid)
     assert r.ok
-    r = requests.delete(base_url + '/projects/' + test_data.pid + '?user=admin@user.com&root=true', verify=False)
+    r = session.delete(base_url + '/projects/' + test_data.pid)
     assert r.ok
 
 
 @with_setup(setup_db, teardown_db)
 def test_collections():
     payload = {
-        'curator': 'admin@user.com',
-        'label': 'SciTran/Testing',
-        'public': True
+        'curator': adm_user,
+        'label': 'test_collection_'+ str(int(time.time())) ,
+        'public': False
     }
-    r = requests.post(base_url + '/collections?user=admin@user.com', data=json.dumps(payload), verify=False)
+    session.params['root'] = False
+    r = session.post(base_url + '/collections', data=json.dumps(payload))
     assert r.ok
     _id = json.loads(r.content)['_id']
     log.debug('_id = \'{}\''.format(_id))
-    r = requests.get(base_url + '/collections/' + _id + '?user=admin@user.com', verify=False)
+    r = session.get(base_url + '/collections/' + _id)
     assert r.ok
     payload = {
         'contents':{
@@ -86,9 +98,9 @@ def test_collections():
             'operation': 'add'
         }
     }
-    r = requests.put(base_url + '/collections/' + _id + '?user=admin@user.com', data=json.dumps(payload), verify=False)
+    r = session.put(base_url + '/collections/' + _id, data=json.dumps(payload))
     assert r.ok
-    r = requests.get(base_url + '/collections/' + _id + '/acquisitions?session=' + test_data.sid + '&user=admin@user.com', verify=False)
+    r = session.get(base_url + '/collections/' + _id + '/acquisitions?session=' + test_data.sid)
     assert r.ok
     coll_acq_id= json.loads(r.content)[0]['_id']
     assert coll_acq_id  == test_data.aid
@@ -97,9 +109,9 @@ def test_collections():
     for ac in acs:
         assert len(ac['collections']) == 1
         assert ac['collections'][0] == ObjectId(_id)
-    r = requests.delete(base_url + '/collections/' + _id + '?user=admin@user.com', verify=False)
+    r = session.delete(base_url + '/collections/' + _id)
     assert r.ok
-    r = requests.get(base_url + '/collections/' + _id + '?user=admin@user.com', verify=False)
+    r = session.get(base_url + '/collections/' + _id)
     assert r.status_code == 404
     acs = db.acquisitions.find({'_id': {'$in': acq_ids}})
     for ac in acs:
