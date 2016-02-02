@@ -1,31 +1,36 @@
 import requests
 import json
+import time
 import logging
 log = logging.getLogger(__name__)
 sh = logging.StreamHandler()
 log.addHandler(sh)
 
-requests.packages.urllib3.disable_warnings()
-
-base_url = 'https://localhost:8443/api'
+base_url = 'http://localhost:8080/api'
 
 def test_groups():
-    _id = 'test'
-    r = requests.get(base_url + '/groups/' + _id + '?user=admin@user.com&root=true', verify=False)
+    session = requests.Session()
+    # all the requests will be performed as root
+    session.params = {
+        'user': 'test@user.com',
+        'root': True
+    }
+    _id = 'test_group_' + str(int(time.time()*1000))
+    r = session.get(base_url + '/groups/' + _id)
     assert r.status_code == 404
     payload = {
         '_id': _id
     }
     payload = json.dumps(payload)
-    r = requests.post(base_url + '/groups?user=admin@user.com&root=true', data=payload, verify=False)
+    r = session.post(base_url + '/groups', data=payload)
     assert r.ok
-    r = requests.get(base_url + '/groups/' + _id + '?user=admin@user.com&root=true', verify=False)
+    r = session.get(base_url + '/groups/' + _id)
     assert r.ok
     payload = {
         'name': 'Test group',
     }
     payload = json.dumps(payload)
-    r = requests.put(base_url + '/groups/' + _id + '?user=admin@user.com&root=true', data=payload, verify=False)
+    r = session.put(base_url + '/groups/' + _id, data=payload)
     assert r.ok
-    r = requests.delete(base_url + '/groups/' + _id + '?user=admin@user.com&root=true', verify=False)
+    r = session.delete(base_url + '/groups/' + _id)
     assert r.ok
