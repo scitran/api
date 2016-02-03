@@ -98,7 +98,7 @@ def setup_download():
     dataset = file_list_to_tree(file_list)
 
     # Create a group
-    test_data.group_id = 'test_group_' + str(int(time.time()))
+    test_data.group_id = 'test_group_' + str(int(time.time()*1000))
     payload = {
         '_id': test_data.group_id
     }
