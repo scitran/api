@@ -47,12 +47,12 @@ def _store(hierarchy):
     return result
 
 
-def create(method, _id, payload):
+def create(method, _id, payload=None):
     hierarchy = _new_version(_id)
     return _store(hierarchy)
 
 
-def remove(method, _id):
+def remove(method, _id, payload=None):
     snapshot_id = bson.objectid.ObjectId(_id)
     result = config.db.project_snapshots.find_one_and_delete({'_id': snapshot_id})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': snapshot_id})]
@@ -61,7 +61,8 @@ def remove(method, _id):
     return result
 
 
-def make_public(method, _id, public=True):
+def make_public(method, _id, payload=None):
+    public = payload['value']
     snapshot_id = bson.objectid.ObjectId(_id)
     result = config.db.project_snapshots.find_one_and_update({'_id': snapshot_id}, {'$set':{'public': public}})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': snapshot_id})]
