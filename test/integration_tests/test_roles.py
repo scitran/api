@@ -1,15 +1,56 @@
 import requests
+import os
 import json
-from pprint import pprint
+import time
+from nose.tools import with_setup
 
-import warnings
-warnings.filterwarnings('ignore')
+base_url = 'http://localhost:8080/api'
+adm_user = 'test@user.com'
+user = 'other@user.com'
+test_data = type('',(object,),{})()
 
-base_url = 'https://localhost:8443/api/groups/scitran/roles'
 
-def _build_url_and_payload(method, user, access, requestor, site='local'):
+def setup_db():
+    global session
+    session = requests.Session()
+    # all the requests will be performed as root
+    session.params = {
+        'user': adm_user,
+        'root': True
+    }
+
+    # Create a group
+    test_data.group_id = 'test_group_' + str(int(time.time()*1000))
+    payload = {
+        '_id': test_data.group_id
+    }
+    payload = json.dumps(payload)
+    r = session.post(base_url + '/groups', data=payload)
+    assert r.ok
+    payload = {
+        '_id': user,
+        'firstname': 'Other',
+        'lastname': 'User',
+    }
+    payload = json.dumps(payload)
+    r = session.post(base_url + '/users', data=payload)
+    assert r.ok
+    session.params = {}
+
+def teardown_db():
+    session.params = {
+        'user': adm_user,
+        'root': True
+    }
+    r = session.delete(base_url + '/groups/' + test_data.group_id)
+    assert r.ok
+    r = session.delete(base_url + '/users/' + user)
+    assert r.ok
+
+def _build_url_and_payload(method, user, access, site='local'):
+
+    url = os.path.join(base_url, 'groups', test_data.group_id, 'roles')
     if method == 'POST':
-        url = base_url + '?user=' + requestor
         payload = {
             '_id': user,
             'site': site,
@@ -17,45 +58,57 @@ def _build_url_and_payload(method, user, access, requestor, site='local'):
         }
         return url, json.dumps(payload)
     else:
-        url = base_url + '/' + site + '/' + user + '?user=' + requestor
-        return url, None
+        return os.path.join(url, site, user), None
 
-adm_user = 'admin@user.com'
-user = 'test@user.com'
-
+@with_setup(setup_db, teardown_db)
 def test_roles():
-    url_get, _ = _build_url_and_payload('GET', user, None, adm_user)
-    r = requests.get(url_get, verify=False)
+    session.params = {
+        'user': adm_user
+    }
+    url_get, _ = _build_url_and_payload('GET', user, None)
+    r = session.get(url_get)
     assert r.status_code == 404
 
-    url_post, payload = _build_url_and_payload('POST', user, 'rw', adm_user)
-    r = requests.post(url_post, data=payload, verify=False)
+    url_post, payload = _build_url_and_payload('POST', user, 'rw')
+    r = session.post(url_post, data=payload)
     assert r.ok
-    r = requests.get(url_get, verify=False)
+    r = session.get(url_get)
     assert r.ok
     content = json.loads(r.content)
     assert content['access'] == 'rw'
     assert content['_id'] == user
-
-    url_get_not_auth, _ = _build_url_and_payload('GET', adm_user, None, user)
-    r = requests.get(url_get_not_auth, verify=False)
+    session.params = {
+        'user': user
+    }
+    url_get_not_auth, _ = _build_url_and_payload('GET', adm_user, None)
+    r = session.get(url_get_not_auth)
     assert r.status_code == 403
-
+    session.params = {
+        'user': adm_user
+    }
     payload = json.dumps({'access':'admin'})
-    r = requests.put(url_get, data=payload, verify=False)
+    r = session.put(url_get, data=payload)
     assert r.ok
-
-    r = requests.get(url_get_not_auth, verify=False)
+    session.params = {
+        'user': user
+    }
+    r = session.get(url_get_not_auth)
     assert r.ok
-
+    session.params = {
+        'user': adm_user
+    }
     payload = json.dumps({'access':'rw'})
-    r = requests.put(url_get, data=payload, verify=False)
+    r = session.put(url_get, data=payload)
     assert r.ok
-
-    r = requests.get(url_get_not_auth, verify=False)
+    session.params = {
+        'user': user
+    }
+    r = session.get(url_get_not_auth)
     assert r.status_code == 403
-
-    r = requests.delete(url_get, verify=False)
+    session.params = {
+        'user': adm_user
+    }
+    r = session.delete(url_get)
     assert r.ok
-    r = requests.get(url_get, verify=False)
+    r = session.get(url_get)
     assert r.status_code == 404
