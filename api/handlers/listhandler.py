@@ -102,6 +102,7 @@ class ListHandler(base.RequestHandler):
 
     def __init__(self, request=None, response=None):
         super(ListHandler, self).__init__(request, response)
+        self.list_handler_configurations = list_handler_configurations
 
     def get(self, cont_name, list_name, **kwargs):
         _id = kwargs.pop('cid')
@@ -166,7 +167,7 @@ class ListHandler(base.RequestHandler):
         5) the mongo_validator that will check what will be sent to mongo against a json schema
         6) the keycheck decorator validating the request key
         """
-        config = list_handler_configurations[cont_name][list_name]
+        config = self.list_handler_configurations[cont_name][list_name]
         storage = config['storage']
         permchecker = config['permchecker']
         if config.get('get_full_container'):

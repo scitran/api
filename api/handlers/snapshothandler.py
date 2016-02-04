@@ -1,4 +1,5 @@
 import bson
+import copy
 import datetime
 
 from .. import base
@@ -7,12 +8,13 @@ from .. import config
 from .. import debuginfo
 from .. import validators
 from ..auth import containerauth, always_ok
-from ..dao import APIStorageException, containerstorage, snapshot
-from containerhandler import ContainerHandler
+from ..dao import APIStorageException, containerstorage, snapshot, liststorage
+import containerhandler
+import listhandler
 
 log = config.log
 
-class SnapshotHandler(ContainerHandler):
+class SnapshotHandler(containerhandler.ContainerHandler):
     use_object_id = {
         'projects': True,
         'sessions': True,
@@ -119,3 +121,31 @@ class SnapshotHandler(ContainerHandler):
         if results is None:
             self.abort(404, 'Element not found in container {} {}'.format(storage.cont_name, _id))
         return results
+
+def initialize_snap_list_configurations():
+    snap_list_handler_configurations = {}
+    for cont_name in ['projects', 'sessions', 'acquisitions']:
+        list_config = copy.copy(listhandler.list_handler_configurations[cont_name]['files'])
+        list_config['storage'] = liststorage.ListStorage(
+            cont_name[:-1] + '_snapshots',
+            'files',
+            use_object_id=list_config.get('use_object_id', False)
+        )
+        snap_list_handler_configurations[cont_name] = {
+            'files': list_config
+        }
+    return snap_list_handler_configurations
+
+snap_list_handler_configurations = initialize_snap_list_configurations()
+
+class SnapshotFileListHandler(listhandler.FileListHandler):
+
+    def __init__(self, request=None, response=None):
+        super(SnapshotFileListHandler, self).__init__(request, response)
+        self.list_handler_configurations = snap_list_handler_configurations
+
+    def post(self, **kwargs):
+        self.abort(400, 'operation not supported for snapshots')
+
+    def delete(self, **kwargs):
+        self.abort(400, 'operation not supported for snapshots')
