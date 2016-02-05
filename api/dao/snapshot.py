@@ -2,6 +2,7 @@ from .. import config
 import bson.objectid
 from pymongo import ReturnDocument
 
+log = config.log
 
 def _new_version(project_id):
     project_id = bson.objectid.ObjectId(project_id)
@@ -29,20 +30,35 @@ def _store(hierarchy):
     project['original'] = project.pop('_id')
     result = config.db.project_snapshots.insert_one(project)
     project_id = result.inserted_id
+    subjects = []
+    sessions = {}
     for session in hierarchy[project['original']]:
         session['project'] = project_id
         session['original'] = session.pop('_id')
-    sessions = config.db.session_snapshots.insert_many(hierarchy[project['original']])
-    session_ids = sessions.inserted_ids
+        subject_code = session.get('subject', {}).get('code', '')
+        if subject_code == 'subject':
+            subjects.append(session)
+        else:
+            sessions[subject_code] = sessions.get(subject_code, [])
+            sessions[subject_code].append(session)
+    sessions_list = []
+    if subjects:
+        new_subject_ids = config.db.session_snapshots.insert_many(subjects).inserted_ids
+        for i, subject in enumerate(subjects):
+            new_sub_id = new_subject_ids[i]
+            for s in sessions[str(subject['original'])]:
+                s['subject']['code'] = str(new_sub_id)
+                sessions_list.append(s)
+    else:
+        session_list = hierarchy[project['original']]
+    session_ids = config.db.session_snapshots.insert_many(sessions_list).inserted_ids
     acquisitions = []
-    for i, session in enumerate(hierarchy[project['original']]):
+    for i, session in enumerate(sessions_list):
         session_id = session_ids[i]
         for acquisition in hierarchy[session['original']]:
             acquisition['session'] = session_id
             acquisition['original'] = acquisition.pop('_id')
             acquisitions.append(acquisition)
-        hierarchy[session_id] = hierarchy.pop(session['original'])
-    hierarchy[project_id] = hierarchy.pop(project['original'])
     config.db.acquisition_snapshots.insert_many(acquisitions)
     return result
 
