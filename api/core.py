@@ -255,7 +255,10 @@ class Core(base.RequestHandler):
             new_infos[info['name']].update(info)
         return new_infos
 
-    def _preflight_archivestream(self, req_spec):
+    def _preflight_archivestream(self, req_spec, snapshot=False):
+        session_cont_name = 'session_snapshots' if snapshot else 'sessions'
+        acquisition_cont_name = 'acquisition_snapshots' if snapshot else 'acquisitions'
+        project_cont_name = 'project_snapshots' if snapshot else 'projects'
         data_path = config.get_item('persistent', 'data_path')
         arc_prefix = 'sdm'
         file_cnt = 0
@@ -266,12 +269,12 @@ class Core(base.RequestHandler):
         for item in req_spec['nodes']:
             item_id = bson.ObjectId(item['_id'])
             if item['level'] == 'project':
-                project = config.db.projects.find_one({'_id': item_id}, ['group', 'label', 'files'])
+                project = config.db[project_cont_name].find_one({'_id': item_id}, ['group', 'label', 'files'])
                 prefix = '/'.join([arc_prefix, project['group'], project['label']])
                 total_size, file_cnt = _append_targets(targets, project, prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
-                sessions = config.db.sessions.find({'project': item_id}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
+                sessions = config.db[session_cont_name].find({'project': item_id}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
                 session_dict = {session['_id']: session for session in sessions}
-                acquisitions = config.db.acquisitions.find({'session': {'$in': session_dict.keys()}}, ['label', 'files', 'session', 'uid', 'timestamp', 'timezone'])
+                acquisitions = config.db[acquisition_cont_name].find({'session': {'$in': session_dict.keys()}}, ['label', 'files', 'session', 'uid', 'timestamp', 'timezone'])
                 session_prefixes = {}
                 for session in session_dict.itervalues():
                     session_prefix = prefix + '/' + self._path_from_container(session, used_subpaths, project['_id'])
@@ -282,18 +285,18 @@ class Core(base.RequestHandler):
                     acq_prefix = session_prefixes[session['_id']] + '/' + self._path_from_container(acq, used_subpaths, session['_id'])
                     total_size, file_cnt = _append_targets(targets, acq, acq_prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
             elif item['level'] == 'session':
-                session = config.db.sessions.find_one({'_id': item_id}, ['project', 'label', 'files', 'uid', 'timestamp', 'timezone'])
-                project = config.db.projects.find_one({'_id': session['project']}, ['group', 'label'])
+                session = config.db[session_cont_name].find_one({'_id': item_id}, ['project', 'label', 'files', 'uid', 'timestamp', 'timezone'])
+                project = config.db[project_cont_name].find_one({'_id': session['project']}, ['group', 'label'])
                 prefix = project['group'] + '/' + project['label'] + '/' + self._path_from_container(session, used_subpaths, project['_id'])
                 total_size, file_cnt = _append_targets(targets, session, prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
-                acquisitions = config.db.acquisitions.find({'session': item_id}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
+                acquisitions = config.db[acquisition_cont_name].find({'session': item_id}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
                 for acq in acquisitions:
                     acq_prefix = prefix + '/' + self._path_from_container(acq, used_subpaths, session['_id'])
                     total_size, file_cnt = _append_targets(targets, acq, acq_prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
             elif item['level'] == 'acquisition':
-                acq = config.db.acquisitions.find_one({'_id': item_id}, ['session', 'label', 'files', 'uid', 'timestamp', 'timezone'])
-                session = config.db.sessions.find_one({'_id': acq['session']}, ['project', 'label', 'uid', 'timestamp', 'timezone'])
-                project = config.db.projects.find_one({'_id': session['project']}, ['group', 'label'])
+                acq = config.db[acquisition_cont_name].find_one({'_id': item_id}, ['session', 'label', 'files', 'uid', 'timestamp', 'timezone'])
+                session = config.db[session_cont_name].find_one({'_id': acq['session']}, ['project', 'label', 'uid', 'timestamp', 'timezone'])
+                project = config.db[project_cont_name].find_one({'_id': session['project']}, ['group', 'label'])
                 prefix = project['group'] + '/' + project['label'] + '/' + self._path_from_container(session, used_subpaths, project['_id']) + '/' + self._path_from_container(acq, used_subpaths, session['_id'])
                 total_size, file_cnt = _append_targets(targets, acq, prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
         log.debug(json.dumps(targets, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -329,7 +332,10 @@ class Core(base.RequestHandler):
         used_subpaths[parent_id] = used_subpaths.get(parent_id, []) + [path]
         return path
 
-    def _preflight_archivestream_bids(self, req_spec):
+    def _preflight_archivestream_bids(self, req_spec, snapshot=False):
+        session_cont_name = 'session_snapshots' if snapshot else 'sessions'
+        acquisition_cont_name = 'acquisition_snapshots' if snapshot else 'acquisitions'
+        project_cont_name = 'project_snapshots' if snapshot else 'projects'
         data_path = config.get_item('persistent', 'data_path')
         file_cnt = 0
         total_size = 0
@@ -343,17 +349,18 @@ class Core(base.RequestHandler):
         for item in req_spec['nodes']:
             item_id = bson.ObjectId(item['_id'])
             if item['level'] == 'project':
-                project = config.db.projects.find_one({'_id': item_id}, ['group', 'label', 'files', 'notes'])
+                project = config.db[project_cont_name].find_one({'_id': item_id}, ['group', 'label', 'files', 'notes'])
                 projects.append(item_id)
                 prefix = project['label']
                 total_size, file_cnt = _append_targets(targets, project, prefix, total_size,
                                                        file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
-                ses_or_subj_list = config.db.sessions.find({'project': item_id}, ['_id', 'label', 'files', 'subject.code', 'subject_code', 'uid', 'timestamp', 'timezone'])
+                ses_or_subj_list = config.db[session_cont_name].find({'project': item_id}, ['_id', 'label', 'files', 'subject.code', 'subject_code', 'uid', 'timestamp', 'timezone'])
                 subject_prefixes = {
                     'missing_subject': prefix + '/missing_subject'
                 }
                 sessions = {}
                 for ses_or_subj in ses_or_subj_list:
+                    log.error(ses_or_subj)
                     subj_code = ses_or_subj.get('subject', {}).get('code') or ses_or_subj.get('subject_code')
                     if subj_code == 'subject':
                         subject_prefix = prefix + '/' + self._path_from_container(ses_or_subj, used_subpaths, project['_id'])
@@ -372,7 +379,7 @@ class Core(base.RequestHandler):
                         session_prefix = subject_prefix + '/' + self._path_from_container(session, used_subpaths, subj_code)
                         total_size, file_cnt = _append_targets(targets, session, session_prefix, total_size,
                                                                file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
-                        acquisitions = config.db.acquisitions.find({'session': session['_id']}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
+                        acquisitions = config.db[acquisition_cont_name].find({'session': session['_id']}, ['label', 'files', 'uid', 'timestamp', 'timezone'])
                         for acq in acquisitions:
                             acq_prefix = session_prefix + '/' + self._path_from_container(acq, used_subpaths, session['_id'])
                             total_size, file_cnt = _append_targets(targets, acq, acq_prefix, total_size,
@@ -410,8 +417,10 @@ class Core(base.RequestHandler):
         yield stream.getvalue() # get tar stream trailer
         stream.close()
 
+    def download_snapshot(self):
+        return self.download(snapshot=True)
 
-    def download(self):
+    def download(self, snapshot=False):
         """
         In downloads we use filters in the payload to exclude/include files.
         To pass a single filter, each of its conditions should be satisfied.
@@ -454,16 +463,19 @@ class Core(base.RequestHandler):
             self.response.headers['Content-Type'] = 'application/octet-stream'
             self.response.headers['Content-Disposition'] = 'attachment; filename=' + str(ticket['filename'])
             for project_id in ticket['projects']:
-                config.db.projects.update_one({'_id': project_id}, {'$inc': {'counter': 1}})
+                if snapshot:
+                    config.db.project_snapshots.update_one({'_id': project_id}, {'$inc': {'counter': 1}})
+                else:
+                    config.db.projects.update_one({'_id': project_id}, {'$inc': {'counter': 1}})
         else:
             req_spec = self.request.json_body
             validator = validators.payload_from_schema_file(self, 'download.json')
             validator(req_spec, 'POST')
             log.debug(json.dumps(req_spec, sort_keys=True, indent=4, separators=(',', ': ')))
             if self.get_param('format') == 'bids':
-                return self._preflight_archivestream_bids(req_spec)
+                return self._preflight_archivestream_bids(req_spec, snapshot=snapshot)
             else:
-                return self._preflight_archivestream(req_spec)
+                return self._preflight_archivestream(req_spec, snapshot=snapshot)
 
     def sites(self):
         """Return local and remote sites."""
