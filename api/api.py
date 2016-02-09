@@ -12,6 +12,7 @@ from handlers import userhandler
 from handlers import grouphandler
 from handlers import containerhandler
 from handlers import collectionshandler
+from handlers import snapshothandler
 
 log = config.log
 
@@ -114,6 +115,20 @@ routes = [
 
     webapp2.Route(_format(r'/api/<par_cont_name:groups>/<par_id:{group_id_re}>/<cont_name:projects>'),          containerhandler.ContainerHandler, name='cont_sublist_groups', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/<par_cont_name:{cont_name_re}>/<par_id:{cid_re}>/<cont_name:{cont_name_re}>'), containerhandler.ContainerHandler, name='cont_sublist', handler_method='get_all', methods=['GET']),
+
+    webapp2.Route(_format(r'/api/snapshots'),                                                                       snapshothandler.SnapshotHandler, name='snap_post', handler_method='create', methods=['POST']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>'),                                                  snapshothandler.SnapshotHandler, name='snap_proj', handler_method='get_all', methods=['GET']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>'),                                   snapshothandler.SnapshotHandler, name='snap_delete', handler_method='remove', methods=['DELETE']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/public'),                            snapshothandler.SnapshotHandler, name='snap_publish', handler_method='publish', methods=['PUT']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>'),                             snapshothandler.SnapshotHandler, name='snap_get', methods=['GET']),
+    webapp2.Route(_format(r'/api/snapshots/<par_cont_name:projects>/<par_id:{cid_re}>/<cont_name:sessions>'),       snapshothandler.SnapshotHandler, name='snap_proj_ses', handler_method='get_all', methods=['GET']),
+    webapp2.Route(_format(r'/api/snapshots/<par_cont_name:sessions>/<par_id:{cid_re}>/<cont_name:acquisitions>'),   snapshothandler.SnapshotHandler, name='snap_ses_acq', handler_method='get_all', methods=['GET']),
+    webapp2.Route(_format(r'/api/projects/<cid:{cid_re}>/snapshots'),                                               snapshothandler.SnapshotHandler, name='snap_for_proj', handler_method='get_all_for_project', methods=['GET']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:files>/<name:{filename_re}>'),
+                                                                                                                    snapshothandler.SnapshotFileListHandler, name='snap_files', methods=['GET']),
+
+    webapp2.Route(r'/api/snapshots/download',         core.Core, handler_method='download_snapshot', methods=['GET', 'POST'], name='download_snapshot'),
+
 ]
 
 
