@@ -156,7 +156,7 @@ def queue_job(db, algorithm_id, input, tags=[], attempt_n=1, previous_job_id=Non
     result = db.jobs.insert_one(job)
     _id = result.inserted_id
 
-    log.info('Running %s as job %s to process %s %s' % (gear.name, str(_id), input.container_type, input.container_id))
+    log.info('Enqueuing %s as job %s to process %s %s' % (gear.name, str(_id), input.container_type, input.container_id))
     return _id
 
 def retry_job(db, j, force=False):
