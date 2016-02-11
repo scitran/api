@@ -5,7 +5,7 @@ set -e
 unset CDPATH
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 
-echo() { builtin echo "[SCITRAN] $@"; }
+echo() { builtin echo -e "\033[1;34m\033[47mSCITRAN\033[0;0m\033[47m $@\033[0;0m"; }
 
 
 set -o allexport
@@ -21,7 +21,7 @@ if [ "$#" -gt 1 ]; then
 fi
 
 
-# Default config values
+# Minimal default config values
 SCITRAN_RUNTIME_HOST=${SCITRAN_RUNTIME_HOST:-"127.0.0.1"}
 SCITRAN_RUNTIME_PORT=${SCITRAN_RUNTIME_PORT:-"8080"}
 SCITRAN_RUNTIME_PATH=${SCITRAN_RUNTIME_PATH:-"./runtime"}
@@ -82,19 +82,11 @@ else
 fi
 
 if [ -d "$SCITRAN_RUNTIME_PATH" ]; then
-    echo "Virtualenv exists present at $SCITRAN_RUNTIME_PATH"
+    echo "Virtualenv exists at $SCITRAN_RUNTIME_PATH"
 else
     echo "Creating 'scitran' Virtualenv at $SCITRAN_RUNTIME_PATH"
     virtualenv -p `brew --prefix`/bin/python --prompt="(scitran)" $SCITRAN_RUNTIME_PATH
     echo "Created 'scitran' Virtualenv at $SCITRAN_RUNTIME_PATH"
-fi
-
-if [ -f "$SCITRAN_RUNTIME_PATH/bin/mongod" ]; then
-    echo "MongoDB is installed"
-else
-    echo "Installing MongoDB"
-    curl https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-3.0.7.tgz | tar xz -C $SCITRAN_RUNTIME_PATH --strip-components 1
-    echo "MongoDB installed"
 fi
 
 
@@ -105,9 +97,29 @@ echo "Installing Python requirements"
 bin/install.sh
 
 
-# Launch mongod
+# Install and launch MongoDB
+install_mongo() {
+    curl $MONGODB_URL | tar xz -C $VIRTUAL_ENV/bin --strip-components 2
+    echo "MongoDB version $MONGODB_VERSION installed"
+}
+
+MONGODB_VERSION=$(cat mongodb_version.txt)
+MONGODB_URL="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-$MONGODB_VERSION.tgz"
+if [ -x "$VIRTUAL_ENV/bin/mongod" ]; then
+    INSTALLED_MONGODB_VERSION=$($VIRTUAL_ENV/bin/mongod --version | grep "db version" | cut -d "v" -f 3)
+    echo "MongoDB version $INSTALLED_MONGODB_VERSION is installed"
+    if [ "$INSTALLED_MONGODB_VERSION" != "$MONGODB_VERSION" ]; then
+        echo "Upgrading MongoDB to version $MONGODB_VERSION"
+        install_mongo
+    fi
+else
+    echo "Installing MongoDB"
+    install_mongo
+fi
+
 mongod --dbpath $SCITRAN_PERSISTENT_DB_PATH --smallfiles --port $SCITRAN_PERSISTENT_DB_PORT &
-MONGO_PID=$!
+MONGOD_PID=$!
+
 
 # Set python path so scripts can work
 export PYTHONPATH=.
@@ -159,12 +171,14 @@ ssl_pem=$SCITRAN_RUNTIME_SSL_PEM
 paste.app_factory = api.api:app_factory
 EOF
 
-paster serve --reload $TEMP_INI_FILE
+paster serve --reload $TEMP_INI_FILE &
+PASTER_PID=$!
+
+
+# Shutdown mongod and paster on SIGINT and SIGTERM
+trap "{ echo 'Exit signal trapped'; kill $MONGOD_PID $PASTER_PID; wait; }" EXIT
+wait
 
 # Clean up and exit out of the python virtualenv
 rm -f $TEMP_INI_FILE
 deactivate
-
-# Shutdown mongod on ctrl+C
-kill $MONGO_PID
-wait $MONGO_PID
