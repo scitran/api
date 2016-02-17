@@ -143,7 +143,7 @@ routes = [
     webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:files>/<name:{filename_re}>'),
                                                                                                                     snapshothandler.SnapshotFileListHandler, name='snap_files', methods=['GET']),
 
-    webapp2.Route(r'/api/snapshots/download',         core.Core, handler_method='download_snapshot', methods=['GET', 'POST'], name='download_snapshot'),
+    webapp2.Route(r'/api/snapshots/download',         download.Download, handler_method='download_snapshot', methods=['GET', 'POST'], name='download_snapshot'),
 
 ]
 
