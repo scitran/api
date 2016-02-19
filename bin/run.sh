@@ -124,7 +124,38 @@ MONGOD_PID=$!
 # Set python path so scripts can work
 export PYTHONPATH=.
 
-# Boostrap users
+
+# Serve API with PasteScript
+TEMP_INI_FILE=$(mktemp -t scitran_api)
+cat << EOF > $TEMP_INI_FILE
+[server:main]
+use = egg:Paste#http
+host = $SCITRAN_RUNTIME_HOST
+port = $SCITRAN_RUNTIME_PORT
+ssl_pem=$SCITRAN_RUNTIME_SSL_PEM
+
+[app:main]
+paste.app_factory = api.api:app_factory
+EOF
+
+paster serve --reload $TEMP_INI_FILE &
+PASTER_PID=$!
+
+
+# Set up exit and error trap to shutdown mongod and paster
+trap "{
+    echo 'Exit signal trapped';
+    kill $MONGOD_PID $PASTER_PID; wait;
+    rm -f $TEMP_INI_FILE
+    deactivate
+}" EXIT ERR
+
+
+# Wait for everything to come up
+sleep 1
+
+
+# Boostrap users and groups
 if [ $BOOTSTRAP_USERS -eq 1 ]; then
     echo "Bootstrapping users"
     bin/bootstrap.py users "$SCITRAN_RUNTIME_BOOTSTRAP"
@@ -132,6 +163,8 @@ else
     echo "Database exists at $SCITRAN_PERSISTENT_PATH/db. Not bootstrapping users."
 fi
 
+
+# Boostrap test data
 TESTDATA_URL="https://github.com/scitran/testdata/archive/master.tar.gz"
 TESTDATA_VERSION=$(curl -sLI $TESTDATA_URL | grep ETag | tail -n 1 | cut -f 2 -d '"')
 if [ ! -d "$SCITRAN_PERSISTENT_PATH/testdata" ]; then
@@ -158,27 +191,5 @@ else
 fi
 
 
-# Serve API with PasteScript
-TEMP_INI_FILE=$(mktemp -t scitran_api)
-cat << EOF > $TEMP_INI_FILE
-[server:main]
-use = egg:Paste#http
-host = $SCITRAN_RUNTIME_HOST
-port = $SCITRAN_RUNTIME_PORT
-ssl_pem=$SCITRAN_RUNTIME_SSL_PEM
-
-[app:main]
-paste.app_factory = api.api:app_factory
-EOF
-
-paster serve --reload $TEMP_INI_FILE &
-PASTER_PID=$!
-
-
-# Shutdown mongod and paster on SIGINT and SIGTERM
-trap "{ echo 'Exit signal trapped'; kill $MONGOD_PID $PASTER_PID; wait; }" EXIT
+# Wait for good or bad things to happen until exit or error trap catches
 wait
-
-# Clean up and exit out of the python virtualenv
-rm -f $TEMP_INI_FILE
-deactivate
