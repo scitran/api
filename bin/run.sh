@@ -158,7 +158,7 @@ sleep 1
 # Boostrap users and groups
 if [ $BOOTSTRAP_USERS -eq 1 ]; then
     echo "Bootstrapping users"
-    bin/bootstrap.py users "$SCITRAN_RUNTIME_BOOTSTRAP"
+    bin/bootstrap.py -i users "$SCITRAN_RUNTIME_BOOTSTRAP"
 else
     echo "Database exists at $SCITRAN_PERSISTENT_PATH/db. Not bootstrapping users."
 fi
@@ -185,7 +185,7 @@ if [ -f "$SCITRAN_PERSISTENT_DATA_PATH/.bootstrapped" ]; then
     echo "Persistence store exists at $SCITRAN_PERSISTENT_PATH/data. Not bootstrapping data. Remove to re-bootstrap."
 else
     echo "Bootstrapping testdata"
-    bin/bootstrap.py data --copy $SCITRAN_PERSISTENT_PATH/testdata
+    bin/bootstrap.py -i data $SCITRAN_PERSISTENT_PATH/testdata
     echo "Bootstrapped testdata"
     touch "$SCITRAN_PERSISTENT_DATA_PATH/.bootstrapped"
 fi
