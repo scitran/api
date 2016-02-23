@@ -3,24 +3,33 @@
     "title": "EngineMetadata",
     "type": "object",
     "properties": {
+        "group": {
+            "type": "object",
+            "properties": {
+                "_id":         {"type": "string"}
+            },
+            "additionalProperties": false,
+            "required": ["_id"]
+        },
         "project":      {
             "type": "object",
             "properties": {
                 "public":       {"type": ["boolean", "null"]},
-                "label":        {"type": ["string", "null"]},
+                "label":        {"type": "string"},
                 "metadata":     {"type": ["object", "null"]},
                 "files":        {
                     "type": ["array", "null"],
                     "items": {"$ref": "file.json"}
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["label"]
         },
         "session":      {
             "type": "object",
             "properties": {
                 "public":       {"type": ["boolean", "null"]},
-                "label":        {"type": ["string", "null"]},
+                "label":        {"type": "string"},
                 "metadata":     {"type": ["object", "null"]},
                 "operator":     {"type": ["string", "null"]},
                 "uid":          {"type": ["string", "null"]},
@@ -32,13 +41,14 @@
                     "items": {"$ref": "file.json"}
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["label"]
         },
         "acquisition":  {
             "type": "object",
             "properties": {
                 "public":       {"type": ["boolean", "null"]},
-                "label":        {"type": ["string", "null"]},
+                "label":        {"type": "string"},
                 "metadata":     {"type": ["object", "null"]},
                 "uid":          {"type": ["string", "null"]},
                 "instrument":   {"type": ["string", "null"]},
@@ -50,9 +60,10 @@
                     "items": {"$ref": "file.json"}
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["label"]
         }
     },
-    "required": ["acquisition"],
+    "required": ["acquisition", "group", "project", "session"],
     "additionalProperties": false
 }

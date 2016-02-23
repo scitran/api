@@ -5,6 +5,7 @@ import shutil
 import hashlib
 import zipfile
 import datetime
+import collections
 
 from . import util
 from . import config
@@ -32,6 +33,8 @@ class HashingFile(file):
 
     def get_hash(self):
         return self.hash_alg.hexdigest()
+
+ParsedFile = collections.namedtuple('ParsedFile', ['info', 'path'])
 
 
 def getHashingFieldStorage(upload_dir, hash_alg):
@@ -116,22 +119,22 @@ class FileStore(object):
         move_file(self.path, target_path)
         self.path = target_path
 
-    def identical(self, filepath, hash_):
-        if zipfile.is_zipfile(filepath) and zipfile.is_zipfile(self.path):
-            with zipfile.ZipFile(filepath) as zf1, zipfile.ZipFile(self.path) as zf2:
-                zf1_infolist = sorted(zf1.infolist(), key=lambda zi: zi.filename)
-                zf2_infolist = sorted(zf2.infolist(), key=lambda zi: zi.filename)
-                if zf1.comment != zf2.comment:
+def identical(hash_0, path_0, hash_1, path_1):
+    if zipfile.is_zipfile(path_0) and zipfile.is_zipfile(path_1):
+        with zipfile.ZipFile(path_0) as zf1, zipfile.ZipFile(path_1) as zf2:
+            zf1_infolist = sorted(zf1.infolist(), key=lambda zi: zi.filename)
+            zf2_infolist = sorted(zf2.infolist(), key=lambda zi: zi.filename)
+            if zf1.comment != zf2.comment:
+                return False
+            if len(zf1_infolist) != len(zf2_infolist):
+                return False
+            for zii, zij in zip(zf1_infolist, zf2_infolist):
+                if zii.CRC != zij.CRC:
                     return False
-                if len(zf1_infolist) != len(zf2_infolist):
-                    return False
-                for zii, zij in zip(zf1_infolist, zf2_infolist):
-                    if zii.CRC != zij.CRC:
-                        return False
-                else:
-                    return True
-        else:
-            return hash_ == self.hash
+            else:
+                return True
+    else:
+        return hash_0 == hash_1
 
 class MultiFileStore(object):
     """This class provides and interface for file uploads.
@@ -153,9 +156,9 @@ class MultiFileStore(object):
         for field in form:
             if form[field].filename:
                 filename = os.path.basename(form[field].filename)
-                self.files[filename] = {
-                    'hash': util.format_hash(hash_alg, form[field].file.get_hash()),
-                    'size': os.path.getsize(os.path.join(dest_path, filename)),
-                    'path': os.path.join(dest_path, filename),
-                    'mimetype': util.guess_mimetype(filename)
-                }
+                self.files[filename] = ParsedFile(
+                    {
+                        'hash': util.format_hash(hash_alg, form[field].file.get_hash()),
+                        'size': os.path.getsize(os.path.join(dest_path, filename)),
+                        'mimetype': util.guess_mimetype(filename)
+                    }, os.path.join(dest_path, filename))

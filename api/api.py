@@ -71,6 +71,7 @@ routes = [
     webapp2_extras.routes.PathPrefixRoute(r'/api', [
         webapp2.Route(r'/download',         download.Download, handler_method='download', methods=['GET', 'POST'], name='download'),
         webapp2.Route(r'/reaper',           upload.Upload, handler_method='reaper', methods=['POST']),
+        webapp2.Route(r'/uploader',         upload.Upload, handler_method='uploader', methods=['POST']),
         webapp2.Route(r'/engine',           upload.Upload, handler_method='engine', methods=['POST']),
         webapp2.Route(r'/sites',            centralclient.CentralClient, handler_method='sites', methods=['GET']),
         webapp2.Route(r'/register',         centralclient.CentralClient, handler_method='register', methods=['POST']),
