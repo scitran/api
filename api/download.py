@@ -110,6 +110,7 @@ class Download(base.RequestHandler):
                 modified_path = path + '_' + str(i)
                 if modified_path not in list_used_subpaths:
                     return modified_path
+                i += 1
         path = None
         if not path and container.get('label'):
             path = container['label']
