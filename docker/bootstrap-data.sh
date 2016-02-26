@@ -21,7 +21,7 @@ GET_LATEST_DATA=${1:-N}
 #
 # When changing scitran/testdata, merge that change to master first,
 # then reference that resulting commit hash here.
-bootstrap_data_label=45056c104caf85796e6138a5ca163c3937c7b5d9
+bootstrap_data_label=9362b768d54caf6e5cd35f00498208c3b2bff77d
 
 
 # Move to API folder for relative path assumptions later on
