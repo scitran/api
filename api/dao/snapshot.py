@@ -51,6 +51,8 @@ def _store(hierarchy):
                 sessions_list.append(s)
     else:
         session_list = hierarchy[project['original']]
+    if not sessions_list:
+        return result
     session_ids = config.db.session_snapshots.insert_many(sessions_list).inserted_ids
     acquisitions = []
     for i, session in enumerate(sessions_list):
@@ -59,7 +61,8 @@ def _store(hierarchy):
             acquisition['session'] = session_id
             acquisition['original'] = acquisition.pop('_id')
             acquisitions.append(acquisition)
-    config.db.acquisition_snapshots.insert_many(acquisitions)
+    if acquisitions:
+        config.db.acquisition_snapshots.insert_many(acquisitions)
     return result
 
 

@@ -76,7 +76,7 @@ def data(args):
     files = []
     for dirpath, dirnames, filenames in os.walk(args.path):
         for filepath in [os.path.join(dirpath, fn) for fn in filenames if not fn.startswith('.')]:
-            if not os.path.islink(filepath):
+            if not os.path.islink(filepath) and filepath.endswith('.zip'):
                 files.append(filepath)
         dirnames[:] = [dn for dn in dirnames if not dn.startswith('.')] # need to use slice assignment to influence walk behavior
     file_cnt = len(files)
