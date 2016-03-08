@@ -108,14 +108,14 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         if self.superuser_request:
             permchecker = always_ok
         elif self.public_request:
-            self.abort(403, 'this request is not allowed')
+            permchecker = containerauth.list_public_request
         else:
             permchecker = containerauth.list_permission_checker(self)
         query = {
             'original': bson.ObjectId(proj_id)
         }
         try:
-            results = permchecker(self.storage.exec_op)('GET', query=query, projection=projection)
+            results = permchecker(self.storage.exec_op)('GET', query=query, projection=projection, public=self.public_request)
         except APIStorageException as e:
             self.abort(400, e.message)
         if results is None:
