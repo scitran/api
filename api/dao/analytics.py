@@ -12,7 +12,14 @@ def add(analytics_type, container_id, user_id, user_site, timestamp):
     )
     config.db.analytics.insert_one(view)
 
-def get(analytics_type, container_id, user_id, user_site, start_date, end_date, count, limit):
+def get(analytics_type, container_id, user_id, user_site, start_date, end_date, count, limit, is_admin):
+    if not is_admin:
+        projection = {
+            'user_site': 0,
+            'user_id': 0
+        }
+    else:
+        projection = None
     query = {}
     if user_id:
         query['user_id'] = user_id
@@ -31,4 +38,4 @@ def get(analytics_type, container_id, user_id, user_site, start_date, end_date, 
     if count:
         return {'count': config.db.analytics.count(query)}
     else:
-        return list(config.db.analytics.find(query, limit=limit))
+        return list(config.db.analytics.find(query, projection=projection, limit=limit))

@@ -48,7 +48,8 @@ class AnalyticsHandler(base.RequestHandler):
             start_date,
             end_date,
             self.is_true('count'),
-            limit
+            limit,
+            self.superuser_request
         )
         return result
 
