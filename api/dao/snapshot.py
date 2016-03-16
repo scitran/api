@@ -79,6 +79,14 @@ def remove(method, _id, payload=None):
     config.db.acquisition_snapshots.delete_many({'session': {'$in': session_snapshot_ids}})
     return result
 
+def remove_private_snapshots_for_project(pid):
+    pid = bson.objectid.ObjectId(pid)
+    project_snapshot_ids = [sn['_id'] for sn in config.db.project_snapshots.find({'original': pid, 'public': False})]
+    result = config.db.project_snapshots.delete_many({'original': pid, 'public': False})
+    session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': {'$in': project_snapshot_ids}})]
+    config.db.session_snapshots.delete_many({'_id': {'$in': session_snapshot_ids}})
+    config.db.acquisition_snapshots.delete_many({'session': {'$in': session_snapshot_ids}})
+    return result
 
 def make_public(method, _id, payload=None):
     public = payload['value']

@@ -7,7 +7,7 @@ from .. import config
 from .. import debuginfo
 from .. import validators
 from ..auth import containerauth, always_ok
-from ..dao import APIStorageException, containerstorage
+from ..dao import APIStorageException, containerstorage, snapshot
 
 log = config.log
 
@@ -295,6 +295,8 @@ class ContainerHandler(base.RequestHandler):
             self.abort(400, e.message)
 
         if result.deleted_count == 1:
+            if cont_name == 'projects':
+                snapshot.remove_private_snapshots_for_project(_id)
             return {'deleted': result.deleted_count}
         else:
             self.abort(404, 'Element not removed from container {} {}'.format(storage.cont_name, _id))
