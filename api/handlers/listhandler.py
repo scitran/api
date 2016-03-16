@@ -226,6 +226,10 @@ class PermissionsListHandler(ListHandler):
             session_ids = [s['_id'] for s in config.db.sessions.find({'project': oid}, [])]
             config.db.sessions.update_many({'project': oid}, {'$set': update})
             config.db.acquisitions.update_many({'session': {'$in': session_ids}}, {'$set': update})
+            acq_ids = [a['_id'] for a in config.db.acquisitions.find({'session': {'$in': session_ids}})]
+            config.db.project_snapshots.update_many({'original': oid}, {'$set': update})
+            config.db.session_snapshots.update_many({'original': {'$in': session_ids}}, {'$set': update})
+            config.db.acquisition_snapshots.update_many({'original': {'$in': acq_ids}}, {'$set': update})
         except:
             self.abort(500, 'permissions not propagated from project {} to sessions'.format(_id))
 
