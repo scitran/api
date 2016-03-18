@@ -88,6 +88,15 @@ def remove_private_snapshots_for_project(pid):
     config.db.acquisition_snapshots.delete_many({'session': {'$in': session_snapshot_ids}})
     return result
 
+def remove_permissions_from_snapshots(pid):
+    pid = bson.objectid.ObjectId(pid)
+    project_snapshot_ids = [sn['_id'] for sn in config.db.project_snapshots.find({'original': pid})]
+    result = config.db.project_snapshots.update_many({'original': pid}, {'$set':{'permissions': []}})
+    session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': {'$in': project_snapshot_ids}})]
+    config.db.session_snapshots.update_many({'_id': {'$in': session_snapshot_ids}}, {'$set':{'permissions': []}})
+    config.db.acquisition_snapshots.update_many({'session': {'$in': session_snapshot_ids}}, {'$set':{'permissions': []}})
+    return result
+
 def make_public(method, _id, payload=None):
     public = payload['value']
     snapshot_id = bson.objectid.ObjectId(_id)

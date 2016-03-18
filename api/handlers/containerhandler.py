@@ -297,6 +297,7 @@ class ContainerHandler(base.RequestHandler):
         if result.deleted_count == 1:
             if cont_name == 'projects':
                 snapshot.remove_private_snapshots_for_project(_id)
+                snapshot.remove_permissions_from_snapshots(_id)
             return {'deleted': result.deleted_count}
         else:
             self.abort(404, 'Element not removed from container {} {}'.format(storage.cont_name, _id))
