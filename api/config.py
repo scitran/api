@@ -100,7 +100,6 @@ def initialize_db():
         db.authtokens.create_index('timestamp', expireAfterSeconds=600)
         db.uploads.create_index('timestamp', expireAfterSeconds=60)
         db.downloads.create_index('timestamp', expireAfterSeconds=60)
-        db.analytics.create_index('timestamp', expireAfterSeconds=600)
 
     now = datetime.datetime.utcnow()
     db.groups.update_one({'_id': 'unknown'}, {'$setOnInsert': { 'created': now, 'modified': now, 'name': 'Unknown', 'roles': []}}, upsert=True)
