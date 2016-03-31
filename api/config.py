@@ -97,6 +97,7 @@ def initialize_db():
         db.acquisitions.create_index('session')
         db.acquisitions.create_index('uid')
         db.acquisitions.create_index('collections')
+        db.analytics.create_index('timestamp')
         db.authtokens.create_index('timestamp', expireAfterSeconds=600)
         db.uploads.create_index('timestamp', expireAfterSeconds=60)
         db.downloads.create_index('timestamp', expireAfterSeconds=60)
