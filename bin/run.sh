@@ -22,6 +22,7 @@ fi
 
 
 # Minimal default config values
+SCITRAN_CORE_DRONE_SECRET=${SCITRAN_CORE_DRONE_SECRET:-"change-me"}
 SCITRAN_RUNTIME_HOST=${SCITRAN_RUNTIME_HOST:-"127.0.0.1"}
 SCITRAN_RUNTIME_PORT=${SCITRAN_RUNTIME_PORT:-"8080"}
 SCITRAN_RUNTIME_PATH=${SCITRAN_RUNTIME_PATH:-"./runtime"}
@@ -154,7 +155,7 @@ trap "{
 
 
 # Wait for everything to come up
-sleep 1
+sleep 5
 
 
 
@@ -184,7 +185,7 @@ if [ -f "$SCITRAN_PERSISTENT_DATA_PATH/.bootstrapped" ]; then
     echo "Persistence store exists at $SCITRAN_PERSISTENT_PATH/data. Not bootstrapping data. Remove to re-bootstrap."
 else
     echo "Bootstrapping testdata"
-    folder_reaper --insecure --secret "$SCITRAN_CORE_DRONE_SECRET" $SCITRAN_SITE_API_URL "$SCITRAN_PERSISTENT_PATH/testdata"
+    folder_uploader --insecure --secret "$SCITRAN_CORE_DRONE_SECRET" $SCITRAN_SITE_API_URL "$SCITRAN_PERSISTENT_PATH/testdata"
     echo "Bootstrapped testdata"
     touch "$SCITRAN_PERSISTENT_DATA_PATH/.bootstrapped"
 fi
