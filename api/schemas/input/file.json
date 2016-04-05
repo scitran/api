@@ -1,16 +1,17 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
+  "oneOf": [
+      { "$ref": "file.json#/definitions/MR" },
+      { "$ref": "file.json#/definitions/physio" },
+      { "$ref": "file.json#/definitions/CT" }
+  ],
   "properties": {
     "name":           { "type": "string" },
-    "type":           { "type": "string" },
+    "type":           { "enum": ["dicom", "nifti", null] },
     "mimetype":       { "type": "string" },
-    "instrument":     { "type": "string" },
-    "measurements": {
-      "items": { "type": "string"},
-      "type": "array",
-      "uniqueItems": true
-    },
+    "instrument":     {},
+    "measurements":   {},
     "tags": {
       "items": { "type": "string"},
       "type": "array",
@@ -20,5 +21,52 @@
       "type": "object"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "MR": {
+      "type": "object",
+      "properties": {
+        "instrument": { "enum": ["MR"] },
+        "measurements": {
+          "type": "array",
+          "items": {
+            "enum": ["mr_measurement1",
+                     "mr_measurement2",
+                     "mr_measurement3"]
+          },
+        "uniqueItems": true
+        }
+      }
+    },
+    "physio": {
+      "type": "object",
+      "properties": {
+        "instrument": { "enum": ["Physio"] },
+        "measurements": {
+          "items": {
+            "enum": ["physio_measurement1",
+                     "physio_measurement2",
+                     "physio_measurement3"]
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      }
+    },
+    "CT": {
+      "type": "object",
+      "properties": {
+        "instrument": { "enum": ["CT"] },
+        "measurements": {
+          "items": {
+            "enum": ["ct_measurement1",
+                     "ct_measurement2",
+                     "ct_measurement3"]
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      }
+    }
+  }
 }

@@ -104,6 +104,8 @@ class TargetedPlacer(Placer):
         self.saved = []
 
     def process_file_field(self, field, info):
+        if self.metadata is not None:
+            info.update(self.metadata)
         self.save_file(field, info)
         self.saved.append(info)
 
