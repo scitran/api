@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
-  "oneOf": [
+  "anyOf": [
       { "$ref": "file.json#/definitions/MR" },
       { "$ref": "file.json#/definitions/physio" },
       { "$ref": "file.json#/definitions/CT" }
