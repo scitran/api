@@ -104,6 +104,8 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.config = self.container_handler_configurations['projects']
         self.storage = self.config['storage']
         projection = self.config['list_projection']
+        if self.is_true('metadata'):
+            projection = None
         # select which permission filter will be applied to the list of results.
         if self.superuser_request:
             permchecker = always_ok

@@ -97,6 +97,8 @@ class CollectionsHandler(ContainerHandler):
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
         projection = self.config['list_projection']
+        if self.is_true('metadata'):
+            projection = None
         if self.superuser_request:
             permchecker = always_ok
         elif self.public_request:
@@ -152,6 +154,8 @@ class CollectionsHandler(ContainerHandler):
                 ])
         query = {'_id': {'$in': [ar['_id'] for ar in agg_res]}}
         projection = self.container_handler_configurations['sessions']['list_projection']
+        if self.is_true('metadata'):
+            projection = None
         log.debug(query)
         log.debug(projection)
         sessions = list(config.db.sessions.find(query, projection))
@@ -184,6 +188,8 @@ class CollectionsHandler(ContainerHandler):
         elif sid != '':
             self.abort(400, sid + ' is not a valid ObjectId')
         projection = self.container_handler_configurations['acquisitions']['list_projection']
+        if self.is_true('metadata'):
+            projection = None
         acquisitions = list(config.db.acquisitions.find(query, projection))
         self._filter_all_permissions(acquisitions, self.uid, self.user_site)
         for acq in acquisitions:
