@@ -259,13 +259,29 @@ routes = [
 
     webapp2.Route(_format(r'/api/<par_cont_name:groups>/<par_id:{group_id_re}>/<cont_name:projects>'),          containerhandler.ContainerHandler, name='cont_sublist_groups', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/<par_cont_name:{cont_name_re}>/<par_id:{cid_re}>/<cont_name:{cont_name_re}>'), containerhandler.ContainerHandler, name='cont_sublist', handler_method='get_all', methods=['GET']),
-    webapp2.Route(_format(r'/api/search'),                                            searchhandler.SearchHandler, name='es_proxy', methods=['GET']),
+    webapp2.Route(_format(r'/api/search'),                                            searchhandler.SearchHandler, handler_method='advanced_search', name='es_proxy', methods=['GET']),
     webapp2.Route(_format(r'/api/search/files'),                                      searchhandler.SearchHandler, handler_method='get_datatree', name='es_data', methods=['GET']),
     webapp2.Route(_format(r'/api/search/<cont_name:{cont_name_re}>'),                 searchhandler.SearchHandler, name='es_proxy', methods=['GET']),
     webapp2.Route(_format(r'/api/schemas/<schema:{schema_re}>'),                      schemahandler.SchemaHandler, name='schemas', methods=['GET']),
     webapp2.Route(r'/api/report/<report_type:site|project>',                          reporthandler.ReportHandler, methods=['GET']),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>'),
+                                                                                      listhandler.AnalysesHandler, name='analysis_post', methods=['POST']),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>/<_id:{cid_re}>'),
+                                                                                      listhandler.AnalysesHandler, name='analysis',
+                                                                                      methods=['GET', 'DELETE']),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>/<_id:{cid_re}>/files'),
+                                                                                      listhandler.AnalysesHandler, handler_method='download',
+                                                                                      methods=['GET'], name='analysis_files'),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>/<_id:{cid_re}>/files/<name:{filename_re}>'),
+                                                                                      listhandler.AnalysesHandler,
+                                                                                      handler_method='download', name='analysis_single_file'),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>/<_id:{cid_re}>/notes'),
+                                                                                      listhandler.AnalysesHandler, handler_method='add_note',
+                                                                                      methods=['POST'], name='analysis_add_note'),
+    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:analyses>/<_id:{cid_re}>/notes/<note_id:{cid_re}>'),
+                                                                                      listhandler.AnalysesHandler, handler_method='delete_note',
+                                                                                      methods=['DELETE'], name='analysis_delete_note'),
 ]
-
 
 def dispatcher(router, request, response):
     try:

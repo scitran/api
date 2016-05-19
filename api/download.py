@@ -47,6 +47,32 @@ def _append_targets(targets, container, prefix, total_size, total_cnt, optional,
                 total_cnt += 1
     return total_size, total_cnt
 
+def symlinkarchivestream(ticket, data_path):
+    for filepath, arcpath, _ in ticket['target']:
+        t = tarfile.TarInfo(name=arcpath)
+        t.type = tarfile.SYMTYPE
+        t.linkname = os.path.relpath(filepath, data_path)
+        yield t.tobuf()
+    stream = cStringIO.StringIO()
+    with tarfile.open(mode='w|', fileobj=stream) as archive:
+        pass
+    yield stream.getvalue() # get tar stream trailer
+    stream.close()
+
+def archivestream(ticket):
+    BLOCKSIZE = 512
+    CHUNKSIZE = 2**20  # stream files in 1MB chunks
+    stream = cStringIO.StringIO()
+    with tarfile.open(mode='w|', fileobj=stream) as archive:
+        for filepath, arcpath, _ in ticket['target']:
+            yield archive.gettarinfo(filepath, arcpath).tobuf()
+            with open(filepath, 'rb') as fd:
+                for chunk in iter(lambda: fd.read(CHUNKSIZE), ''):
+                    yield chunk
+                if len(chunk) % BLOCKSIZE != 0:
+                    yield (BLOCKSIZE - (len(chunk) % BLOCKSIZE)) * b'\0'
+    yield stream.getvalue() # get tar stream trailer
+    stream.close()
 
 class Download(base.RequestHandler):
 
@@ -125,33 +151,6 @@ class Download(base.RequestHandler):
         used_subpaths[parent_id] = used_subpaths.get(parent_id, []) + [path]
         return path
 
-    def _archivestream(self, ticket):
-        BLOCKSIZE = 512
-        CHUNKSIZE = 2**20  # stream files in 1MB chunks
-        stream = cStringIO.StringIO()
-        with tarfile.open(mode='w|', fileobj=stream) as archive:
-            for filepath, arcpath, _ in ticket['target']:
-                yield archive.gettarinfo(filepath, arcpath).tobuf()
-                with open(filepath, 'rb') as fd:
-                    for chunk in iter(lambda: fd.read(CHUNKSIZE), ''):
-                        yield chunk
-                    if len(chunk) % BLOCKSIZE != 0:
-                        yield (BLOCKSIZE - (len(chunk) % BLOCKSIZE)) * b'\0'
-        yield stream.getvalue() # get tar stream trailer
-        stream.close()
-
-    def _symlinkarchivestream(self, ticket, data_path):
-        for filepath, arcpath, _ in ticket['target']:
-            t = tarfile.TarInfo(name=arcpath)
-            t.type = tarfile.SYMTYPE
-            t.linkname = os.path.relpath(filepath, data_path)
-            yield t.tobuf()
-        stream = cStringIO.StringIO()
-        with tarfile.open(mode='w|', fileobj=stream) as archive:
-            pass
-        yield stream.getvalue() # get tar stream trailer
-        stream.close()
-
     def download(self):
         """
         .. http:get::  /api/download
@@ -207,9 +206,9 @@ class Download(base.RequestHandler):
             if ticket['ip'] != self.request.client_addr:
                 self.abort(400, 'ticket not for this source IP')
             if self.get_param('symlinks'):
-                self.response.app_iter = self._symlinkarchivestream(ticket, config.get_item('persistent', 'data_path'))
+                self.response.app_iter = symlinkarchivestream(ticket, config.get_item('persistent', 'data_path'))
             else:
-                self.response.app_iter = self._archivestream(ticket)
+                self.response.app_iter = archivestream(ticket)
             self.response.headers['Content-Type'] = 'application/octet-stream'
             self.response.headers['Content-Disposition'] = 'attachment; filename=' + str(ticket['filename'])
             for project_id in ticket['projects']:

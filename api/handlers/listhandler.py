@@ -13,6 +13,7 @@ from .. import files
 from ..jobs import rules
 from .. import tempdir as tempfile
 from .. import upload
+from .. import download
 from .. import util
 from .. import validators
 from ..auth import listauth, always_ok
@@ -61,6 +62,13 @@ def initialize_list_configurations():
             'storage_schema_file': 'note.json',
             'input_schema_file': 'note.json'
         },
+        'analyses': {
+            'storage': liststorage.AnalysesStorage,
+            'permchecker': listauth.default_sublist,
+            'use_object_id': True,
+            'storage_schema_file': 'analysis.json',
+            'input_schema_file': 'analysis.json'
+        }
     }
     list_handler_configurations = {
         'groups': {
@@ -576,3 +584,133 @@ class FileListHandler(ListHandler):
         metadata = json.loads(self.request.GET.get('metadata'))
 
         return upload.process_upload(self.request, upload.Strategy.packfile, origin=self.origin, context={'token': token_id}, response=self.response, metadata=metadata)
+
+class AnalysesHandler(ListHandler):
+
+    def _check_ticket(self, ticket_id, _id, filename):
+        ticket = config.db.downloads.find_one({'_id': ticket_id})
+        if not ticket:
+            self.abort(404, 'no such ticket')
+        if ticket['ip'] != self.request.client_addr:
+            self.abort(400, 'ticket not for this source IP')
+        if not filename:
+            return self._check_ticket_for_batch(ticket)
+        if ticket.get('filename') != filename or ticket['target'] != _id:
+            self.abort(400, 'ticket not for this resource')
+        return ticket
+
+    def _check_ticket_for_batch(self, ticket):
+        if ticket.get('type') != 'batch':
+            self.abort(400, 'ticket not for this resource')
+        return ticket
+
+    def put(self, *args, **kwargs):
+        raise NotImplementedError("an analysis can't be modified")
+
+    def post(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        container, permchecker, storage, mongo_validator, _, keycheck = self._initialize_request(cont_name, list_name, _id)
+
+        permchecker(noop)('POST', _id=_id)
+        payload = upload.process_upload(self.request, upload.Strategy.analysis, origin=self.origin)
+        payload['created'] = datetime.datetime.utcnow()
+        payload['user'] = payload.get('user', self.uid)
+        result = keycheck(mongo_validator(storage.exec_op))('POST', _id=_id, payload=payload)
+        if result.modified_count == 1:
+            return {'_id': payload['_id']}
+        else:
+            self.abort(404, 'Element not added in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
+
+    def download(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        container, permchecker, storage, _, _, _ = self._initialize_request(cont_name, list_name, _id)
+        filename = kwargs.get('name')
+        ticket_id = self.get_param('ticket')
+        if not ticket_id:
+            permchecker(noop)('GET', _id=_id)
+        analysis_id = kwargs.get('_id')
+        fileinfo = [f['files'] for f in storage.get_fileinfo(_id, analysis_id, filename)]
+        if not ticket_id:
+            if filename:
+                total_size = fileinfo[0]['size']
+                file_cnt = 1
+                ticket = util.download_ticket(self.request.client_addr, 'file', _id, filename, total_size)
+            else:
+                targets, total_size, file_cnt = self._prepare_batch(fileinfo)
+                filename = 'analysis_' + analysis_id + '.tar'
+                ticket = util.download_ticket(self.request.client_addr, 'batch', targets, filename, total_size)
+            return {
+                'ticket': config.db.downloads.insert_one(ticket).inserted_id,
+                'size': total_size,
+                'file_cnt': file_cnt,
+                'filename': filename
+            }
+        else:
+            ticket = self._check_ticket(ticket_id, _id, filename)
+            if not filename:
+                self._send_batch(ticket)
+                return
+            if not fileinfo:
+                self.abort(404, '{} doesn''t exist'.format(filename))
+            fileinfo = fileinfo[0]
+            filepath = os.path.join(
+                config.get_item('persistent', 'data_path'),
+                util.path_from_hash(fileinfo['hash'])
+            )
+            filename = fileinfo['name']
+            self.response.app_iter = open(filepath, 'rb')
+            self.response.headers['Content-Length'] = str(fileinfo['size']) # must be set after setting app_iter
+            if self.is_true('view'):
+                self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
+            else:
+                self.response.headers['Content-Type'] = 'application/octet-stream'
+                self.response.headers['Content-Disposition'] = 'attachment; filename=' + str(filename)
+
+    def _prepare_batch(self, fileinfo):
+        ## duplicated code from download.py
+        ## we need a way to avoid this
+        targets = []
+        total_size = total_cnt = 0
+        data_path = config.get_item('persistent', 'data_path')
+        for f in fileinfo:
+            filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
+            log.error(filepath)
+            if os.path.exists(filepath): # silently skip missing files
+                targets.append((filepath, 'analyses/' + f['name'], f['size']))
+                total_size += f['size']
+                total_cnt += 1
+        return targets, total_size, total_cnt
+
+    def _send_batch(self, ticket):
+        self.response.app_iter = download.archivestream(ticket)
+        self.response.headers['Content-Type'] = 'application/octet-stream'
+        self.response.headers['Content-Disposition'] = 'attachment; filename=' + str(ticket['filename'])
+
+    def delete_note(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        analysis_id = kwargs.pop('_id')
+        container, permchecker, storage, _, _, _ = self._initialize_request(cont_name, list_name, _id)
+        note_id = kwargs.get('note_id')
+        permchecker(noop)('DELETE', _id=_id)
+        result = storage.delete_note(_id=_id, analysis_id=analysis_id, note_id=note_id)
+        if result.modified_count == 1:
+            return {'modified':result.modified_count}
+        else:
+            self.abort(404, 'Element not removed from list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
+
+    def add_note(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        analysis_id = kwargs.get('_id')
+        container, permchecker, storage, mongo_validator, input_validator, keycheck = self._initialize_request(cont_name, list_name, _id)
+        payload = self.request.json_body
+        input_validator(payload, 'POST')
+        payload['_id'] = str(bson.objectid.ObjectId())
+        payload['user'] = payload.get('user', self.uid)
+        payload['created'] = datetime.datetime.utcnow()
+        permchecker(noop)('POST', _id=_id)
+        result = storage.add_note(_id=_id, analysis_id=analysis_id, payload=payload)
+        if result.modified_count == 1:
+            return {'modified':result.modified_count}
+        else:
+            self.abort(404, 'Element not added in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
+

@@ -73,7 +73,7 @@ class Placer(object):
         if self.metadata == None:
             raise Exception('Metadata required')
 
-    def save_file(self, field, info):
+    def save_file(self, field=None, info=None):
         """
         Helper function that moves a file saved via a form field into our CAS.
         May trigger jobs, if applicable, so this should only be called once we're ready for that.
@@ -82,13 +82,15 @@ class Placer(object):
         """
 
         # Save file
-        files.move_form_file_field_into_cas(field)
+        if field is not None:
+            files.move_form_file_field_into_cas(field)
 
         # Update the DB
-        hierarchy.upsert_fileinfo(self.container_type, self.id, info)
+        if info is not None:
+            hierarchy.upsert_fileinfo(self.container_type, self.id, info)
 
-        # Queue any jobs as a result of this upload
-        rules.create_jobs(config.db, self.container, self.container_type, info)
+            # Queue any jobs as a result of this upload
+            rules.create_jobs(config.db, self.container, self.container_type, info)
 
 
 class TargetedPlacer(Placer):
@@ -475,3 +477,32 @@ class PackfilePlacer(Placer):
             'event': 'result',
             'data': result,
         })
+
+class AnalysisPlacer(Placer):
+
+    def check(self):
+        self.requireMetadata()
+        #validators.validate_data(self.metadata, 'analysys.json', 'input', 'POST', optional=True)
+        self.saved = []
+
+    def process_file_field(self, field, info):
+        self.save_file(field)
+        self.saved.append(info)
+
+    def finalize(self):
+        # we are going to merge the "hard" infos from the processed upload
+        # with the infos from the payload
+        metadata_infos = {}
+        for info in self.metadata.pop('inputs', []):
+            info['input'] = True
+            metadata_infos[info['name']] = info
+        for info in self.metadata.pop('outputs', []):
+            info['output'] = True
+            metadata_infos[info['name']] = info
+        self.metadata['files'] = []
+        for info in self.saved:
+            metadata_info = metadata_infos.get(info['name'], {})
+            metadata_info.update(info)
+            self.metadata['files'].append(metadata_info)
+        self.metadata['_id'] = str(bson.objectid.ObjectId())
+        return self.metadata
