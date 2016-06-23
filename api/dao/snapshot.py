@@ -46,7 +46,7 @@ def _store(hierarchy):
         new_subject_ids = config.db.session_snapshots.insert_many(subjects).inserted_ids
         for i, subject in enumerate(subjects):
             new_sub_id = new_subject_ids[i]
-            for s in sessions[str(subject['original'])]:
+            for s in sessions.get(str(subject['original']), []):
                 s['subject']['code'] = str(new_sub_id)
                 sessions_list.append(s)
     else:
