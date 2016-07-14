@@ -106,7 +106,7 @@ routes = [
     webapp2.Route(_format(r'/api/<cont_name:collections>/<cid:{cid_re}>'),              collectionshandler.CollectionsHandler, name='coll_details', methods=['GET', 'PUT', 'DELETE']),
     webapp2.Route(_format(r'/api/<cont_name:collections>/<cid:{cid_re}>/sessions'),     collectionshandler.CollectionsHandler, name='coll_ses', handler_method='get_sessions', methods=['GET']),
     webapp2.Route(_format(r'/api/<cont_name:collections>/<cid:{cid_re}>/acquisitions'), collectionshandler.CollectionsHandler, name='coll_acq', handler_method='get_acquisitions', methods=['GET']),
-
+    webapp2.Route(_format(r'/api/<cont_name:projects>/<cid:{cid_re}>/acquisitions'),    containerhandler.ContainerHandler, name='proj_acq', handler_method='get_acquisitions_in_project', methods=['GET']),
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>'),                          containerhandler.ContainerHandler, name='cont_list', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>'),                          containerhandler.ContainerHandler, methods=['POST']),
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>'),           containerhandler.ContainerHandler, name='cont_details', methods=['GET','PUT','DELETE']),
