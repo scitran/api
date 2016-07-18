@@ -8,7 +8,9 @@ from .. import config
 from .. import debuginfo
 from .. import validators
 from ..auth import containerauth, always_ok
-from ..dao import APIStorageException, containerstorage, snapshot, liststorage
+from ..dao import (
+    APIStorageException, containerstorage, snapshot, liststorage, openfmriutils
+)
 import containerhandler
 import listhandler
 
@@ -122,6 +124,22 @@ class SnapshotHandler(containerhandler.ContainerHandler):
             self.abort(400, e.message)
         if results is None:
             self.abort(404, 'Element not found in container {} {}'.format(storage.cont_name, _id))
+        return results
+
+    def get_acquisitions_in_project(self, cont_name, **kwargs):
+        assert cont_name == 'projects'
+        _id = kwargs.pop('cid')
+
+        self.config = self.container_handler_configurations[cont_name]
+        self.storage = self.config['storage']
+        container= self._get_container(_id)
+        permchecker = self._get_permchecker(container)
+        try:
+            results = permchecker(openfmriutils.acquisitions_in_project_snapshot)('GET', _id)
+        except APIStorageException as e:
+            self.abort(400, e.message)
+        if results is None:
+            self.abort(404, 'Element not found in container {} {}'.format(cont_name, _id))
         return results
 
 def initialize_snap_list_configurations():

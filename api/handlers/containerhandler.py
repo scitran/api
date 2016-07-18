@@ -7,7 +7,7 @@ from .. import config
 from .. import debuginfo
 from .. import validators
 from ..auth import containerauth, always_ok
-from ..dao import APIStorageException, containerstorage, snapshot
+from ..dao import APIStorageException, containerstorage, snapshot, openfmriutils
 
 log = config.log
 
@@ -88,7 +88,7 @@ class ContainerHandler(base.RequestHandler):
         except APIStorageException as e:
             self.abort(400, e.message)
         if result is None:
-            self.abort(404, 'Element not found in container {} {}'.format(storage.cont_name, _id))
+            self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, _id))
         if not self.superuser_request:
             self._filter_permissions(result, self.uid, self.user_site)
         # build and insert file paths if they are requested
@@ -150,6 +150,23 @@ class ContainerHandler(base.RequestHandler):
         if self.debug:
             debuginfo.add_debuginfo(self, cont_name, results)
         return results
+
+    def get_acquisitions_in_project(self, cont_name, **kwargs):
+        assert cont_name == 'projects'
+        _id = kwargs.pop('cid')
+
+        self.config = self.container_handler_configurations[cont_name]
+        self.storage = self.config['storage']
+        container= self._get_container(_id)
+        permchecker = self._get_permchecker(container)
+        try:
+            results = permchecker(openfmriutils.acquisitions_in_project)('GET', _id)
+        except APIStorageException as e:
+            self.abort(400, e.message)
+        if results is None:
+            self.abort(404, 'Element not found in container {} {}'.format(cont_name, _id))
+        return results
+
 
     def _filter_all_permissions(self, results, uid, site):
         for result in results:
@@ -295,6 +312,7 @@ class ContainerHandler(base.RequestHandler):
         try:
             # This line exec the actual delete checking permissions using the decorator permchecker
             result = permchecker(self.storage.exec_op)('DELETE', _id)
+
         except APIStorageException as e:
             self.abort(400, e.message)
 
@@ -302,6 +320,8 @@ class ContainerHandler(base.RequestHandler):
             if cont_name == 'projects':
                 snapshot.remove_private_snapshots_for_project(_id)
                 snapshot.remove_permissions_from_snapshots(_id)
+                if self.is_true('purge'):
+                    openfmriutils.project_purge('DELETE', _id)
             return {'deleted': result.deleted_count}
         else:
             self.abort(404, 'Element not removed from container {} {}'.format(storage.cont_name, _id))
