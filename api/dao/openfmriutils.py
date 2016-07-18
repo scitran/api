@@ -20,9 +20,14 @@ def project_purge(method, _id, payload=None):
     if not delete_sessions.acknowledged:
         raise APIStorageException('sessions within project {} have not been deleted'.format(_id))
 
-
 def acquisitions_in_project(method, _id, payload=None):
     assert method == 'GET'
     sessions = config.db.sessions.find({'project': bson.objectid.ObjectId(_id)})
     ids = [s['_id'] for s in sessions]
     return list(config.db.acquisitions.find({'session': {'$in': ids}}))
+
+def acquisitions_in_project_snapshot(method, _id, payload=None):
+    assert method == 'GET'
+    sessions = config.db.session_snapshots.find({'project': bson.objectid.ObjectId(_id)})
+    ids = [s['_id'] for s in sessions]
+    return list(config.db.acquisition_snapshots.find({'session': {'$in': ids}}))

@@ -137,6 +137,7 @@ routes = [
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>'),                                                  snapshothandler.SnapshotHandler, name='snap_proj', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>'),                                   snapshothandler.SnapshotHandler, name='snap_delete', handler_method='remove', methods=['DELETE']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/public'),                            snapshothandler.SnapshotHandler, name='snap_publish', handler_method='publish', methods=['PUT']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/acquisitions'),                      snapshothandler.SnapshotHandler, name='snap_proj_acq', handler_method='get_acquisitions_in_project', methods=['GET']),
 
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/analytics'),                         analyticshandler.AnalyticsHandler, name='snap_measure', methods=['GET', 'POST']),
 
@@ -146,10 +147,7 @@ routes = [
     webapp2.Route(_format(r'/api/projects/<cid:{cid_re}>/snapshots'),                                               snapshothandler.SnapshotHandler, name='snap_for_proj', handler_method='get_all_for_project', methods=['GET']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:{cont_name_re}>/<cid:{cid_re}>/<list_name:files>/<name:{filename_re}>'),
                                                                                                                     snapshothandler.SnapshotFileListHandler, name='snap_files', methods=['GET']),
-
-
     webapp2.Route(r'/api/snapshots/download',         download.Download, handler_method='download_snapshot', methods=['GET', 'POST'], name='download_snapshot'),
-
 ]
 
 
