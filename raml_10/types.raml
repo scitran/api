@@ -1,0 +1,380 @@
+ObjectId:
+  type: string
+  maxLength: 24
+  minLength: 24
+  
+Origin:
+  type: object
+  properties:
+    type:
+      type: string
+    uid:
+      type: string
+      
+FileInfo:
+  type: object
+  properties:
+    name:
+    type:
+    mimetype:
+    instrument:
+    measurements:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    tags:
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+    metadata:
+      type: object
+
+Avatars:
+  type: object
+  properties:
+    gravatar:
+    provider:
+    custom:
+    
+UserId:
+  type: string
+  description: ID of the user
+  
+User:
+  description: An SDM user
+  type: object
+  properties:
+    _id:
+      type: UserId
+    firstname:
+    lastname:
+    email:
+      required: false
+    avatars:
+      type: Avatars
+      required: false
+    avatar:
+      description: Avatar URI
+      type: string
+      required: false
+
+Subject:
+  type: object
+  properties:
+    _id:
+      type: string
+    age:
+      type: number
+    code:
+      maxLength: 64
+      type: string
+    ethnicity:
+      enum: ["Not Hispanic or Latino", "Hispanic or Latino", "Unknown or Not Reported", null]
+    firstname:
+      maxLength: 64
+      type: string
+    firstname_hash:
+      type: string
+    lastname:
+      maxLength: 64
+      type: string
+    lastname_hash:
+      type: string
+    metadata:
+      type: object
+    race:
+      enum: ["American Indian or Alaska Native", "Asian", "Native Hawaiian or Other Pacific
+          Islander", "Black or African American", "White, More Than One Race", "Unknown or
+          Not Reported", null]
+    sex:
+      enum: ["male", "female", "other", "unknown", null]
+    tags:
+      type: array
+      items:
+        type: string        
+
+UIDUploadMetadata:
+  type: object
+  properties:
+    acquisition:
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+          required: false
+        instrument:
+          type: string
+          required: false
+        label:
+          type: string
+          required: false   
+        measurement:
+          type: string
+          required: false
+        metadata:
+          type: object
+          required: false
+        public:
+          type: boolean
+          required: false
+        timestamp:
+          type: string
+          required: false
+        timezone:
+          type: string
+          required: false
+        uid:
+          type: string
+          required: true
+      type: object
+    group:
+      additionalProperties: false
+      properties:
+        _id:
+          type: string
+          required: true
+      type: object
+    project:
+      additionalProperties: false
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+          required: false
+        label: 
+          type: string
+          required: true
+        metadata:
+          type: object
+          required: false
+        public:
+          type: boolean
+          required: false
+    session:
+      additionalProperties: false
+      properties:
+        files:
+          items:
+            type: FileInfo
+          type: array
+          required: false
+        label:
+          type: string
+          required: false
+        metadata:
+          type: object
+          required: false
+        operator:
+          type: string
+          required: false
+        public:
+          type: boolean
+          required: false
+        subject:
+          type: Subject
+          required: false
+        timestamp:
+          type: datetime
+          required: false
+        timezone:
+          type: string
+          required: false
+        uid:
+          type: string
+          required: true
+      type: object
+
+LabelUploadMetadata:
+  type: object
+  properties:
+    acquisition:
+      required: false
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+          required: false
+        instrument:
+          type: string
+          required: false
+        label:
+          type: string
+          required: true
+        measurement:
+          type: string
+          required: false
+        metadata:
+          type: object
+          required: false
+        public:
+          type: boolean
+          required: false
+        timestamp:
+          type: string
+          required: false
+        timezone:
+          type: string
+          required: false
+        uid:
+          type: string
+          required: false
+      type: object
+    group:
+      additionalProperties: false
+      properties:
+        _id:
+          type: string
+          required: true
+      type: object
+    project:
+      additionalProperties: false
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+          required: false
+        label: 
+          type: string
+          required: true
+        metadata:
+          type: object
+          required: false
+        public:
+          type: boolean
+          required: false
+    session:
+      required: false
+      additionalProperties: false
+      properties:
+        files:
+          items:
+            type: FileInfo
+          type: array
+          required: false
+        label:
+          type: string
+          required: true
+        metadata:
+          type: object
+          required: false
+        operator:
+          type: string
+          required: false
+        public:
+          type: boolean
+          required: false
+        subject:
+          type: Subject
+          required: false
+        timestamp:
+          type: datetime
+          required: false
+        timezone:
+          type: string
+          required: false
+        uid:
+          type: string
+          required: false
+      type: object
+
+EngineUploadMetadata:
+  type: object
+  properties:
+    acquisition:
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+        instrument:
+          type: string
+        label:
+          type: string
+        measurement:
+          type: string
+        metadata:
+          type: object
+        public:
+          type: boolean
+        timestamp:
+          type: string
+        timezone:
+          type: string
+        uid:
+          type: string
+      type: object
+    project:
+      additionalProperties: false
+      properties:
+        files:
+          type: array
+          items:
+            type: FileInfo
+        label: 
+          type: string
+        metadata:
+          type: object
+        public:
+          type: boolean
+    session:
+      additionalProperties: false
+      properties:
+        files:
+          items:
+            type: FileInfo
+          type: array
+        label:
+          type: string
+        metadata:
+          type: object
+        operator:
+          type: string
+        public:
+          type: boolean
+        subject:
+          type: Subject
+        timestamp:
+          type: datetime
+        timezone:
+          type: string
+        uid:
+          type: string
+      type: object
+
+AnalysisUploadMetadata:
+  type: object
+  properties:
+    inputs:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+
+Job:
+  type: object
+  properties:
+    _id:
+      type: ObjectId
+      required: false
+    gear:
+      type: string
+      description: Name of the gear this job will run
+    inputs:
+      type: object
+      description: Inputs to the gear (data files, etc)
+      
+Gear:
+  type: object
+  properties:
+    name:
+      description: Name of the gear 
+      type: string
+          

@@ -1,0 +1,11 @@
+[
+    {
+        "name": "dicom_mr_classifier"
+    },
+    {
+        "name": "dcm_convert"
+    },
+    {
+        "name": "qa-report-fmri"
+    }
+]

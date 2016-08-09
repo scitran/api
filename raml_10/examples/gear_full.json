@@ -1,0 +1,16 @@
+{
+	"name": "dcm_convert",
+	"manifest": {
+		"config": {},
+		"inputs": {
+			"dicom": {
+				"base": "file",
+				"type": {
+					"enum": [
+						"dicom"
+					]
+				}
+			}
+		}
+	}
+}

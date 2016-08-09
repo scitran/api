@@ -1,0 +1,485 @@
+#%RAML 1.0
+title: SciTran
+version: 1
+baseUri: https://demo.flywheel.io/api
+
+types:
+  !include types.raml
+
+traits:
+  validates-json-body:
+    responses:
+      400:
+        description: There was an error validating the user input
+        body:
+          application/json:
+            example: |
+              {
+                "message":"Message describing the input validation error",
+                "status_code":400
+              }
+
+/api/download: !include resources/download.raml
+
+/api/upload/{strategy}:
+  description: Upload files by label or UID
+  uriParameters:
+    strategy:
+      enum: ["label", "uid"]
+  post:
+    description: |
+      Multipart form upload with N file fields, each with their desired filename.
+      For technical reasons, no form field names can be repeated. Instead, use (file1, file2) and so forth.
+      A non-file form field called "metadata" is also required, which must be a string containing JSON.
+    body:
+      multipart/form-data:
+        properties:
+          file1:
+            type: file
+          metadata:
+            enum: [LabelUploadMetadata, UIDUploadMetadata]
+            description: |
+              Object encoded as a JSON string.
+              If strategy is "label", JSON must match type LabelUploadMetadata
+              Otherwise if strategy is "uid", JSON must match type UIDUploadMetadata
+              See "Types" section for more information
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/file_info_list.json
+      402:
+        description: Uploads must be from an authorized drone
+/api/clean-packfiles:
+  description:  Purge stale packfiles
+  post:
+    description: Clean up expired upload tokens and invalid token directories
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "tokens":5,
+                "directories":3
+              }
+            type: object
+            properties:
+              tokens:
+                type: number
+                description: Number of tokens removed
+              directories:
+                type: number
+                description: Number of directories removed
+/api/engine:
+  description:  Allows the engine to manage files
+  post:
+    description: |
+      ### Default behavior:
+      > Uploads a list of file fields sent as file1, file2, etc to an existing
+        container and updates fields of the files, the container and it's
+        parents as specified in the metadata fileformfield using the
+        engine placer class
+
+      ### When ``level`` is ``analysis``:
+      > Uploads a list of files to an existing analysis object, marking
+        all files as ``output=true`` using the job-based analyses placer
+        class
+    queryParameters:
+      level:
+        enum: [project, session, acquisition, analysis]
+        required: true
+        description: Whihch level to store files in
+      id:
+        type: ObjectId
+        required: true
+        description: The ID of the container to place files in
+      job:
+        type: string
+        description: Required if ``level`` is ``analysis``
+    body:
+      application/json:
+        properties:
+          file1:
+            type: file
+          metadata:
+            enum: [EngineUploadMetadata, AnalysisUploadMetadata]
+            description: |
+              Object encoded as a JSON string.
+              By default JSON must match type EngineUploadMetadata
+              If ``level`` is ``analysis``, JSON must match type AnalysisUploadMetadata
+              See "Types" section for more information
+    responses:
+      200:
+        description: A list of FileInfo objects
+        body:
+          application/json:
+            type: array
+            items:
+              type: FileInfo
+            example: !include examples/file_info_list.json
+/api/sites:
+  description: Local and remote sites
+  get:
+    description:  Return a list of sites, both local and remote.
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  "_id": "local",
+                  "onload": true,
+                  "name": "BaliDemo"
+                }
+              ]
+/api/config:
+  description: Scitran Configuration
+  get:
+    description:  Return public Scitran configuration information
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/scitran_config.json
+
+/api/config.js:
+  description: Scitran Config in JS format
+  get:
+    description:  Return public Scitran configuration information in javascript format
+    responses:
+      200:
+        body:
+          text/html:
+            example: !include examples/scitran_config.js.txt
+
+/api/version:
+  description: Database Schema version
+  get:
+    description: Get database schema version info
+    responses:
+      200:
+        body:
+          application/json:
+            type: object
+            properties:
+              _id:
+              database:
+                type: number
+                description: Version number of database schema that is currently active
+            example: |
+              {"_id": "version", "database": 2}
+/api/users:
+  description: SDM Users
+  get:
+    description: Return a list of all users
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/user_list.json
+            type: array
+            items:
+              type: User
+  post:
+    description: Add a new user
+    body:
+      application/json:
+        example: !include examples/user_jane_doe.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: {"_id": "jane.doe@gmail.com"}
+/api/users/self:
+  description:  The currently authenticated user
+  get:
+    description: Get informatiomn about the current user
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/user_jane_doe.json
+/api/users/self/avatar:
+  description: Current user's avatar
+  get:
+    description:  Get the avatar of the current user
+    responses:
+      302:
+        description: Redirects to the image file of the current user's avatar
+/api/users/{UserId}:
+  description: Interact with a specific user by ID
+  uriParameters:
+    UserId:
+      type: UserId
+  get:
+    description: Get information about the specified user
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/user_jane_doe.json
+            type: User
+  put:
+    description: Update the specified user
+    body:
+      application/json:
+        description: Accepts an object matching the User type except all fields are optional
+        example: |
+          {"email":"new_email@test.com"}
+    responses:
+      200:
+        body:
+          application/json:
+            type: object
+            properties:
+              modified:
+                description: Number of documents modified, always 1
+                type: number
+            example: {"modified":1}
+  delete:
+    description: Delete a user
+    responses:
+      200:
+        description: User was deleted
+        body:
+          application/json:
+            example: {"deleted":1}
+            type: object
+            properties:
+              deleted:
+                type: number
+                description: Always 1
+      404:
+        description: User not found
+/api/users/{UserId}/groups:
+  description: Groups for the specified user
+  uriParameters:
+    UserId:
+      type: UserId
+  get:
+    description: List all groups the specified user is a member of
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/groups_list.json
+/api/users/{UserId}/avatar:
+  description: Avatar for the specified user
+  get:
+    description:  Get the avatar of the specified user
+    responses:
+      302:
+        description: Redirects to the image file of the specified user's avatar
+/api/jobs:
+  description: Run Gears on distributed computing
+  get:
+    description: List all jobs
+    responses:
+      200:
+        body:
+          application/json:
+            type: array
+            items:
+              type: Job
+            example: !include examples/job_list.json
+/api/jobs/next:
+  description: Used by the engine
+  get:
+    description: Get the next job in the queue
+    responses:
+      200:
+        body:
+          application/json:
+            type: Job
+            example: !include examples/job.json
+/api/jobs/stats:
+  description: Job stats
+  get:
+    description: Get stats about all current jobs
+    responses:
+      200:
+        body:
+          application/json:
+            type: object
+            properties:
+              by-state:
+                type: object
+                description: Each key is a particular state and the value is the number of jobs currently in that state
+                properties:
+                  pending:
+                    type: number
+                  running:
+                    type: number
+                  failed:
+                    type: number
+                  complete:
+                    type: number
+              by-tag:
+                type: array
+                description: |
+                  Each element in the array is an object representing a unique combination of tags.
+                  The "tags" key in each object tells you the unique combination of tags.
+                  The "count" key tells you how many jobs there are with that combination of tags
+                items:
+                  type: object
+                  properties:
+                    tags:
+                      type: array
+                      description: The combination of tags for this count
+                      items:
+                        type: string
+                    count:
+                      type: number
+                      description: The number of jobs with this combination of tags
+            example: !include examples/job_stats.json
+/api/jobs/reap:
+  description: Reap stale jobs
+  post:
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "orphaned":3
+              }
+            type: object
+            properties:
+              orphaned:
+                type: number
+                description: Number of orhaned jobs that were set to failed
+/api/jobs/add:
+  description: Add a job
+  post:
+    body:
+      application/json:
+        example: !include examples/job_new.json
+        type: Job
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "_id": "573cb66b135d87002660597c"
+              }
+/api/jobs/{JobId}:
+  description: Perform actions with a specific job
+  uriParameters:
+    JobId:
+      type: ObjectId
+  get:
+    description: Get info about a specific job
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/job.json
+            type: Job
+  put:
+    description: |
+      Update a job. Updates timestamp.
+      Enforces a valid state machine transition, if any.
+      Rejects any change to a job that is not currently in 'pending' or 'running' state.
+      Accepts the same body as /api/jobs/add , except all fields are optional.
+    body:
+      application/json:
+        type: Job
+    responses:
+      200:
+        description: |
+          The job has been updated.  No response body is sent.
+/api/jobs/{JobId}/retry:
+  uriParameters:
+    JobId:
+      type: ObjectId
+  description: Retry a job
+  post:
+    description: |
+      Retry a job
+      The job must have a state of 'failed', and must not have already been retried.
+      The failed jobs config is copied to a new job.
+      The ID of the new job is returned
+    responses:
+      200:
+        body:
+          application/json:
+            example: {"_id":"57a35c118120be0e8d1f3f5f"}
+            type: object
+            properties:
+              _id:
+                type: ObjectId
+/api/gears:
+  description: Data processing algorithms
+  get:
+    description: List all gears
+    queryParameters:
+      fields:
+        description: |
+          Which fields to return.  Defaults to "name".
+          Specify "all" for all fields.
+          This parameter may be specified multiple times.
+        type: string
+        default: name
+    responses:
+      200:
+          body:
+            application/json:
+              type: array
+              items:
+                type: Gear
+              example: !include examples/gears_list_just_name.json
+/api/gears/{GearName}:
+  description: Interact with a specific gear
+  uriParameters:
+    GearName:
+      type: string
+      description: Name of the gear to interact with
+  get:
+    description: Retrieve details about a specific gear
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/gear_full.json
+  post:
+    description: |
+      Create or update a gear.
+      "Name" field of gear must match "GearName" uri parameter
+      If no existing gear is found, one will be created
+      Otherwise, the specified gear will be updated
+    body:
+      application/json:
+        type: Gear
+        example: !include examples/gear_full.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: {"name":"dcm_convert"}
+  delete:
+      description: Delete a gear (not recommended)
+      responses:
+        200:
+          description: Gear was deleted
+/api/rules:
+  description: Rules for gears
+  get:
+    description: List all rules
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/rules_list.json
+  post:
+    description: Upsert all rules
+    body:
+      application/json:
+        example: !include examples/rules_list.json
+    responses:
+      200:
+        description: Upsert successful
+/api/groups:
+  description: Groups of users

@@ -1,0 +1,70 @@
+#%RAML 0.8
+title: SciTran
+version: 1
+baseUri: https://demo.flywheel.io/api
+
+/api/users:
+  description: SDM Users
+  get:
+    description: Return a list of all users
+    responses:
+      200:
+        description: !include user_desc.txt
+        body:
+          application/json:
+            description: !include user_model.txt
+  post:
+    description: Add a new user
+    body:
+      application/json:
+        example: |
+          {"_id":"jane.doe@gmail.com"}
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"_id": "jane.doe@gmail.com"}
+/api/users/self:
+  description:  The currently authenticated user
+  get:
+    description: Get informatiomn about the current user
+    responses:
+      200:
+        body:
+          application/json:
+/api/users/self/avatar:
+  description: Current user's avatar
+  get:
+    description:  Get the avatar of the current user
+    responses:
+      302:
+        description: Redirects to the image file of the current user's avatar
+/api/users/{UserId}:
+  description: Interact with a specific user by ID
+  uriParameters:
+    UserId:
+      type: string
+  get:
+    description: Get information about the specified user
+    responses:
+      200:
+        body:
+          application/json:
+  put:
+    description: Update the specified user
+    body:
+      application/json:
+        description: Accepts an object matching the User type except all fields are optional
+        example: |
+          {"email":"new_email@test.com"}
+    responses:
+      200:
+        body:
+          application/json:
+            description: |
+              modified:
+                description: Number of documents modified, always 1
+                type: number
+            example: |
+              {"modified":1}
