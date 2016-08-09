@@ -18,7 +18,12 @@ baseUri: https://demo.flywheel.io/api
     body:
       application/json:
         example: |
-          {"_id":"jane.doe@gmail.com"}
+          {
+            "_id":"jane.doe@gmail.com",
+            "firstname":"Jane",
+            "lastname":"Doe",
+            "email":"jane.doe@gmail.com"
+          }
     responses:
       200:
         body:
@@ -51,6 +56,13 @@ baseUri: https://demo.flywheel.io/api
       200:
         body:
           application/json:
+            example: |
+              {
+                "_id":"jane.doe@gmail.com",
+                "firstname":"Jane",
+                "lastname":"Doe",
+                "email":"jane.doe@gmail.com"
+              }
   put:
     description: Update the specified user
     body:

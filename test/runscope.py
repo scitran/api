@@ -1,7 +1,8 @@
 import json
+import urlparse
 import warnings
 
-class APISystemTest:
+class APISystemTest(object):
     """A base class for system tests
 
     Must have an attribute called "path",
@@ -24,6 +25,7 @@ class APISystemTest:
         :returns: list -- A list of runscope test dictionary.
             Each test dictionary may contain the following keys:
             queryParameters: A dictionary of query parameters
+            uriParameters: A dictionary of uri parameters
             headers: A dictionary of hearders
             body: Content of request body (N/A for GET method)
             form: Form data to send in place of body
@@ -90,6 +92,29 @@ class APISystemTest:
             }
         ]
 
+    def test_put_example(self, resource):
+        body = resource.body[0]
+        response = resource.responses[0]
+        assertions = self.get_response_body_assertions(response)
+        assertions.append(
+            {
+                "source":"response_status",
+                "comparison":"equal",
+                "value":response.code
+            }
+        )
+        return [
+            {
+              "queryParameters":{},
+              "body": json.dumps(body.example),
+              "variables": [],
+              "headers": {
+                "Content-Type":body.mime_type
+              },
+              "assertions": assertions
+            }
+        ]
+
     def get_response_body_assertions(self, response):
         response_body = response.body[0]
         if not response_body.example:
@@ -120,7 +145,37 @@ class APISystemTest:
 class UsersCollectionTest(APISystemTest):
     path = "/users"
 
-system_test_classes = [UsersCollectionTest]
+    def test_get_example(self, resource):
+        steps = super(UsersCollectionTest, self).test_get_example(resource)
+        steps[0]["variables"].append(
+            {
+                "name":"TestExampleUserId",
+                "property":"_id",
+                "source":"response_json"
+            }
+        )
+        return steps
+
+class UsersItemTest(APISystemTest):
+    path = "/users/{UserId}"
+
+    def test_post_example(self, resource):
+        steps = super(UsersItemTest, self).test_post_example(resource)
+        steps[0]["uriParameters"] = {"UserId":"{{TestExampleUserId}}"}
+        return steps
+
+    def test_get_example(self, resource):
+        steps = super(UsersItemTest, self).test_get_example(resource)
+        steps[0]["uriParameters"] = {"UserId":"{{TestExampleUserId}}"}
+        return steps
+
+    def test_put_example(self, resource):
+        steps = super(UsersItemTest, self).test_put_example(resource)
+        steps[0]["uriParameters"] = {"UserId":"{{TestExampleUserId}}"}
+        return steps
+
+
+system_test_classes = [UsersCollectionTest, UsersItemTest]
 
 def format_resources_by_path(resources):
     raml_resources = {}
@@ -133,7 +188,15 @@ def format_resources_by_path(resources):
 
 def process_runscope_step(test_step, resource):
     test_step["step_type"] = "request"
-    test_step["url"] = resource.absolute_uri
+    url_parts = list(urlparse.urlparse(resource.absolute_uri))
+    url_parts[4] = test_step.get("queryParameters", {})
+    full_url = urlparse.urlunparse(url_parts)
+    print(test_step)
+    uri_parameters = test_step.get("uriParameters", {})
+    print(uri_parameters)
+    print(full_url)
+    url_with_params = full_url.format(**uri_parameters)
+    test_step["url"] = url_with_params
     test_step["method"] = resource.method
     return test_step
 
@@ -170,8 +233,7 @@ def get_api_runscope_test(raml_api):
     test_steps = get_api_test_steps(raml_api)
     test = {
         "name":"Test SciTran",
-        "version":"1.0",
         "steps":test_steps,
-        "description":"test"
+        "description":"Test SciTran"
     }
     return test
