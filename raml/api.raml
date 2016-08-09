@@ -3,7 +3,7 @@ title: SciTran
 version: 1
 baseUri: https://demo.flywheel.io/api
 
-/api/users:
+/users:
   description: SDM Users
   get:
     description: Return a list of all users
@@ -25,7 +25,7 @@ baseUri: https://demo.flywheel.io/api
           application/json:
             example: |
               {"_id": "jane.doe@gmail.com"}
-/api/users/self:
+/users/self:
   description:  The currently authenticated user
   get:
     description: Get informatiomn about the current user
@@ -33,14 +33,14 @@ baseUri: https://demo.flywheel.io/api
       200:
         body:
           application/json:
-/api/users/self/avatar:
+/users/self/avatar:
   description: Current user's avatar
   get:
     description:  Get the avatar of the current user
     responses:
       302:
         description: Redirects to the image file of the current user's avatar
-/api/users/{UserId}:
+/users/{UserId}:
   description: Interact with a specific user by ID
   uriParameters:
     UserId:

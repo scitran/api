@@ -118,7 +118,7 @@ class APISystemTest:
         return assertions
 
 class UsersCollectionTest(APISystemTest):
-    path = "/api/users"
+    path = "/users"
 
 system_test_classes = [UsersCollectionTest]
 
