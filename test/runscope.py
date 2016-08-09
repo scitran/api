@@ -131,6 +131,12 @@ def format_resources_by_path(resources):
         raml_resources[path][resource.method] = resource
     return raml_resources
 
+def process_runscope_step(test_step, resource):
+    test_step["step_type"] = "request"
+    test_step["url"] = resource.absolute_uri
+    test_step["method"] = resource.method
+    return test_step
+
 def get_api_test_steps(raml_api):
     raml_resources = format_resources_by_path(raml_api.resources)
     untested_endpoints = [] # Used to check if all endpoints have tests
@@ -145,11 +151,27 @@ def get_api_test_steps(raml_api):
         for method, resource in resources_by_method.items():
             example_test_name = "test_{0}_example".format(method)
             example_test_method = getattr(system_test, example_test_name)
-            all_steps += example_test_method(resource)
+            all_steps += [
+                process_runscope_step(test_step, resource) \
+                for test_step in example_test_method(resource)
+            ]
             test_name = "test_{0}".format(method)
             test_method = getattr(system_test, test_name)
-            all_steps += test_method(resource)
+            all_steps += [
+                process_runscope_step(test_step, resource) \
+                for test_step in test_method(resource)
+            ]
             untested_endpoints.remove((test_class.path, method))
     if untested_endpoints:
         warnings.warn("Untested endpoints:  {0}".format(untested_endpoints))
     return all_steps
+
+def get_api_runscope_test(raml_api):
+    test_steps = get_api_test_steps(raml_api)
+    test = {
+        "name":"Test SciTran",
+        "version":"1.0",
+        "steps":test_steps,
+        "description":"test"
+    }
+    return test
