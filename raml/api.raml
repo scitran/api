@@ -9,10 +9,10 @@ baseUri: https://demo.flywheel.io/api
     description: Return a list of all users
     responses:
       200:
-        description: !include user_desc.txt
         body:
           application/json:
-            description: !include user_model.txt
+            example: |
+              [{"_id":"jane.doe@gmail.com"}]
   post:
     description: Add a new user
     body:
