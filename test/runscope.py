@@ -1,4 +1,5 @@
 import json
+import warnings
 
 class APISystemTest:
     """A base class for system tests
@@ -119,16 +120,6 @@ class APISystemTest:
 class UsersCollectionTest(APISystemTest):
     path = "/api/users"
 
-    def test_get(self, resource):
-        [
-            {
-                "queryParameters":{},
-                "headers":{},
-                "body":None,
-                "assertions":[]
-            }
-        ]
-
 system_test_classes = [UsersCollectionTest]
 
 def format_resources_by_path(resources):
@@ -142,6 +133,10 @@ def format_resources_by_path(resources):
 
 def get_api_test_steps(raml_api):
     raml_resources = format_resources_by_path(raml_api.resources)
+    untested_endpoints = [] # Used to check if all endpoints have tests
+    for path, resource_methods in raml_resources.items():
+        for method, resource in resource_methods.items():
+            untested_endpoints.append((path, method))
     all_steps = []
     for test_class in system_test_classes:
         resources_by_method = raml_resources[test_class.path]
@@ -150,8 +145,11 @@ def get_api_test_steps(raml_api):
         for method, resource in resources_by_method.items():
             example_test_name = "test_{0}_example".format(method)
             example_test_method = getattr(system_test, example_test_name)
-            all_steps.append(example_test_method(resource))
+            all_steps += example_test_method(resource)
             test_name = "test_{0}".format(method)
             test_method = getattr(system_test, test_name)
-            all_steps.append(test_method(resource))
+            all_steps += test_method(resource)
+            untested_endpoints.remove((test_class.path, method))
+    if untested_endpoints:
+        warnings.warn("Untested endpoints:  {0}".format(untested_endpoints))
     return all_steps
