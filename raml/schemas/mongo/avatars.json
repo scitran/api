@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Group",
+  "type": "object",
+  "properties": {
+    "gravatar":         {"type": ["string", "null"], "format": "uri" },
+    "provider":         {"type": ["string", "null"], "format": "uri" },
+    "custom":           {"type": ["string", "null"], "format": "uri" }
+  },
+  "additionalProperties": false
+}

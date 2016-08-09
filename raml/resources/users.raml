@@ -1,0 +1,100 @@
+description: SDM Users
+get:
+  description: Return a list of all users
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/user-list.json
+          schema: !include ../schemas/output/user-list.json
+post:
+  description: Add a new user
+  is: [validates-json-body]
+  body:
+    application/json:
+      example: !include ../examples/user_jane_doe.json
+      schema: !include ../schemas/input/user-new.json
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {"_id": "jane.doe@gmail.com"}
+          schema: !include ../schemas/output/user-new.json
+/self:
+  description:  The currently authenticated user
+  get:
+    description: Get informatiomn about the current user
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/user_jane_doe.json
+            schema: !include ../schemas/output/user.json
+/self/avatar:
+  description: Current user's avatar
+  get:
+    description:  Get the avatar of the current user
+    responses:
+      307:
+        description: Redirects to the image file of the current user's avatar
+/{UserId}:
+  description: Interact with a specific user by ID
+  uriParameters:
+    UserId:
+      type: string
+  get:
+    description: Get information about the specified user
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/user_jane_doe.json
+            schema: !include ../schemas/output/user.json
+  put:
+    description: Update the specified user
+    body:
+      application/json:
+        description: Accepts an object matching the User type except all fields are optional
+        example: |
+          {"email":"new_email@test.com"}
+        schema: !include ../schemas/input/user.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"modified":1}
+            schema: !include ../schemas/output/user-update.json
+  delete:
+    description: Delete a user
+    responses:
+      200:
+        description: User was deleted
+        body:
+          application/json:
+            example: |
+              {"deleted":1}
+            schema: !include ../schemas/output/user-delete.json
+      404:
+        description: User not found
+/{UserId}/groups:
+  description: Groups for the specified user
+  uriParameters:
+    UserId:
+      type: string
+  get:
+    description: List all groups the specified user is a member of
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/groups_list.json
+            schema: !include ../schemas/output/groups-list.json
+/{UserId}/avatar:
+  description: Avatar for the specified user
+  get:
+    description:  Get the avatar of the specified user
+    responses:
+      307:
+        description: Redirects to the image file of the specified user's avatar

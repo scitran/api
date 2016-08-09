@@ -13,7 +13,7 @@ from .. import config
 log = config.log
 
 class Job(object):
-    def __init__(self, name, inputs, destination=None, tags=None, attempt=1, previous_job_id=None, created=None, modified=None, state='pending', request=None, id_=None):
+    def __init__(self, name, inputs, destination=None, tags=None, attempt=1, previous_job_id=None, created=None, modified=None, state='pending', request=None, id_=None, config_=None):
         """
         Creates a job.
 
@@ -40,6 +40,8 @@ class Job(object):
             The request that is used for the engine. Generated when job is started.
         id_: string (optional)
             The database identifier for this job.
+        config: map (optional)
+            The gear configuration for this job.
         """
 
         # TODO: validate inputs against the manifest
@@ -75,6 +77,7 @@ class Job(object):
         self.state           = state
         self.request         = request
         self.id_             = id_
+        self.config          = config_
 
     @classmethod
     def load(cls, e):
@@ -97,7 +100,7 @@ class Job(object):
 
         d['_id'] = str(d['_id'])
 
-        return cls(d['name'], d.get('inputs', None), destination=d.get('destination', None), tags=d['tags'], attempt=d['attempt'], previous_job_id=d.get('previous_job_id', None), created=d['created'], modified=d['modified'], state=d['state'], request=d.get('request', None), id_=d['_id'])
+        return cls(d['name'], d.get('inputs', None), destination=d.get('destination', None), tags=d['tags'], attempt=d['attempt'], previous_job_id=d.get('previous_job_id', None), created=d['created'], modified=d['modified'], state=d['state'], request=d.get('request', None), id_=d['_id'], config_=d.get('config', None))
 
     @classmethod
     def get(cls, _id):
@@ -190,6 +193,18 @@ class Job(object):
 
         # Map destination to upload URI
         r['outputs'][0]['uri'] = '/engine?level=' + self.destination.type + '&id=' + self.destination.id
+
+        # Add config, if any
+        if self.config is not None:
+
+            if self._id is None:
+                raise Exception('Running a job requires an ID')
+
+            r['inputs'].append({
+                'type': 'scitran',
+                'uri': '/jobs/' + self._id + '/config.json',
+                'location': '/flywheel/v0',
+            })
 
         # Add the files
         for input_name in self.inputs.keys():

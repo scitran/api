@@ -11,7 +11,7 @@ preserving their contents across container instances.
 
 ```
 # Build Example:
-   docker build -t scitran-core -f docker/Dockerfile .
+   docker build -t scitran-core .
 
 # Run Example:
    # First start mongodb

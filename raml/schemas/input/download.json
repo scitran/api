@@ -1,5 +1,4 @@
 {
-    "id": "#",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "definitions": {
         "filterDefinition": {
@@ -7,7 +6,8 @@
             "properties": {
                 "+": {"$ref": "#/definitions/filterItems"},
                 "-": {"$ref": "#/definitions/filterItems"}
-            }
+            },
+            "additionalProperties": false
         },
         "filterItems": {
             "type": "array",
@@ -48,8 +48,8 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "tags": {"$ref": "download.json#/definitions/filterDefinition"},
-                    "types": {"$ref": "download.json#/definitions/filterDefinition"}
+                    "tags": {"$ref": "#/definitions/filterDefinition"},
+                    "types": {"$ref": "#/definitions/filterDefinition"}
                 }
             }
         }

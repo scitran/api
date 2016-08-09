@@ -1,7 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "User",
-  "type": "object",
   "properties": {
     "_id":              {
                           "maxLength": 64,
@@ -39,7 +37,6 @@
                           "title": "Preferences",
                           "type": "object"
                         }
-  },
-  "additionalProperties": false,
-  "required":["_id", "firstname", "lastname"]
+    },
+    "type":"object"
 }

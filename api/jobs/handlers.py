@@ -2,6 +2,9 @@
 API request handlers for the jobs module
 """
 
+import json
+import StringIO
+
 from ..dao.containerutil import create_filereference_from_dictionary, create_containerreference_from_dictionary, create_containerreference_from_filereference
 from .. import base
 from .. import config
@@ -327,6 +330,7 @@ class JobsHandler(base.RequestHandler):
         """
 
         submit = self.request.json
+
         gear_name = submit['gear']
 
         # Translate maps to FileReferences
@@ -335,8 +339,9 @@ class JobsHandler(base.RequestHandler):
             input_map = submit['inputs'][x]
             inputs[x] = create_filereference_from_dictionary(input_map)
 
-        # Add job tags, attempt number, and/or previous job ID, if present
+        # Add job tags, config, attempt number, and/or previous job ID, if present
         tags            = submit.get('tags', None)
+        config_         = submit.get('config', None)
         attempt_n       = submit.get('attempt_n', 1)
         previous_job_id = submit.get('previous_job_id', None)
 
@@ -354,7 +359,7 @@ class JobsHandler(base.RequestHandler):
                 inputs[x].check_access(self.uid, 'ro')
             destination.check_access(self.uid, 'rw')
 
-        job = Job(gear_name, inputs, destination=destination, tags=tags, attempt=attempt_n, previous_job_id=previous_job_id)
+        job = Job(gear_name, inputs, destination=destination, tags=tags, config_=config_, attempt=attempt_n, previous_job_id=previous_job_id)
         result = job.insert()
 
         return { "_id": result }
@@ -397,6 +402,47 @@ class JobHandler(base.RequestHandler):
             self.abort(403, 'Request requires superuser')
 
         return Job.get(_id)
+
+    def get_config(self, _id):
+        """
+        .. http:get:: /api/jobs/x/config.json
+
+            Returns the job's config as a downloadable json file
+
+            :statuscode 200: no error
+
+            **Example request**:
+
+            .. sourcecode:: http
+
+                GET /api/jobs/3/config.json HTTP/1.1
+
+            **Example response**:
+
+            .. sourcecode:: http
+
+                HTTP/1.1 200 OK
+                Content-Disposition: attachment; filename="config.json"
+                Content-Type: application/octet-stream
+
+                {
+                    "speed": 5
+                }
+        """
+
+        if not self.superuser_request:
+            self.abort(403, 'Request requires superuser')
+
+        c = Job.get(_id).config
+        if c is None:
+            c = {}
+
+        self.response.headers['Content-Type'] = 'application/octet-stream'
+        self.response.headers['Content-Disposition'] = 'attachment; filename="config.json"'
+
+        # Serve config as formatted json file
+        encoded = json.dumps(c, sort_keys=True, indent=4, separators=(',', ': ')) + '\n'
+        self.response.app_iter = StringIO.StringIO(encoded)
 
     def put(self, _id):
         """

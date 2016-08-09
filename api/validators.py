@@ -1,10 +1,7 @@
 import copy
 import json
 import jsonschema
-import re
-import requests
-
-from jsonschema.compat import urlopen, urlsplit
+import os
 
 from . import config
 
@@ -33,52 +30,26 @@ def validate_data(data, schema_json, schema_type, verb, optional=False):
 def _validate_json(json_data, schema, resolver):
     jsonschema.validate(json_data, schema, resolver=resolver, format_checker=jsonschema.FormatChecker())
 
-class RefResolver(jsonschema.RefResolver):
-
-    def resolve_remote(self, uri):
-        """override default resolve_remote
-        to allow testing when there is no ssl certificate
-        """
-        scheme = urlsplit(uri).scheme
-
-        if scheme in self.handlers:
-            result = self.handlers[scheme](uri)
-        elif (
-            scheme in [u"http", u"https"] and
-            requests and
-            getattr(requests.Response, "json", None) is not None
-        ):
-            # Requests has support for detecting the correct encoding of
-            # json over http
-            if callable(requests.Response.json):
-                result = requests.get(uri, verify=False).json()
-            else:
-                result = requests.get(uri, verify=False).json
-        else:
-            # Otherwise, pass off to urllib and assume utf-8
-            result = json.loads(urlopen(uri).read().decode("utf-8"))
-
-        if self.cache_remote:
-            self.store[uri] = result
-        return result
-
 # We store the resolvers for each base_uri we use, so that we reuse the schemas cached by the resolvers.
 resolvers = {}
-def _resolve_schema(schema_url):
-    base_uri, schema_name = re.match('(.*/)(.*)', schema_url).groups()
-    if not resolvers.get(base_uri):
-        resolvers[base_uri] = RefResolver(base_uri, None)
-    return resolvers[base_uri].resolve(schema_name)[1], resolvers[base_uri]
+def _resolve_schema(schema_file_uri):
+    if not resolvers.get(schema_file_uri):
+        with open(schema_file_uri) as schema_file:
+            base_uri = os.path.dirname(schema_file_uri)
+            schema = json.load(schema_file)
+            resolver = jsonschema.RefResolver('file://'+base_uri+'/', schema)
+            resolvers[schema_file_uri] = (schema, resolver)
+    return resolvers[schema_file_uri]
 
 def no_op(g, *args): # pylint: disable=unused-argument
     return g
 
 def schema_uri(type_, schema_name):
-    return '/'.join([
-        config.get_item('site', 'api_url'),
-        'schemas',
-        type_, schema_name
-    ])
+    return os.path.join(
+        config.get_item('persistent', 'schema_path'),
+        type_,
+        schema_name
+    )
 
 def decorator_from_schema_path(schema_url):
     if schema_url is None:

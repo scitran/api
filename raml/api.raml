@@ -1,0 +1,26 @@
+#%RAML 0.8
+title: SciTran
+version: 1
+baseUri: https://docker.local.flywheel.io:8443/api
+
+traits:
+    - validates-json-body:
+        description: Validates incoming request body
+        responses:
+            422:
+                description: |
+                    JSON did not validate against schema for this endpoint                                      
+
+/download: !include resources/download.raml
+/upload/label: !include resources/upload-by-label.raml
+/upload/uid: !include resources/upload-by-uid.raml
+/clean-packfiles: !include resources/clean-packfiles.raml
+/engine: !include resources/engine.raml
+/sites: !include resources/sites.raml
+/config: !include resources/config.raml
+/config.js: !include resources/config-js.raml
+/version: !include resources/version.raml
+/users: !include resources/users.raml
+/jobs: !include resources/jobs.raml
+/gears: !include resources/gears.raml
+/rules: !include resources/rules.raml

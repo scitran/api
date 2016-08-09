@@ -1,0 +1,12 @@
+description:  Purge stale packfiles
+post:
+  description: Clean up expired upload tokens and invalid token directories
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {
+              "tokens":5,
+              "directories":3
+            }
