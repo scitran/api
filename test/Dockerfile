@@ -11,6 +11,6 @@ RUN pip install -r requirements.txt
 
 # Install node and abao: https://github.com/cybertk/abao
 
-RUN apt-get update && apt-get -y install nodejs npm && npm install -g abao
+RUN apt-get update && apt-get -y install nodejs npm && ln -s /usr/bin/nodejs /usr/bin/node && npm install -g abao
 
 ENTRYPOINT ["py.test"]
