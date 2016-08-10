@@ -70,7 +70,7 @@ case "$1-$2" in
       -f test/docker-compose.yml \
       run \
       --rm \
-      --entrypoint "abao raml/api.raml --server=http://localhost:8080/api --hookfiles=test/abao_test_hooks.js" \
+      --entrypoint "abao /usr/src/raml/api.raml --server=http://localhost:8080/api --hookfiles=test/abao_test_hooks.js" \
       integration-test ||
     # set failure exit code in the event any previous commands in chain failed.
     exit_code=1
