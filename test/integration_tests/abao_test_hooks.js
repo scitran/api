@@ -7,3 +7,12 @@ hooks.beforeEach(function (test, done) {
     };
     done();
 });
+
+hooks.before("GET /users/{UserId} -> 200", function(test, done) {
+    test.request.params = {
+        UserId: "jane.doe@gmail.com"
+    };
+    done();
+});
+
+hooks.skip("GET /users/self/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
