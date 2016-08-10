@@ -70,7 +70,7 @@ case "$1-$2" in
       -f test/docker-compose.yml \
       run \
       --rm \
-      --entrypoint "NODE_TLS_REJECT_UNAUTHORIZED=0 abao raml/api.raml --server=https://localhost:8080/api --hookfiles=test/abao_test_hooks.js"
+      --entrypoint "NODE_TLS_REJECT_UNAUTHORIZED=0 abao raml/api.raml --server=https://localhost:8080/api --hookfiles=test/abao_test_hooks.js" \
       integration-test ||
     # set failure exit code in the event any previous commands in chain failed.
     exit_code=1
