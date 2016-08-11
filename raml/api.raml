@@ -3,8 +3,7 @@ title: SciTran
 version: 1
 baseUri: https://docker.local.flywheel.io:8443/api
 
-
-/api/download:
+/download:
   description: Download Files
   get:
     description: |
@@ -36,15 +35,14 @@ baseUri: https://docker.local.flywheel.io:8443/api
       application/json:
         description: Download files with tag 'incomplete' OR type different from 'dicom'
         example: !include examples/create_download_incomplete_or_not_dicom.json
+        schema: !include ../api/schemas/input/download.json
     responses:
       200:
         body:
           application/json:
             example: |
               {"ticket": "579e97738120be2ada087feb", "file_cnt": 3, "size": 64523904}
-
-
-/api/upload/label:
+/upload/label:
   description: Upload files by label
   post:
     description: |
@@ -61,7 +59,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       402:
         description: Uploads must be from an authorized drone
 
-/api/upload/uid:
+/upload/uid:
   description: Upload files by uid
   post:
     description: |
@@ -77,7 +75,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       402:
         description: Uploads must be from an authorized drone
 
-/api/clean-packfiles:
+/clean-packfiles:
   description:  Purge stale packfiles
   post:
     description: Clean up expired upload tokens and invalid token directories
@@ -90,7 +88,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
                 "tokens":5,
                 "directories":3
               }
-/api/engine:
+/engine:
   description:  Allows the engine to manage files
   post:
     description: |
@@ -129,7 +127,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/file_info_list.json
-/api/sites:
+/sites:
   description: Local and remote sites
   get:
     description:  Return a list of sites, both local and remote.
@@ -145,7 +143,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
                   "name": "BaliDemo"
                 }
               ]
-/api/config:
+/config:
   description: Scitran Configuration
   get:
     description:  Return public Scitran configuration information
@@ -155,7 +153,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           application/json:
             example: !include examples/scitran_config.json
 
-/api/config.js:
+/config.js:
   description: Scitran Config in JS format
   get:
     description:  Return public Scitran configuration information in javascript format
@@ -165,7 +163,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           text/html:
             example: !include examples/scitran_config.js.txt
 
-/api/version:
+/version:
   description: Database Schema version
   get:
     description: Get database schema version info
@@ -175,7 +173,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           application/json:
             example: |
               {"_id": "version", "database": 2}
-/api/users:
+/users:
   description: SDM Users
   get:
     description: Return a list of all users
@@ -195,7 +193,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           application/json:
             example: |
               {"_id": "jane.doe@gmail.com"}
-/api/users/self:
+/users/self:
   description:  The currently authenticated user
   get:
     description: Get informatiomn about the current user
@@ -204,14 +202,14 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/user_jane_doe.json
-/api/users/self/avatar:
+/users/self/avatar:
   description: Current user's avatar
   get:
     description:  Get the avatar of the current user
     responses:
       302:
         description: Redirects to the image file of the current user's avatar
-/api/users/{UserId}:
+/users/{UserId}:
   description: Interact with a specific user by ID
   uriParameters:
     UserId:
@@ -247,7 +245,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
               {"deleted":1}
       404:
         description: User not found
-/api/users/{UserId}/groups:
+/users/{UserId}/groups:
   description: Groups for the specified user
   uriParameters:
     UserId:
@@ -259,14 +257,14 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/groups_list.json
-/api/users/{UserId}/avatar:
+/users/{UserId}/avatar:
   description: Avatar for the specified user
   get:
     description:  Get the avatar of the specified user
     responses:
       307:
         description: Redirects to the image file of the specified user's avatar
-/api/jobs:
+/jobs:
   description: Run Gears on distributed computing
   get:
     description: List all jobs
@@ -275,7 +273,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/job_list.json
-/api/jobs/next:
+/jobs/next:
   description: Used by the engine
   get:
     description: Get the next job in the queue
@@ -284,7 +282,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/job.json
-/api/jobs/stats:
+/jobs/stats:
   description: Job stats
   get:
     description: Get stats about all current jobs
@@ -293,7 +291,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/job_stats.json
-/api/jobs/reap:
+/jobs/reap:
   description: Reap stale jobs
   post:
     responses:
@@ -304,7 +302,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
               {
                 "orphaned":3
               }
-/api/jobs/add:
+/jobs/add:
   description: Add a job
   post:
     body:
@@ -318,7 +316,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
               {
                 "_id": "573cb66b135d87002660597c"
               }
-/api/jobs/{JobId}:
+/jobs/{JobId}:
   description: Perform actions with a specific job
   uriParameters:
     JobId:
@@ -342,7 +340,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       200:
         description: |
           The job has been updated.  No response body is sent.
-/api/jobs/{JobId}/retry:
+/jobs/{JobId}/retry:
   uriParameters:
     JobId:
       type: string
@@ -359,7 +357,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           application/json:
             example: |
               {"_id":"57a35c118120be0e8d1f3f5f"}
-/api/gears:
+/gears:
   description: Data processing algorithms
   get:
     description: List all gears
@@ -376,7 +374,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
           body:
             application/json:
               example: !include examples/gears_list_just_name.json
-/api/gears/{GearName}:
+/gears/{GearName}:
   description: Interact with a specific gear
   uriParameters:
     GearName:
@@ -409,7 +407,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       responses:
         200:
           description: Gear was deleted
-/api/rules:
+/rules:
   description: Rules for gears
   get:
     description: List all rules
@@ -426,6 +424,6 @@ baseUri: https://docker.local.flywheel.io:8443/api
     responses:
       200:
         description: Upsert successful
-        
-/api/groups:
+
+/groups:
   description: Groups of users
