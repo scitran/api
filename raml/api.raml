@@ -49,6 +49,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       Multipart form upload with N file fields, each with their desired filename.
       For technical reasons, no form field names can be repeated. Instead, use (file1, file2) and so forth.
       A non-file form field called "metadata" is also required, which must be a string containing JSON.
+      See api/schemas/input/labelupload.json for the fromat of this metadata.
     body:
       multipart/form-data:
     responses:
@@ -65,6 +66,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
     description: |
       Same behavior as /api/upload/label,
        except the metadata field must be uid format
+       See api/schemas/input/uidupload.json for the fromat of this metadata.
     body:
       multipart/form-data:
     responses:
@@ -119,8 +121,9 @@ baseUri: https://docker.local.flywheel.io:8443/api
       application/json:
         description: |
           Object encoded as a JSON string.
-          By default JSON must match type EngineUploadMetadata
-          If ``level`` is ``analysis``, JSON must match type AnalysisUploadMetadata
+          By default JSON must match the specified enginemetadata.json schema
+          If ``level`` is ``analysis``, JSON must match AnalysisUploadMetadata schema
+        schema: !include ../api/schemas/input/enginemetadata.json
     responses:
       200:
         description: A list of FileInfo objects
@@ -187,6 +190,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
     body:
       application/json:
         example: !include examples/user_jane_doe.json
+        schema: !include ../api/schemas/input/user.json
     responses:
       200:
         body:
@@ -202,6 +206,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/user_jane_doe.json
+            schema: !include ../api/schemas/input/user.json
 /users/self/avatar:
   description: Current user's avatar
   get:
@@ -221,6 +226,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/user_jane_doe.json
+            schema: !include ../api/schemas/input/user.json
   put:
     description: Update the specified user
     body:
