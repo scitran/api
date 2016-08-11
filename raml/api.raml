@@ -429,6 +429,12 @@ baseUri: https://docker.local.flywheel.io:8443/api
       Accepts the same body as /api/jobs/add , except all fields are optional.
     body:
       application/json:
+        example: |
+          {
+            "tags":[
+              "test-tag"
+            ]
+          }
     responses:
       200:
         description: |
@@ -467,6 +473,22 @@ baseUri: https://docker.local.flywheel.io:8443/api
           body:
             application/json:
               example: !include examples/gears_list_just_name.json
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-04/schema#",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                }
 /gears/{GearName}:
   description: Interact with a specific gear
   uriParameters:

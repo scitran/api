@@ -4,6 +4,8 @@ var hooks = require('hooks');
 var job_id = '';
 var gear_name = '';
 
+hooks.skip("POST /jobs/{JobId}/retry -> 200"); // Can only retry a failed job
+
 hooks.beforeEach(function (test, done) {
     test.request.query = {
       user: 'admin@user.com',
@@ -86,12 +88,14 @@ hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
     test.request.params = {
         GearName: gear_name
     };
+    done();
 });
 
 hooks.before("POST /gears/{GearName} -> 200", function(test, done) {
     test.request.params = {
         GearName: gear_name
     };
+    done();
 });
 
 
