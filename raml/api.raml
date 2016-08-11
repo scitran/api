@@ -5,6 +5,23 @@ baseUri: https://docker.local.flywheel.io:8443/api
 
 /download:
   description: Download Files
+  post:
+    description: |
+      Create a download ticket
+      Use filters in the payload to exclude/include files.
+      To pass a single filter, each of its conditions should be satisfied.
+      If a file pass at least one filter, it is included in the targets.
+    body:
+      application/json:
+        description: Download files with tag 'incomplete' OR type 'dicom'
+        example: !include examples/create_download_incomplete_and_dicom.json
+        schema: !include ../api/schemas/input/download.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"ticket": "579e97738120be2ada087feb", "file_cnt": 3, "size": 64523904}
   get:
     description: |
       Download files listed in the given ticket
@@ -12,7 +29,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       The files listed in the ticket are put into a tar archive,
       which is then compressed with gzip (.tar.gz)
     queryParameters:
-      ticketId:
+      ticket:
         type: string
         required: true
         description: ID of the download ticket
@@ -25,23 +42,6 @@ baseUri: https://docker.local.flywheel.io:8443/api
         description: Ticket not for this source IP
       404:
         description: No such ticket
-  post:
-    description: |
-      Create a download ticket
-      Use filters in the payload to exclude/include files.
-      To pass a single filter, each of its conditions should be satisfied.
-      If a file pass at least one filter, it is included in the targets.
-    body:
-      application/json:
-        description: Download files with tag 'incomplete' OR type different from 'dicom'
-        example: !include examples/create_download_incomplete_or_not_dicom.json
-        schema: !include ../api/schemas/input/download.json
-    responses:
-      200:
-        body:
-          application/json:
-            example: |
-              {"ticket": "579e97738120be2ada087feb", "file_cnt": 3, "size": 64523904}
 /upload/label:
   description: Upload files by label
   post:
@@ -206,7 +206,6 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/user_jane_doe.json
-            schema: !include ../api/schemas/input/user.json
 /users/self/avatar:
   description: Current user's avatar
   get:
@@ -226,7 +225,6 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/user_jane_doe.json
-            schema: !include ../api/schemas/input/user.json
   put:
     description: Update the specified user
     body:
@@ -279,6 +277,92 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/job_list.json
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "inputs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "input": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "input",
+                          "type",
+                          "id",
+                          "name"
+                        ]
+                      }
+                    },
+                    "attempt": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "destination": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "id"
+                      ]
+                    },
+                    "modified": {
+                      "type": "string"
+                    },
+                    "created": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "inputs",
+                    "attempt",
+                    "name",
+                    "tags",
+                    "destination",
+                    "modified",
+                    "created",
+                    "state",
+                    "_id"
+                  ]
+                }
+              }
 /jobs/next:
   description: Used by the engine
   get:
@@ -334,6 +418,8 @@ baseUri: https://docker.local.flywheel.io:8443/api
         body:
           application/json:
             example: !include examples/job.json
+      404:
+        description: JobId not found
   put:
     description: |
       Update a job. Updates timestamp.
@@ -432,4 +518,4 @@ baseUri: https://docker.local.flywheel.io:8443/api
         description: Upsert successful
 
 /groups:
-  description: Groups of users
+  description: Groups
