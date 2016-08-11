@@ -90,7 +90,7 @@ hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
 
 hooks.before("POST /gears/{GearName} -> 200", function(test, done) {
     test.request.params = {
-        GearName: gear_name;
+        GearName: gear_name
     };
 });
 
