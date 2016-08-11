@@ -1,6 +1,6 @@
 var hooks = require('hooks');
 
-# Variables for passing results as input to subsequent tests
+// Variables for passing results as input to subsequent tests
 var job_id = '';
 var gear_name = '';
 
@@ -44,7 +44,7 @@ hooks.before("POST /jobs/{JobId}/retry -> 200", function(test, done) {
 hooks.before("GET /jobs/{JobId} -> 404", function(test, done) {
     console.log(job_id);
     test.request.params = {
-        JobId: '57ace4479e512c61bc6e006f' # fake ID, 404
+        JobId: '57ace4479e512c61bc6e006f' // fake ID, 404
     };
     done();
 });
@@ -98,7 +98,7 @@ hooks.before("POST /gears/{GearName} -> 200", function(test, done) {
 hooks.skip("GET /users/self/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
 hooks.skip("GET /users/{UserId}/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
 
-# Skipping some tests until we figure out how to test file fields
+// Skipping some tests until we figure out how to test file fields
 hooks.skip("POST /download -> 200");
 hooks.skip("GET /download -> 200");
 hooks.skip("POST /upload/label -> 200");
