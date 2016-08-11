@@ -268,6 +268,21 @@ baseUri: https://docker.local.flywheel.io:8443/api
     responses:
       307:
         description: Redirects to the image file of the specified user's avatar
+
+/jobs/add:
+  description: Add a job
+  post:
+    body:
+      application/json:
+        example: !include examples/job_new.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "_id": "573cb66b135d87002660597c"
+              }
 /jobs:
   description: Run Gears on distributed computing
   get:
@@ -391,20 +406,6 @@ baseUri: https://docker.local.flywheel.io:8443/api
             example: |
               {
                 "orphaned":3
-              }
-/jobs/add:
-  description: Add a job
-  post:
-    body:
-      application/json:
-        example: !include examples/job_new.json
-    responses:
-      200:
-        body:
-          application/json:
-            example: |
-              {
-                "_id": "573cb66b135d87002660597c"
               }
 /jobs/{JobId}:
   description: Perform actions with a specific job
