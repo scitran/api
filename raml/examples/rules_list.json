@@ -1,0 +1,11 @@
+[
+    {
+        "alg" : "dicom_mr_classifier",
+        "all" : [
+            [
+                "file.type",
+                "dicom"
+            ]
+        ]
+    }
+]

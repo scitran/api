@@ -3,7 +3,179 @@ title: SciTran
 version: 1
 baseUri: https://docker.local.flywheel.io:8443/api
 
-/users:
+
+/api/download:
+  description: Download Files
+  get:
+    description: |
+      Download files listed in the given ticket
+      You can use POST to create a download ticket
+      The files listed in the ticket are put into a tar archive,
+      which is then compressed with gzip (.tar.gz)
+    queryParameters:
+      ticketId:
+        type: string
+        required: true
+        description: ID of the download ticket
+    responses:
+      200:
+        description: The requested tarball download as a binary stream
+        body:
+          application/octet-stream:
+      400:
+        description: Ticket not for this source IP
+      404:
+        description: No such ticket
+  post:
+    description: |
+      Create a download ticket
+      Use filters in the payload to exclude/include files.
+      To pass a single filter, each of its conditions should be satisfied.
+      If a file pass at least one filter, it is included in the targets.
+    body:
+      application/json:
+        description: Download files with tag 'incomplete' OR type different from 'dicom'
+        example: !include examples/create_download_incomplete_or_not_dicom.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"ticket": "579e97738120be2ada087feb", "file_cnt": 3, "size": 64523904}
+
+
+/api/upload/label:
+  description: Upload files by label
+  post:
+    description: |
+      Multipart form upload with N file fields, each with their desired filename.
+      For technical reasons, no form field names can be repeated. Instead, use (file1, file2) and so forth.
+      A non-file form field called "metadata" is also required, which must be a string containing JSON.
+    body:
+      multipart/form-data:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/file_info_list.json
+      402:
+        description: Uploads must be from an authorized drone
+
+/api/upload/uid:
+  description: Upload files by uid
+  post:
+    description: |
+      Same behavior as /api/upload/label,
+       except the metadata field must be uid format
+    body:
+      multipart/form-data:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/file_info_list.json
+      402:
+        description: Uploads must be from an authorized drone
+
+/api/clean-packfiles:
+  description:  Purge stale packfiles
+  post:
+    description: Clean up expired upload tokens and invalid token directories
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "tokens":5,
+                "directories":3
+              }
+/api/engine:
+  description:  Allows the engine to manage files
+  post:
+    description: |
+      ### Default behavior:
+       >Uploads a list of file fields sent as file1, file2, etc to an existing
+        container and updates fields of the files, the container and it's
+        parents as specified in the metadata fileformfield using the
+        engine placer class
+
+      ### When ``level`` is ``analysis``:
+      > Uploads a list of files to an existing analysis object, marking
+        all files as ``output=true`` using the job-based analyses placer
+        class
+
+    queryParameters:
+      level:
+        enum: [project, session, acquisition, analysis]
+        required: true
+        description: Whihch level to store files in
+      id:
+        type: string
+        required: true
+        description: The ID of the container to place files in
+      job:
+        type: string
+        description: Required if ``level`` is ``analysis``
+    body:
+      application/json:
+        description: |
+          Object encoded as a JSON string.
+          By default JSON must match type EngineUploadMetadata
+          If ``level`` is ``analysis``, JSON must match type AnalysisUploadMetadata
+    responses:
+      200:
+        description: A list of FileInfo objects
+        body:
+          application/json:
+            example: !include examples/file_info_list.json
+/api/sites:
+  description: Local and remote sites
+  get:
+    description:  Return a list of sites, both local and remote.
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  "_id": "local",
+                  "onload": true,
+                  "name": "BaliDemo"
+                }
+              ]
+/api/config:
+  description: Scitran Configuration
+  get:
+    description:  Return public Scitran configuration information
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/scitran_config.json
+
+/api/config.js:
+  description: Scitran Config in JS format
+  get:
+    description:  Return public Scitran configuration information in javascript format
+    responses:
+      200:
+        body:
+          text/html:
+            example: !include examples/scitran_config.js.txt
+
+/api/version:
+  description: Database Schema version
+  get:
+    description: Get database schema version info
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"_id": "version", "database": 2}
+/api/users:
   description: SDM Users
   get:
     description: Return a list of all users
@@ -11,26 +183,19 @@ baseUri: https://docker.local.flywheel.io:8443/api
       200:
         body:
           application/json:
-            example: |
-              [{"_id":"jane.doe@gmail.com"}]
+            example: !include examples/user_list.json
   post:
     description: Add a new user
     body:
       application/json:
-        example: |
-          {
-            "_id":"jane.doe@gmail.com",
-            "firstname":"Jane",
-            "lastname":"Doe",
-            "email":"jane.doe@gmail.com"
-          }
+        example: !include examples/user_jane_doe.json
     responses:
       200:
         body:
           application/json:
             example: |
               {"_id": "jane.doe@gmail.com"}
-/users/self:
+/api/users/self:
   description:  The currently authenticated user
   get:
     description: Get informatiomn about the current user
@@ -38,14 +203,15 @@ baseUri: https://docker.local.flywheel.io:8443/api
       200:
         body:
           application/json:
-/users/self/avatar:
+            example: !include examples/user_jane_doe.json
+/api/users/self/avatar:
   description: Current user's avatar
   get:
     description:  Get the avatar of the current user
     responses:
-      307:
+      302:
         description: Redirects to the image file of the current user's avatar
-/users/{UserId}:
+/api/users/{UserId}:
   description: Interact with a specific user by ID
   uriParameters:
     UserId:
@@ -56,13 +222,7 @@ baseUri: https://docker.local.flywheel.io:8443/api
       200:
         body:
           application/json:
-            example: |
-              {
-                "_id":"jane.doe@gmail.com",
-                "firstname":"Jane",
-                "lastname":"Doe",
-                "email":"jane.doe@gmail.com"
-              }
+            example: !include examples/user_jane_doe.json
   put:
     description: Update the specified user
     body:
@@ -74,9 +234,198 @@ baseUri: https://docker.local.flywheel.io:8443/api
       200:
         body:
           application/json:
-            description: |
-              modified:
-                description: Number of documents modified, always 1
-                type: number
             example: |
               {"modified":1}
+  delete:
+    description: Delete a user
+    responses:
+      200:
+        description: User was deleted
+        body:
+          application/json:
+            example: |
+              {"deleted":1}
+      404:
+        description: User not found
+/api/users/{UserId}/groups:
+  description: Groups for the specified user
+  uriParameters:
+    UserId:
+      type: string
+  get:
+    description: List all groups the specified user is a member of
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/groups_list.json
+/api/users/{UserId}/avatar:
+  description: Avatar for the specified user
+  get:
+    description:  Get the avatar of the specified user
+    responses:
+      307:
+        description: Redirects to the image file of the specified user's avatar
+/api/jobs:
+  description: Run Gears on distributed computing
+  get:
+    description: List all jobs
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/job_list.json
+/api/jobs/next:
+  description: Used by the engine
+  get:
+    description: Get the next job in the queue
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/job.json
+/api/jobs/stats:
+  description: Job stats
+  get:
+    description: Get stats about all current jobs
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/job_stats.json
+/api/jobs/reap:
+  description: Reap stale jobs
+  post:
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "orphaned":3
+              }
+/api/jobs/add:
+  description: Add a job
+  post:
+    body:
+      application/json:
+        example: !include examples/job_new.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "_id": "573cb66b135d87002660597c"
+              }
+/api/jobs/{JobId}:
+  description: Perform actions with a specific job
+  uriParameters:
+    JobId:
+      type: string
+  get:
+    description: Get info about a specific job
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/job.json
+  put:
+    description: |
+      Update a job. Updates timestamp.
+      Enforces a valid state machine transition, if any.
+      Rejects any change to a job that is not currently in 'pending' or 'running' state.
+      Accepts the same body as /api/jobs/add , except all fields are optional.
+    body:
+      application/json:
+    responses:
+      200:
+        description: |
+          The job has been updated.  No response body is sent.
+/api/jobs/{JobId}/retry:
+  uriParameters:
+    JobId:
+      type: string
+  description: Retry a job
+  post:
+    description: |
+      Retry a job
+      The job must have a state of 'failed', and must not have already been retried.
+      The failed jobs config is copied to a new job.
+      The ID of the new job is returned
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"_id":"57a35c118120be0e8d1f3f5f"}
+/api/gears:
+  description: Data processing algorithms
+  get:
+    description: List all gears
+    queryParameters:
+      fields:
+        description: |
+          Which fields to return.  Defaults to "name".
+          Specify "all" for all fields.
+          This parameter may be specified multiple times.
+        type: string
+        default: name
+    responses:
+      200:
+          body:
+            application/json:
+              example: !include examples/gears_list_just_name.json
+/api/gears/{GearName}:
+  description: Interact with a specific gear
+  uriParameters:
+    GearName:
+      type: string
+      description: Name of the gear to interact with
+  get:
+    description: Retrieve details about a specific gear
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/gear_full.json
+  post:
+    description: |
+      Create or update a gear.
+      "Name" field of gear must match "GearName" uri parameter
+      If no existing gear is found, one will be created
+      Otherwise, the specified gear will be updated
+    body:
+      application/json:
+        example: !include examples/gear_full.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"name":"dcm_convert"}
+  delete:
+      description: Delete a gear (not recommended)
+      responses:
+        200:
+          description: Gear was deleted
+/api/rules:
+  description: Rules for gears
+  get:
+    description: List all rules
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/rules_list.json
+  post:
+    description: Upsert all rules
+    body:
+      application/json:
+        example: !include examples/rules_list.json
+    responses:
+      200:
+        description: Upsert successful
+        
+/api/groups:
+  description: Groups of users

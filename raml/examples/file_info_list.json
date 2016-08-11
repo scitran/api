@@ -1,0 +1,18 @@
+[
+  {
+    "name":"results.dcm.zip",
+    "modified":"2016-08-01T09:07:27.681792+00:00",
+    "size":7364859,
+    "mimetype":"application/octet-stream",
+    "hash":"v0-sha384-768412320f7b0aa5812fce428dc4706b3cae50e02a64caa16a782249bfe8efc4b7ef1ccb126255d196047dfedf17a0a9",
+    "origin":{
+      "name":"user1",
+      "uid":"579f5a4f8120be0c0828d777"
+    },
+    "type":"dicom",
+    "tags":[],
+    "metadata":{},
+    "instrument":"instrument1",
+    "measurements":[]
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "optional": true,
+  "nodes": [{"level":"project", "_id":"<project_id>"}],
+  "filters":[{
+      "tags":{"+":["incomplete"]}
+  },
+  {
+      "types":{"-":["dicom"]}
+  }]
+}

@@ -1,0 +1,18 @@
+{
+	"site": {
+		"central_url": "https://sdmc.scitran.io/api",
+		"ssl_cert": null,
+		"api_url": "https://10.240.0.2:443/api",
+		"registered": false,
+		"id": "local",
+		"name": "BaliDemo"
+	},
+	"modified": "2016-03-31T16:30:00.852000+00:00",
+	"auth": {
+		"id_endpoint": "https://www.googleapis.com/plus/v1/people/me/openIdConnect",
+		"verify_endpoint": "https://www.googleapis.com/oauth2/v1/tokeninfo",
+		"client_id": "949263322061-6q4fqi0m4ihkp1v5n6v8q9bef4gd0f1k.apps.googleusercontent.com",
+		"auth_endpoint": "https://accounts.google.com/o/oauth2/auth"
+	},
+	"created": "2016-03-31T16:30:00.852000+00:00"
+}

@@ -1,0 +1,17 @@
+{
+    "gear": "dcm_convert",
+    "inputs": {
+        "dicom": {
+            "type": "acquisition",
+            "id": "573c9e6a844eac7fc01747cd",
+            "name" : "1_1_dicom.zip"
+        }
+    },
+    "destination": {
+        "type": "acquisition",
+        "id": "573c9e6a844eac7fc01747cd"
+    },
+    "tags": [
+        "ad-hoc"
+    ]
+}
