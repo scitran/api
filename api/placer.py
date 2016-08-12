@@ -287,6 +287,7 @@ class PackfilePlacer(Placer):
         self.path           = None
         self.zip_           = None
         self.ziptime        = None
+        self.tempdir        = None
 
 
     def check(self):
@@ -345,10 +346,10 @@ class PackfilePlacer(Placer):
 
         # Make a tempdir to store zip until moved
         # OPPORTUNITY: this is also called in files.py. Could be a util func.
-        tempdir = tempfile.TemporaryDirectory(prefix='.tmp', dir=config.get_item('persistent', 'data_path'))
+        self.tempdir = tempfile.TemporaryDirectory(prefix='.tmp', dir=config.get_item('persistent', 'data_path'))
 
         # Create a zip in the tempdir that later gets moved into the CAS.
-        self.path = os.path.join(tempdir.name, 'temp.zip')
+        self.path = os.path.join(self.tempdir.name, 'temp.zip')
         self.zip_  = zipfile.ZipFile(self.path, 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
 
         # OPPORTUNITY: add zip comment
@@ -357,7 +358,7 @@ class PackfilePlacer(Placer):
         # Bit of a silly hack: write our tempdir directory into the zip (not including its contents).
         # Creates an empty directory entry in the zip which will hold all the files inside.
         # This way, when you expand a zip, you'll get folder/things instead of a thousand dicoms splattered everywhere.
-        self.zip_.write(tempdir.name, self.dir_)
+        self.zip_.write(self.tempdir.name, self.dir_)
 
     def process_file_field(self, field, info):
         # Should not be called with any files

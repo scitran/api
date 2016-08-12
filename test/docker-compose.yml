@@ -3,7 +3,7 @@ services:
   scitran-base:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
   scitran-core:
     extends: scitran-base
     links:

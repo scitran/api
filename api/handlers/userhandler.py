@@ -213,7 +213,6 @@ class UserHandler(base.RequestHandler):
             self.abort(404, 'no avatar')
 
     def generate_api_key(self):
-        self._init_storage()
         if not self.uid:
             self.abort(400, 'no user is logged in')
         generated_key = base64.urlsafe_b64encode(os.urandom(42))
