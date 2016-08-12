@@ -10,7 +10,7 @@ COPY requirements-integration-test.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # Install node and abao: https://github.com/cybertk/abao
-
-RUN apt-get update && apt-get -y install nodejs npm && ln -s /usr/bin/nodejs /usr/bin/node && npm install -g abao
+# Using our fork of abao to expand jsonschema refs
+RUN apt-get update && apt-get -y install nodejs npm && ln -s /usr/bin/nodejs /usr/bin/node && npm install -g github:flywheel-io/abao#add-jsonschema-deref
 
 ENTRYPOINT ["py.test"]
