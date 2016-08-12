@@ -130,6 +130,7 @@ expected_input_schemas = set([
     'session.json',
     'subject.json',
     'user.json',
+    'user-new.json',
     'avatars.json',
     'download.json',
     'tag.json',
