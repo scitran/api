@@ -4,7 +4,19 @@ var hooks = require('hooks');
 var job_id = '';
 var gear_name = '';
 
+// Tests we're skipping, fix these
+
 hooks.skip("POST /jobs/{JobId}/retry -> 200"); // Can only retry a failed job
+
+hooks.skip("GET /users/self/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
+hooks.skip("GET /users/{UserId}/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
+
+// Skipping some tests until we figure out how to test file fields
+hooks.skip("POST /download -> 200");
+hooks.skip("GET /download -> 200");
+hooks.skip("POST /upload/label -> 200");
+hooks.skip("POST /upload/uid -> 200");
+hooks.skip("POST /engine -> 200");
 
 hooks.beforeEach(function (test, done) {
     test.request.query = {
@@ -75,12 +87,6 @@ hooks.before("DELETE /users/{UserId} -> 200", function(test, done) {
     done();
 });
 
-hooks.after("GET /gears -> 200", function(test, done) {
-    console.log(test.response.body);
-    gear_name = test.response.body[0].name
-    done();
-});
-
 hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
     test.request.params = {
         GearName: gear_name
@@ -90,20 +96,16 @@ hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
 
 hooks.before("POST /gears/{GearName} -> 200", function(test, done) {
     test.request.params = {
-        GearName: gear_name
+        GearName: "dcm_convert"
     };
     done();
 });
 
-
-hooks.skip("GET /users/self/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
-hooks.skip("GET /users/{UserId}/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
-
-// Skipping some tests until we figure out how to test file fields
-hooks.skip("POST /download -> 200");
-hooks.skip("GET /download -> 200");
-hooks.skip("POST /upload/label -> 200");
-hooks.skip("POST /upload/uid -> 200");
-hooks.skip("POST /engine -> 200");
+hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
+    test.request.params = {
+        GearName: "dcm_convert"
+    };
+    done();
+});
 
 
