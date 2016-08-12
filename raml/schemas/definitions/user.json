@@ -1,38 +1,42 @@
 {
-  "_id":              {
-                        "maxLength": 64,
-                        "minLength": 2,
-                        "pattern": "^[0-9a-z.@_-]*$",
-                        "title": "ID",
-                        "type": "string"
-                      },
-  "firstname":        {
-                        "maxLength": 64,
-                        "minLength": 1,
-                        "title": "First Name",
-                        "type": "string"
-                      },
-  "lastname":         {
-                        "maxLength": 64,
-                        "minLength": 1,
-                        "title": "Last Name",
-                        "type": "string"
-                      },
-  "email":            {
-                        "format": "email",
-                        "title": "Email",
-                        "type": "string"
-                      },
-  "avatars":          { "$ref": "avatars.json#"},
-  "avatar":           {
-                        "format": "uri",
-                        "title": "Avatar",
-                        "type": "string"
-                      },
-  "root":             { "type": "boolean"},
-  "disabled":         { "type": "boolean"},
-  "preferences":      {
-                        "title": "Preferences",
-                        "type": "object"
-                      }
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "_id":              {
+                          "maxLength": 64,
+                          "minLength": 2,
+                          "pattern": "^[0-9a-z.@_-]*$",
+                          "title": "ID",
+                          "type": "string"
+                        },
+    "firstname":        {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "title": "First Name",
+                          "type": "string"
+                        },
+    "lastname":         {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "title": "Last Name",
+                          "type": "string"
+                        },
+    "email":            {
+                          "format": "email",
+                          "title": "Email",
+                          "type": "string"
+                        },
+    "avatars":          { "$ref": "avatars.json#"},
+    "avatar":           {
+                          "format": "uri",
+                          "title": "Avatar",
+                          "type": "string"
+                        },
+    "root":             { "type": "boolean"},
+    "disabled":         { "type": "boolean"},
+    "preferences":      {
+                          "title": "Preferences",
+                          "type": "object"
+                        }
+    }
 }
