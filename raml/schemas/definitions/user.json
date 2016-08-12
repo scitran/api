@@ -23,7 +23,7 @@
                         "title": "Email",
                         "type": "string"
                       },
-  "avatars":          { "$ref": "avatars.json"},
+  "avatars":          { "$ref": "avatars.json#"},
   "avatar":           {
                         "format": "uri",
                         "title": "Avatar",

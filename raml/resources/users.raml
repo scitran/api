@@ -29,7 +29,7 @@ post:
         body:
           application/json:
             example: !include ../examples/user_jane_doe.json
-            schema: !include ../schemas/output/user.json
+            schema: !include ../schemas/definitions/user.json
 /self/avatar:
   description: Current user's avatar
   get:
@@ -49,7 +49,7 @@ post:
         body:
           application/json:
             example: !include ../examples/user_jane_doe.json
-            schema: !include ../schemas/output/user.json
+            schema: !include ../schemas/definitions/user.json
   put:
     description: Update the specified user
     body:
@@ -57,7 +57,7 @@ post:
         description: Accepts an object matching the User type except all fields are optional
         example: |
           {"email":"new_email@test.com"}
-        schema: !include ../schemas/input/user.json
+        schema: !include ../schemas/definitions/user.json
     responses:
       200:
         body:
