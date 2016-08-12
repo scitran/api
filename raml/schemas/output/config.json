@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "site": {
+      "type": "object",
+      "properties": {
+        "central_url": {
+          "type": "string"
+        },
+        "ssl_cert": {
+          "type": "null"
+        },
+        "api_url": {
+          "type": "string"
+        },
+        "registered": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "central_url",
+        "ssl_cert",
+        "api_url",
+        "registered",
+        "id",
+        "name"
+      ]
+    },
+    "modified": {
+      "type": "string"
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "id_endpoint": {
+          "type": "string"
+        },
+        "verify_endpoint": {
+          "type": "string"
+        },
+        "client_id": {
+          "type": "string"
+        },
+        "auth_endpoint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id_endpoint",
+        "verify_endpoint",
+        "client_id",
+        "auth_endpoint"
+      ]
+    },
+    "created": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "site",
+    "modified",
+    "auth",
+    "created"
+  ]
+}

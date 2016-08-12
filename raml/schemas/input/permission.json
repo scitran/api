@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "_id":            { "type": "string" },
+    "access":         { "enum": ["ro", "rw", "admin"] },
+    "site":           { "type": "string" }
+  },
+  "required": ["_id", "access"],
+  "key_fields": ["_id", "site"],
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "_id": {
+        "type": "string"
+      },
+      "onload": {
+        "type": "boolean"
+      },
+      "name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "_id",
+      "onload",
+      "name"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+description: Upload files by uid
+post:
+  description: |
+    Same behavior as /api/upload/label,
+     except the metadata field must be uid format
+     See api/schemas/input/uidupload.json for the fromat of this metadata.
+  body:
+    multipart/form-data:
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/file_info_list.json
+    402:
+      description: Uploads must be from an authorized drone

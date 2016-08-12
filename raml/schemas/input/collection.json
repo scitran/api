@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Collection",
+    "type": "object",
+    "allOf": [{"$ref": "container.json"}],
+    "properties": {
+        "public": {},
+        "label": {},
+        "metadata": {},
+
+        "curator": {"type": "string"}
+    },
+    "required": ["label"],
+    "additionalProperties": false
+}

@@ -1,0 +1,58 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {
+        "filterDefinition": {
+            "type": "object",
+            "properties": {
+                "+": {"$ref": "#/definitions/filterItems"},
+                "-": {"$ref": "#/definitions/filterItems"}
+            }
+        },
+        "filterItems": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "title": "Download",
+    "type": "object",
+    "properties": {
+        "optional": {
+            "type": "boolean"
+        },
+        "nodes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "level": {
+                        "type": "string",
+                        "enum": ["project", "session", "acquisition"]
+                    },
+                    "_id": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{24}$"
+                    }
+                },
+                "required": ["level", "_id"],
+                "additionalProperties": false
+            }
+        },
+        "filters": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "tags": {"$ref": "download.json#/definitions/filterDefinition"},
+                    "types": {"$ref": "download.json#/definitions/filterDefinition"}
+                }
+            }
+        }
+    },
+    "required": ["optional", "nodes"],
+    "additionalProperties": false
+}
