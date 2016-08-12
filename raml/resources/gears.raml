@@ -1,0 +1,51 @@
+description: Data processing algorithms
+get:
+  description: List all gears
+  queryParameters:
+    fields:
+      description: |
+        Which fields to return.  Defaults to "name".
+        Specify "all" for all fields.
+        This parameter may be specified multiple times.
+      type: string
+      default: name
+  responses:
+    200:
+        body:
+          application/json:
+            example: !include ../examples/gears_list_just_name.json
+            schema: !include ../schemas/output/gears-list.json
+
+/{GearName}:
+  description: Interact with a specific gear
+  uriParameters:
+    GearName:
+      type: string
+      description: Name of the gear to interact with
+  post:
+    description: |
+      Create or update a gear.
+      "Name" field of gear must match "GearName" uri parameter
+      If no existing gear is found, one will be created
+      Otherwise, the specified gear will be updated
+    body:
+      application/json:
+        example: !include ../examples/gear_full.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"name":"dcm_convert"}
+  get:
+    description: Retrieve details about a specific gear
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/gear_full.json
+  delete:
+      description: Delete a gear (not recommended)
+      responses:
+        200:
+          description: Gear was deleted
