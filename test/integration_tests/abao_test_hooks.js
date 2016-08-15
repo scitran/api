@@ -23,17 +23,17 @@ hooks.skip("POST /upload/uid -> 402");
 // to all endpoints which validate a json body
 hooks.skip("POST /users -> 422");
 
-// No way to order tests, have to add a job before it can be listed
-hooks.skip("GET /jobs -> 200");
-hooks.skip("GET /jobs/{JobId} -> 200");
-hooks.skip("PUT /jobs/{JobId} -> 200");
-
 // Should 404
 hooks.skip("GET /jobs/{JobId} -> 404");
 
 // This does run after a job is added
 // 500 saying unknown gear
 hooks.skip("GET /jobs/next -> 200");
+
+// No way to order tests, have to add a job before it can be listed
+hooks.skip("GET /jobs -> 200");
+hooks.skip("GET /jobs/{JobId} -> 200");
+hooks.skip("PUT /jobs/{JobId} -> 200");
 
 // Can only retry a failed job
 hooks.skip("POST /jobs/{JobId}/retry -> 200");
