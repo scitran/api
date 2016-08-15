@@ -66,6 +66,11 @@ hooks.before("GET /download -> 404", function(test, done) {
     done();
 });
 
+hooks.before("POST /users -> 422", function(test, done) {
+    test.request.body = {totally:"not valid"};
+    done();
+});
+
 hooks.before("GET /users/{UserId} -> 200", function(test, done) {
     test.request.params = {
         UserId: "jane.doe@gmail.com"
