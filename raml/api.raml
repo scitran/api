@@ -3,6 +3,14 @@ title: SciTran
 version: 1
 baseUri: https://docker.local.flywheel.io:8443/api
 
+traits:
+    - validates-json-body:
+        description: Validates incoming request body
+        responses:
+            422:
+                description: |
+                    JSON did not validate against schema for this endpoint                                      
+
 /download: !include resources/download.raml
 /upload/label: !include resources/upload-by-label.raml
 /upload/uid: !include resources/upload-by-uid.raml

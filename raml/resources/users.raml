@@ -9,6 +9,8 @@ get:
           schema: !include ../schemas/output/user-list.json
 post:
   description: Add a new user
+  traits:
+    - validates-json-body:
   body:
     application/json:
       example: !include ../examples/user_jane_doe.json
