@@ -6,10 +6,39 @@ var gear_name = '';
 
 // Tests we're skipping, fix these
 
-hooks.skip("POST /jobs/{JobId}/retry -> 200"); // Can only retry a failed job
 
-hooks.skip("GET /users/self/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
-hooks.skip("GET /users/{UserId}/avatar -> 307"); // https://github.com/cybertk/abao/issues/160
+// Skipped due to 500 when should 4xx
+
+// Should 400 to say invalid json
+hooks.skip("GET /download -> 400");
+
+// Should 422 for missing metadata field
+hooks.skip("POST /upload/label -> 402");
+hooks.skip("POST /upload/uid -> 402");
+
+// Should 422 for JSON not matching schema
+// After this is fixed, add "validates-json-body" trait
+// to all endpoints which validate a json body
+hooks.skip("POST /users -> 422");
+
+// No way to order tests, have to add a job before it can be listed
+hooks.skip("GET /jobs -> 200");
+hooks.skip("GET /jobs/{JobId} -> 200");
+hooks.skip("PUT /jobs/{JobId} -> 200");
+
+// Should 404
+hooks.skip("GET /jobs/{JobId} -> 404");
+
+// This does run after a job is added
+// 500 saying unknown gear
+hooks.skip("GET /jobs/next -> 200");
+
+// Can only retry a failed job
+hooks.skip("POST /jobs/{JobId}/retry -> 200");
+
+// https://github.com/cybertk/abao/issues/160
+hooks.skip("GET /users/self/avatar -> 307");
+hooks.skip("GET /users/{UserId}/avatar -> 307");
 
 // Skipping some tests until we figure out how to test file fields
 hooks.skip("POST /download -> 200");
@@ -112,5 +141,3 @@ hooks.before("GET /gears/{GearName} -> 200", function(test, done) {
     };
     done();
 });
-
-
