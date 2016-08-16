@@ -1,0 +1,17 @@
+config = {
+      "auth": {
+          "auth_endpoint": "https://accounts.google.com/o/oauth2/auth",
+          "client_id": "949263322061-6q4fqi0m4ihkp1v5n6v8q9bef4gd0f1k.apps.googleusercontent.com",
+          "id_endpoint": "https://www.googleapis.com/plus/v1/people/me/openIdConnect",
+          "verify_endpoint": "https://www.googleapis.com/oauth2/v1/tokeninfo"
+      },
+      "created": "2016-03-31T16:30:00.852000+00:00",
+      "modified": "2016-03-31T16:30:00.852000+00:00",
+      "site": {
+          "api_url": "https://10.240.0.2:443/api",
+          "central_url": "https://sdmc.scitran.io/api",
+          "id": "local",
+          "name": "BaliDemo",
+          "registered": false,
+          "ssl_cert": null
+      } 

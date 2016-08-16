@@ -1,0 +1,16 @@
+description: Rules for gears
+get:
+  description: List all rules
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/rules_list.json
+post:
+  description: Upsert all rules
+  body:
+    application/json:
+      example: !include ../examples/rules_list.json
+  responses:
+    200:
+      description: Upsert successful

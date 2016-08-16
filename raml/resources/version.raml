@@ -1,0 +1,10 @@
+description: Database Schema version
+get:
+  description: Get database schema version info
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {"_id": "version", "database": 2}
+          schema: !include ../schemas/output/version.json

@@ -1,0 +1,49 @@
+[
+    {
+        "inputs": [
+            {
+                "input": "dicom",
+                "type": "acquisition",
+                "id": "57ac7394c700190017123fb7",
+                "name": "8403_4_1_t1_dicom.zip"
+            }
+        ],
+        "attempt": 1,
+        "name": "dcm-convert",
+        "tags": [
+            "dcm-convert"
+        ],
+        "destination": {
+            "type": "acquisition",
+            "id": "57ac7394c700190017123fb7"
+        },
+        "modified": "2016-08-11T12:46:12.593000+00:00",
+        "created": "2016-08-11T12:46:12.593000+00:00",
+        "state": "pending",
+        "_id": "57ac7394c700190017123fb8"
+    },
+    {
+      "inputs": [
+          {
+              "input": "dicom",
+              "type": "acquisition",
+              "id": "573c9e6a844eac7fc01747cd",
+              "name": "1_1_dicom.zip"
+          }
+      ],
+      "attempt": 1,
+      "name": "dcm_convert",
+      "tags": [
+          "ad-hoc",
+          "dcm_convert"
+      ],
+      "destination": {
+          "type": "acquisition",
+          "id": "573c9e6a844eac7fc01747cd"
+      },
+      "modified": "2016-08-11T13:02:09.055000+00:00",
+      "created": "2016-08-11T13:02:09.055000+00:00",
+      "state": "pending",
+      "_id": "57ac77515e325c0018cd17cf"
+    }
+]

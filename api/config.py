@@ -53,7 +53,7 @@ DEFAULT_CONFIG = {
         'db_connect_timeout': '2000',
         'db_server_selection_timeout': '3000',
         'data_path': os.path.join(os.path.dirname(__file__), '../persistent/data'),
-        'schema_path': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas'),
+        'schema_path': os.path.join(os.path.dirname(os.path.abspath(__file__)), '../raml/schemas'),
         'elasticsearch_host': 'localhost:9200',
     },
 }
@@ -130,6 +130,7 @@ expected_input_schemas = set([
     'session.json',
     'subject.json',
     'user.json',
+    'user-new.json',
     'avatars.json',
     'download.json',
     'tag.json',

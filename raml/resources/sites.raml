@@ -1,0 +1,16 @@
+description: Local and remote sites
+get:
+  description:  Return a list of sites, both local and remote.
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            [
+              {
+                "_id": "local",
+                "onload": true,
+                "name": "BaliDemo"
+              }
+            ]
+          schema: !include ../schemas/output/sites-list.json

@@ -1,0 +1,39 @@
+description:  Allows the engine to manage files
+post:
+  description: |
+    ### Default behavior:
+     >Uploads a list of file fields sent as file1, file2, etc to an existing
+      container and updates fields of the files, the container and it's
+      parents as specified in the metadata fileformfield using the
+      engine placer class
+
+    ### When ``level`` is ``analysis``:
+    > Uploads a list of files to an existing analysis object, marking
+      all files as ``output=true`` using the job-based analyses placer
+      class
+
+  queryParameters:
+    level:
+      enum: [project, session, acquisition, analysis]
+      required: true
+      description: Whihch level to store files in
+    id:
+      type: string
+      required: true
+      description: The ID of the container to place files in
+    job:
+      type: string
+      description: Required if ``level`` is ``analysis``
+  body:
+    application/json:
+      description: |
+        Object encoded as a JSON string.
+        By default JSON must match the specified enginemetadata.json schema
+        If ``level`` is ``analysis``, JSON must match AnalysisUploadMetadata schema
+      schema: !include ../schemas/input/enginemetadata.json
+  responses:
+    200:
+      description: A list of FileInfo objects
+      body:
+        application/json:
+          example: !include ../examples/file_info_list.json

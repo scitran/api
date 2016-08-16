@@ -1,0 +1,9 @@
+description: Scitran Configuration
+get:
+  description:  Return public Scitran configuration information
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/scitran_config.json
+          schema: !include ../schemas/output/config.json

@@ -1,0 +1,15 @@
+{
+  "by-state": {
+    "pending":1,
+    "running":3,
+    "failed":0,
+    "complete":17
+  },
+  "by-tag": [
+    {
+      "tags":["tag1"],
+      "count":4
+    } 
+  ],
+  "permafailed": 0
+}

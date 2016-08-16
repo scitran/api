@@ -55,6 +55,7 @@ case "$1-$2" in
       exit 1
     ) &&
     # execute tests
+    
     docker-compose \
       -f test/docker-compose.yml \
       run \
@@ -64,6 +65,12 @@ case "$1-$2" in
       -f test/docker-compose.yml \
       run \
       --rm \
+      integration-test &&
+    docker-compose \
+      -f test/docker-compose.yml \
+      run \
+      --rm \
+      --entrypoint "abao /usr/src/raml/api.raml --server=http://scitran-core:8080/api --hookfiles=/usr/src/tests/abao_test_hooks.js" \
       integration-test ||
     # set failure exit code in the event any previous commands in chain failed.
     exit_code=1

@@ -1,0 +1,38 @@
+description: Download Files
+post:
+  description: |
+    Create a download ticket
+    Use filters in the payload to exclude/include files.
+    To pass a single filter, each of its conditions should be satisfied.
+    If a file pass at least one filter, it is included in the targets.
+  body:
+    application/json:
+      description: Download files with tag 'incomplete' OR type 'dicom'
+      example: !include ../examples/create_download_incomplete_and_dicom.json
+      schema: !include ../schemas/input/download.json
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {"ticket": "579e97738120be2ada087feb", "file_cnt": 3, "size": 64523904}
+get:
+  description: |
+    Download files listed in the given ticket
+    You can use POST to create a download ticket
+    The files listed in the ticket are put into a tar archive,
+    which is then compressed with gzip (.tar.gz)
+  queryParameters:
+    ticket:
+      type: string
+      required: true
+      description: ID of the download ticket
+  responses:
+    200:
+      description: The requested tarball download as a binary stream
+      body:
+        application/octet-stream:
+    400:
+      description: Ticket not for this source IP
+    404:
+      description: No such ticket

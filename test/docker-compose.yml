@@ -40,6 +40,8 @@ services:
       - mongo
     volumes:
       - ./integration_tests:/usr/src/tests
+      - ../raml:/usr/src/raml
+      - ../api:/usr/src/api
   core-check:
     extends: scitran-base
     links:

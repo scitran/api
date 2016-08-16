@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "modified": {
+        "type": "string"
+      },
+      "roles": {
+        "type": "array",
+        "items": {}
+      },
+      "tags": {
+        "type": "array",
+        "items": {}
+      }
+    },
+    "required": [
+      "name",
+      "created",
+      "modified",
+      "roles",
+      "tags"
+    ]
+  }
+}

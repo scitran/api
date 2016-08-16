@@ -1,0 +1,187 @@
+description: Run Gears on distributed computing
+get:
+  description: List all jobs
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/job_list.json
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "input": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "input",
+                        "type",
+                        "id",
+                        "name"
+                      ]
+                    }
+                  },
+                  "attempt": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id"
+                    ]
+                  },
+                  "modified": {
+                    "type": "string"
+                  },
+                  "created": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "inputs",
+                  "attempt",
+                  "name",
+                  "tags",
+                  "destination",
+                  "modified",
+                  "created",
+                  "state",
+                  "_id"
+                ]
+              }
+            }
+/add:
+  description: Add a job
+  post:
+    body:
+      application/json:
+        example: !include ../examples/job_new.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "_id": "573cb66b135d87002660597c"
+              }
+            schema: !include ../schemas/output/job-new.json
+/next:
+  description: Used by the engine
+  get:
+    description: Get the next job in the queue
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/job.json
+/stats:
+  description: Job stats
+  get:
+    description: Get stats about all current jobs
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/job_stats.json
+/reap:
+  description: Reap stale jobs
+  post:
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "orphaned":3
+              }
+/{JobId}:
+  description: Perform actions with a specific job
+  uriParameters:
+    JobId:
+      type: string
+  get:
+    description: Get info about a specific job
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/job.json
+      404:
+        description: JobId not found
+  put:
+    description: |
+      Update a job. Updates timestamp.
+      Enforces a valid state machine transition, if any.
+      Rejects any change to a job that is not currently in 'pending' or 'running' state.
+      Accepts the same body as /api/jobs/add , except all fields are optional.
+    body:
+      application/json:
+        example: |
+          {
+            "tags":[
+              "test-tag"
+            ]
+          }
+    responses:
+      200:
+        description: |
+          The job has been updated.  No response body is sent.
+/{JobId}/retry:
+  uriParameters:
+    JobId:
+      type: string
+  description: Retry a job
+  post:
+    description: |
+      Retry a job
+      The job must have a state of 'failed', and must not have already been retried.
+      The failed jobs config is copied to a new job.
+      The ID of the new job is returned
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"_id":"57a35c118120be0e8d1f3f5f"}
