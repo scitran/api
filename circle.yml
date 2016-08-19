@@ -4,9 +4,17 @@ machine:
 
 dependencies:
   pre:
-    - docker build -t constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") .
+    - docker build -t constellates/$CIRCLE_PROJECT_REPONAME:V$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} .
 
 test:
   override:
     # Unit Tests
-    - docker run constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") bin/runtests.sh unit --ci
+    - docker run constellates/$CIRCLE_PROJECT_REPONAME:V$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} bin/runtests.sh unit --ci
+
+deployment:
+  hub:
+    branch: docker-CI
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker tag constellates/$CIRCLE_PROJECT_REPONAME:V$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} constellates/$CIRCLE_PROJECT_REPONAME:latest
+      - docker push constellates/$CIRCLE_PROJECT_REPONAME
