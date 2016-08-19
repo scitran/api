@@ -9,4 +9,4 @@ dependencies:
 test:
   override:
     # Unit Tests
-    - docker run constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") /srv/bids-core/bin/runtests.sh unit --ci
+    - docker run constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") bin/runtests.sh unit --ci
