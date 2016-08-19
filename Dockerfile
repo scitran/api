@@ -39,9 +39,6 @@ VOLUME /srv/bids-core/logs
 RUN pip install --upgrade pip wheel setuptools \
   && pip install -r /srv/bids-core/requirements.txt
 
-# COPY uwsgi config
-COPY uwsgi-config.ini /srv/bids-core/config/
-
 EXPOSE 8112
 
-CMD ["uwsgi", "/srv/bids-core/config/uwsgi-config.ini", "--socket", "[::]:8112", "--plugins", "python"]
+CMD ["uwsgi", "/srv/bids-core/uwsgi-config.ini", "--socket", "[::]:8112", "--plugins", "python"]
