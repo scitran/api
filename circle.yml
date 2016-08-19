@@ -1,0 +1,20 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - docker build -t poldracklab/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} .
+
+test:
+  override:
+    # Unit Tests
+    - docker run poldracklab/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} bin/runtests.sh unit --ci
+
+deployment:
+  hub:
+    branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker tag poldracklab/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BUILD_NUM-${CIRCLE_SHA1:0:6} poldracklab/$CIRCLE_PROJECT_REPONAME:latest
+      - docker push poldracklab/$CIRCLE_PROJECT_REPONAME
