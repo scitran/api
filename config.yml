@@ -1,0 +1,12 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - docker build -t constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") .
+
+test:
+  override:
+    # Unit Tests
+    - docker run constellates/$CIRCLE_PROJECT_REPONAME:$([ "$CIRCLE_BRANCH" == dev ] && echo "dev-" || echo "") ls
