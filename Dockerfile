@@ -37,7 +37,8 @@ VOLUME /srv/bids-core/logs
 
 # Install pip modules
 RUN pip install --upgrade pip wheel setuptools \
-  && pip install -r /srv/bids-core/requirements.txt
+  && pip install -r /srv/bids-core/requirements.txt \
+  && pip install -r requirements_dev.txt
 
 EXPOSE 8112
 
