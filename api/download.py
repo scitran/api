@@ -11,9 +11,6 @@ from . import config
 from . import util
 from . import validators
 
-log = config.log
-
-
 def _filter_check(property_filter, property_values):
     minus = set(property_filter.get('-', []))
     plus = set(property_filter.get('+', []))
@@ -220,7 +217,7 @@ class Download(base.RequestHandler):
                 total_size, file_cnt = _append_targets(targets, acq, prefix, total_size, file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
 
         if len(targets) > 0:
-            log.debug(json.dumps(targets, sort_keys=True, indent=4, separators=(',', ': ')))
+            self.request.logger.debug(json.dumps(targets, sort_keys=True, indent=4, separators=(',', ': ')))
             filename = arc_prefix + '_' + datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S') + '.tar'
             ticket = util.download_ticket(self.request.client_addr, 'batch', targets, filename, total_size)
             config.db.downloads.insert_one(ticket)
@@ -285,6 +282,6 @@ class Download(base.RequestHandler):
                 payload_schema_uri = validators.schema_uri('input', 'download.json')
                 validator = validators.from_schema_path(payload_schema_uri)
                 validator(req_spec, 'POST')
-                log.debug(json.dumps(req_spec, sort_keys=True, indent=4, separators=(',', ': ')))
+                self.request.logger.debug(json.dumps(req_spec, sort_keys=True, indent=4, separators=(',', ': ')))
 
                 return self._preflight_archivestream(req_spec, collection=self.get_param('collection'))

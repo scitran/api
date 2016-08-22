@@ -2,9 +2,6 @@ import re
 import markdown
 
 from . import base
-from . import config
-
-log = config.log
 
 class Root(base.RequestHandler):
 

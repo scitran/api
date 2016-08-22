@@ -13,9 +13,6 @@ from .gears import get_gears, get_gear_by_name, remove_gear, upsert_gear
 from .jobs import Job
 from .queue import Queue
 
-log = config.log
-
-
 class GearsHandler(base.RequestHandler):
 
     """Provide /gears API routes."""

@@ -14,9 +14,6 @@ from ..types import Origin
 from ..jobs.queue import Queue
 from ..jobs.jobs import Job
 
-log = config.log
-
-
 class ContainerHandler(base.RequestHandler):
     """
     This class handle operations on a generic container
@@ -369,7 +366,7 @@ class ContainerHandler(base.RequestHandler):
         mongo_validator, payload_validator = self._get_validators()
 
         payload = self.request.json_body
-        log.debug(payload)
+        self.request.logger.debug(payload)
         #validate the input payload
         payload_validator(payload, 'POST')
         # Load the parent container in which the new container will be created

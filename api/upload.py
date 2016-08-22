@@ -8,10 +8,9 @@ from . import base
 from . import config
 from . import files
 from . import placer as pl
+from .request import get_current_request
 from . import util
 from .dao import hierarchy
-
-log = config.log
 
 Strategy = util.Enum('Strategy', {
     'targeted'    : pl.TargetedPlacer,      # Upload N files to a container.
@@ -193,9 +192,10 @@ class Upload(base.RequestHandler):
             'modified': {'$lt': datetime.datetime.utcnow() - datetime.timedelta(hours=1)},
         })
 
+        request = get_current_request()
         removed = result.deleted_count
         if removed > 0:
-            log.info('Removed ' + str(removed) + ' expired packfile tokens')
+            request.logger.info('Removed ' + str(removed) + ' expired packfile tokens')
 
         # Next, find token directories and remove any that don't map to a token.
 
@@ -225,7 +225,7 @@ class Upload(base.RequestHandler):
                 pass
 
             if result is None:
-                log.info('Cleaning expired token directory ' + token)
+                request.logger.info('Cleaning expired token directory ' + token)
                 shutil.rmtree(path)
                 cleaned += 1
 

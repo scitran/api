@@ -8,9 +8,6 @@ from ..dao import APIStorageException
 
 from .containerhandler import ContainerHandler
 
-log = config.log
-
-
 class CollectionsHandler(ContainerHandler):
     # pylint: disable=arguments-differ
 
@@ -36,7 +33,7 @@ class CollectionsHandler(ContainerHandler):
         mongo_validator, payload_validator = self._get_validators()
 
         payload = self.request.json_body
-        log.debug(payload)
+        self.request.logger.debug(payload)
         payload_validator(payload, 'POST')
         payload['permissions'] = [{
             '_id': self.uid,
@@ -89,7 +86,7 @@ class CollectionsHandler(ContainerHandler):
             elif item['level'] == 'acquisition':
                 acq_ids += [item_id]
         operator = '$addToSet' if contents['operation'] == 'add' else '$pull'
-        log.info(' '.join(['collection', _id, operator, str(acq_ids)]))
+        self.request.logger.info(' '.join(['collection', _id, operator, str(acq_ids)]))
         if not bson.ObjectId.is_valid(_id):
             self.abort(400, 'not a valid object id')
         config.db.acquisitions.update_many({'_id': {'$in': acq_ids}}, {operator: {'collections': bson.ObjectId(_id)}})
@@ -151,8 +148,8 @@ class CollectionsHandler(ContainerHandler):
                 ])
         query = {'_id': {'$in': [ar['_id'] for ar in agg_res]}}
         projection = self.container_handler_configurations['sessions']['list_projection']
-        log.debug(query)
-        log.debug(projection)
+        self.request.logger.debug(query)
+        self.request.logger.debug(projection)
         sessions = list(config.db.sessions.find(query, projection))
         self._filter_all_permissions(sessions, self.uid, self.user_site)
         if self.is_true('measurements'):

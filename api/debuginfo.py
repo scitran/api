@@ -1,7 +1,3 @@
-from . import config
-
-log = config.log
-
 child_containers = {
     'projects': 'sessions',
     'sessions': 'acquisitions',
@@ -52,4 +48,3 @@ def _add_di(handler, cont_name, response):
             'group_details',
             _id=response['group'],
             _full=True) + '?' + handler.request.query_string
-

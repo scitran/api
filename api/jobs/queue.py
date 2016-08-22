@@ -8,10 +8,9 @@ import pymongo
 import datetime
 
 from .. import config
+from ..request import get_current_request
 from .jobs import Job
 from .gears import get_gear_by_name
-
-log = config.log
 
 JOB_STATES = [
     'pending',  # Job is queued
@@ -81,9 +80,9 @@ class Queue(object):
         Given a failed job, either retry the job or fail it permanently, based on the attempt number.
         Can override the attempt limit by passing force=True.
         """
-
+        request = get_current_request()
         if job.attempt >= max_attempts() and not force:
-            log.info('Permanently failed job %s (after %d attempts)', job.id_, job.attempt)
+            request.logger.info('Permanently failed job %s (after %d attempts)', job.id_, job.attempt)
             return
 
         if job.state != 'failed':
@@ -109,7 +108,7 @@ class Queue(object):
         new_job.modified = now
 
         new_id = new_job.insert()
-        log.info('respawned job %s as %s (attempt %d)', job.id_, new_id, new_job.attempt)
+        request.logger.info('respawned job %s as %s (attempt %d)', job.id_, new_id, new_job.attempt)
 
         return new_id
 
@@ -161,7 +160,8 @@ class Queue(object):
         job = Job.load(result)
 
         if job.request is not None:
-            log.info('Job ' + job.id_ + ' already has a request, so not generating')
+            current_request = get_current_request()
+            current_request.logger.info('Job ' + job.id_ + ' already has a request, so not generating')
             print job.request
             return result
 

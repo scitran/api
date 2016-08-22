@@ -11,8 +11,6 @@ from ..auth import userauth
 from ..dao import containerstorage
 from ..dao import noop, APIStorageException
 
-log = config.log
-
 
 class UserHandler(base.RequestHandler):
 
@@ -50,7 +48,7 @@ class UserHandler(base.RequestHandler):
         # Check for authZ before cleaning up user permissions
         permchecker(noop)('DELETE', _id)
         self._cleanup_user_permissions(user.get('_id'))
-        log.debug('2')
+        self.request.logger.debug('2')
         result = self.storage.exec_op('DELETE', _id)
         if result.deleted_count == 1:
             return {'deleted': result.deleted_count}

@@ -1,8 +1,3 @@
-from .. import config
-
-log = config.log
-
-
 def default(handler, user=None):
     def g(exec_op):
         def f(method, _id=None, query=None, payload=None, projection=None):

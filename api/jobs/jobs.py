@@ -10,8 +10,6 @@ from ..dao.containerutil import create_filereference_from_dictionary, create_con
 
 from .. import config
 
-log = config.log
-
 class Job(object):
     def __init__(self, name, inputs, destination=None, tags=None, attempt=1, previous_job_id=None, created=None, modified=None, state='pending', request=None, id_=None, config_=None, now=False):
         """
