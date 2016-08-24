@@ -3,7 +3,7 @@
 set -eu
 
 unset CDPATH
-cd "$( dirname "${BASH_SOURCE[0]}" )/.."
+cd "$( dirname "${BASH_SOURCE[0]}" )/../.."
 
 echo "Running pylint ..."
 # TODO: Enable Refactor and Convention reports

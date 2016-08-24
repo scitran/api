@@ -1,6 +1,7 @@
+import json
 import os
 import time
-import json
+
 import pytest
 import pymongo
 import requests
@@ -28,9 +29,14 @@ def base_url():
 
 
 class RequestsAccessor(object):
-    def __init__(self, base_url, default_params):
+    def __init__(self, base_url, default_params=None, default_headers=None):
         self.base_url = base_url
+        if default_params is None:
+            default_params = {}
         self.default_params = default_params
+        if default_headers is None:
+            default_headers = {}
+        self.default_headers = default_headers
 
     def _get_params(self, **kwargs):
         params = self.default_params.copy()
@@ -38,40 +44,73 @@ class RequestsAccessor(object):
             params.update(kwargs["params"])
         return params
 
-    def post(self, url_path, *args, **kwargs):
-        kwargs['params'] = self._get_params(**kwargs)
-        return requests.post(self.base_url + url_path, verify=False, *args, **kwargs)
+    def get_headers(self, user_headers):
+        request_headers = self.default_headers.copy()
+        request_headers.update(user_headers)
+        return request_headers
 
-    def delete(self, url_path, *args, **kwargs):
+    def get(self, url_path, **kwargs):
+        url = self.get_url_from_path(url_path)
         kwargs['params'] = self._get_params(**kwargs)
-        return requests.delete(self.base_url + url_path, verify=False, *args, **kwargs)
+        headers = self.get_headers(kwargs.get("headers", {}))
+        return requests.get(url, verify=False,
+                            headers=headers, **kwargs)
 
-    def get(self, url_path, *args, **kwargs):
+    def post(self, url_path, **kwargs):
+        url = self.get_url_from_path(url_path)
         kwargs['params'] = self._get_params(**kwargs)
-        return requests.get(self.base_url + url_path, verify=False, *args, **kwargs)
+        headers = self.get_headers(kwargs.get("headers", {}))
+        return requests.post(url, verify=False,
+                             headers=headers, **kwargs)
 
-    def put(self, url_path, *args, **kwargs):
+    def put(self, url_path, **kwargs):
+        url = self.get_url_from_path(url_path)
         kwargs['params'] = self._get_params(**kwargs)
-        return requests.put(self.base_url + url_path, verify=False, *args, **kwargs)
+        headers = self.get_headers(kwargs.get("headers", {}))
+        return requests.put(url, verify=False,
+                            headers=headers, **kwargs)
 
+    def delete(self, url_path, **kwargs):
+        kwargs['params'] = self._get_params(**kwargs)
+        headers = self.get_headers(kwargs.get("headers", {}))
+        url = self.get_url_from_path(url_path)
+        return requests.delete(url, verify=False,
+                               headers=headers, **kwargs)
+
+    def get_url_from_path(self, path):
+        return "{0}{1}".format(self.base_url, path)
 
 @pytest.fixture(scope="module")
 def api_as_admin(base_url):
-    accessor = RequestsAccessor(base_url, {"user": "admin@user.com", "root": "true"})
+    accessor = RequestsAccessor(base_url,
+        {"user": "admin@user.com", "root": "true"},
+        default_headers={
+            "Authorization":"scitran-user XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK"
+            }
+        )
     return accessor
 
 
 @pytest.fixture(scope="module")
 def api_as_user(base_url):
-    accessor = RequestsAccessor(base_url, {"user": "admin@user.com"})
+    accessor = RequestsAccessor(base_url,
+        {"user": "admin@user.com"},
+        default_headers={
+            "Authorization":"scitran-user XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK"
+            }
+        )
     return accessor
 
 
 @pytest.fixture(scope="module")
 def api_accessor(base_url):
     class RequestsAccessorWithBaseUrl(RequestsAccessor):
-        def __init__(self, user):
-            super(self.__class__, self).__init__(base_url, {"user": user})
+        def __init__(self, user_api_key):
+            super(self.__class__, self).__init__(
+                base_url,
+                default_headers={
+                    "Authorization":"scitran-user {0}".format(user_api_key)
+                })
 
     return RequestsAccessorWithBaseUrl
 

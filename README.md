@@ -19,10 +19,28 @@ SciTran Core is a RESTful HTTP API, written in Python and backed by MongoDB. It 
 
 
 ### Usage
+**Currently Python 2 Only**  
+
+#### OSX
 ```
-./bin/run.sh [config file]
+$ ./bin/run-dev-osx.sh --help
+Run a development instance of scitran-core
+ Also starts mongo on port 9001 by default
+
+ Usage:
+
+ -C, --config-file <shell-script>: Source a shell script to set environemnt variables
+ -I, --no-install: Do not attempt install the application first
+ -R, --reload <interval>: Enable live reload, specifying interval in seconds
+ -T, --no-testdata: do not bootstrap testdata
+ -U, --no-user: do not bootstrap users and groups
 ```
-or
+
+#### Ubuntu
 ```
-PYTHONPATH=. uwsgi --http :8443 --virtualenv ./runtime --master --wsgi-file bin/api.wsgi
+mkvirtualenv scitran-core
+export env
+./bin/install-ubuntu.sh
+uwsgi --http :8080 --master --wsgi-file bin/api.wsgi -H $VIRTUAL_ENV \
+    --env SCITRAN_PERSISTENT_DB_URI="mongodb://localhost:27017/scitran-core"
 ```

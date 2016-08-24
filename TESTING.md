@@ -1,3 +1,18 @@
+## Run the tests
+### OSX
+```
+./test/bin/run-tests-osx.sh
+```
+
+### Ubuntu
+```
+# Follow installation instructions in README first
+workon scitran-core
+export env
+./test/bin/setup-integration-tests-ubuntu.sh
+./test/bin/run-tests-ubuntu.sh
+```
+
 ### Tools
 - [abao](https://github.com/cybertk/abao/)
 - [postman](https://www.getpostman.com/docs/)
@@ -25,4 +40,3 @@ Postman Links
 - http://blog.getpostman.com/2014/03/07/writing-automated-tests-for-apis-using-postman/
 - https://www.getpostman.com/docs/environments
 - https://www.getpostman.com/docs/newman_intro
-

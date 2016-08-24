@@ -1,6 +1,10 @@
-from api import validators
 import logging
-import nose.tools
+
+import jsonschema.exceptions
+import pytest
+
+from api import validators
+
 log = logging.getLogger(__name__)
 sh = logging.StreamHandler()
 log.addHandler(sh)
@@ -12,7 +16,6 @@ class StubHandler:
 
 default_handler = StubHandler()
 
-@nose.tools.raises(Exception)
 def test_payload():
     payload = {
         'files': [],
@@ -22,9 +25,7 @@ def test_payload():
         'permissions': [],
         'extra_params': 'testtest'
     }
-    payload_validator = validators.payload_from_schema_file(default_handler, 'input/project.json')
-    payload_validator(payload, 'POST')
-
-
-
-
+    schema_uri = validators.schema_uri("input", "project.json")
+    schema, resolver = validators._resolve_schema(schema_uri)
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        validators._validate_json(payload, schema, resolver)

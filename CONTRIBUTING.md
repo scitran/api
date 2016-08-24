@@ -23,7 +23,7 @@ Changes to `requirements.txt` should always be by pull request.
 - Add docstrings to all functions with a one-line description of its purpose.
 
 ### Format
-- Ensure that `./test/lint.sh api` exits without errors.
+Ensure that `./test/bin/lint.sh api` exits without errors.
 
 ### Commit Messages
 1. The subject line should be a phrase describing the commit and limited to 50 characters
