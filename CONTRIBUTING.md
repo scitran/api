@@ -12,7 +12,7 @@
 - Add docstrings to all functions with a one-line description of its purpose.
 
 ### Format
-Ensure that `./test/lint.sh api` exists without errors.
+Ensure that `./test/lint.sh api` exits without errors.
 
 
 ## Adding an API Resource
