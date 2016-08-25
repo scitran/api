@@ -15,16 +15,16 @@
 - Ensure that `./test/lint.sh api` exits without errors.
 
 ### Commit Messages
-1. First line should be a phrase describing the commit, do not use punctuation
-1. Make sure the subject line is capitalized and no longer than 50 characters
-1. Always use present tense / imperative mood  e.g. "Fix bug in foo.py", NOT "fixed" or "fixes"
-1. Blank line, followed by a detailed description (optional)  Use punctuation
-1. When writing your description line length should be 72 characters at most
-1. Description should be broken up into paragraphs no more than 4 sentences.
+1. First line should be a phrase describing the commit, do not use punctuation.
+1. Make sure the subject line is capitalized and no longer than 50 characters.
+1. Always use present tense / imperative mood  e.g. "Fix bug in foo.py", NOT "fixed" or "fixes".
+1. Following the subject is a detailed description (optional), separated by a blank line.  Use punctuation.
+1. When writing your description, line length should be 72 characters at most.
+1. Description should be broken into paragraphs no more than 4 sentences.
 1. Make sure your description says what you changed and why, less important is how.
-1. Blank line, followed by "Resolves: #xxx, #yyy" for any issues fixed by the commit
-1. Follow immediately with a line containing "See also: #xxx, #yyy" for any other issues
-1. These steps were adapted from [7 Rules of a Great Commit Message](http://chris.beams.io/posts/git-commit/#seven-rules).  Visit for more info
+1. A blank line followed by "Resolves: #xxx, #yyy" for any issues fixed by the commit.
+1. Follow immediately with a line containing "See also: #xxx, #yyy" for any other issues.
+1. These steps were adapted from [7 Rules of a Great Commit Message](http://chris.beams.io/posts/git-commit/#seven-rules).  Visit for more info.
 
 ## Adding an API Resource
 ### Design Resource
