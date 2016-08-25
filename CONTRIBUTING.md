@@ -12,8 +12,19 @@
 - Add docstrings to all functions with a one-line description of its purpose.
 
 ### Format
-Ensure that `./test/lint.sh api` exits without errors.
+- Ensure that `./test/lint.sh api` exits without errors.
 
+### Commit Messages
+1. The subject line should be a phrase describing the commit, do not use punctuation.
+1. The subject line should be limited to 50 characters, capitalized, and not use punctuation.
+1. The subject line should use present tense / imperative mood  e.g. "Fix bug in foo.py", NOT "fixed" or "fixes".
+1. Following the subject is an optional detailed description, separated by a blank line.
+1. The description should be limited to 72 characters per line and use punctuation.
+1. The description should be broken into paragraphs limited to 4 sentences each.
+1. The description should state what you changed and why, less important is how.
+1. Following the description include a line containing "Resolves: #xxx, #yyy" for any issues fixed by the commit, separated by a blank line.
+1. Finally include a line containing "See also: #xxx, #yyy" for any other issues.
+1. These steps were adapted from [7 Rules of a Great Commit Message](http://chris.beams.io/posts/git-commit/#seven-rules).  Visit for more info.
 
 ## Adding an API Resource
 ### Design Resource
