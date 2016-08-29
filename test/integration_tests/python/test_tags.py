@@ -49,7 +49,7 @@ def test_tags(with_a_group_and_a_project, api_as_admin):
     # Add too long tag and verify
     payload = json.dumps({'value': too_long_tag})
     r = api_as_admin.post(tags_path, data=payload)
-    assert r.status_code == 400
+    assert r.status_code == 422
 
     # Attempt to update tag, returns 404
     payload = json.dumps({'value': new_tag})
