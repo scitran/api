@@ -1,4 +1,4 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref":"../definitions/user.json#"
+  "$ref":"../definitions/user-output.json#"
 }

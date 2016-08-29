@@ -22,7 +22,7 @@ hooks.skip("POST /upload/uid-match -> 402");
 // Should 422 for JSON not matching schema
 // After this is fixed, add "validates-json-body" trait
 // to all endpoints which validate a json body
-hooks.skip("POST /users -> 422");
+// hooks.skip("POST /users -> 422");
 
 // Should 404
 hooks.skip("GET /jobs/{JobId} -> 404");

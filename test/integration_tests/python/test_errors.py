@@ -18,7 +18,7 @@ def test_extra_param(api_as_admin):
     })
 
     r = api_as_admin.post('/projects', data=bad_payload)
-    assert r.status_code == 400
+    assert r.status_code == 422
 
     r = api_as_admin.get('/projects')
     assert r.ok

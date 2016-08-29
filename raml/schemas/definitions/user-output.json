@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref":"user.json#",
+  "additionalProperties":{
+    "created":{"type":"string"},
+    "modified":{"type":"string"}
+  },
+  "required":[
+     "_id", "firstname", "lastname",
+     "root", "email", "created", "modified"
+   ]
+}
