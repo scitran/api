@@ -17,7 +17,10 @@
                     "email": "admin@user.com",
                     "firstname": "Admin",
                     "lastname": "User",
-                    "root": true
+                    "root": true,
+                    "api_key":{
+                        "key":"XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK"
+                    }
             },
             {
                     "_id": "test@user.com",

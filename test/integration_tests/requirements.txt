@@ -1,0 +1,8 @@
+# Development packages
+coverage==4.0.3
+coveralls==1.1
+PasteScript==2.0.2
+pylint==1.5.3
+pytest==2.8.5
+pytest-cov==2.2.0
+pytest-watch==3.8.0

@@ -49,10 +49,8 @@ hooks.skip("POST /upload/uid-match -> 404");
 hooks.skip("POST /engine -> 200");
 
 hooks.beforeEach(function (test, done) {
-    test.request.query = {
-      user: 'admin@user.com',
-      root: 'true'
-    };
+    test.request.query.root = "true"
+    test.request.headers.Authorization = "scitran-user XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK";
     done();
 });
 

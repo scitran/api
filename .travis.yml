@@ -2,18 +2,12 @@
 # "This computer doesn't have VT-X/AMD-v enabled."
 sudo: required
 dist: trusty
+services:
+  - mongodb
 install:
-  - sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-  - sudo sh -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' > /etc/apt/sources.list.d/docker.list"
-  - sudo apt-get update -qq
-  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y -q docker-engine
-  - sudo curl -o /usr/local/bin/docker-compose -L https://github.com/docker/compose/releases/download/1.6.2/docker-compose-`uname -s`-`uname -m`
-  - sudo chmod +x /usr/local/bin/docker-compose
-before_script:
-  - sudo bin/install.sh --ci
+  - bin/install-ubuntu.sh
+  - test/bin/setup-integration-tests-ubuntu.sh
 script:
-  - bin/runtests.sh unit --ci
-  - bin/runtests.sh integration --ci
-  - ./test/lint.sh api
+  - SCITRAN_PERSISTENT_DB_PORT=27017 test/bin/run-tests-ubuntu.sh
 after_success:
   - coveralls

@@ -1,5 +1,7 @@
+import datetime
 import json
 import time
+
 import pytest
 
 
@@ -37,9 +39,19 @@ def create_role_payload(user, site, access):
     })
 
 
-def test_roles(api_as_admin, with_a_group_and_a_user, api_accessor):
+def test_roles(api_as_admin, with_a_group_and_a_user, api_accessor, db):
     data = with_a_group_and_a_user
-    api_as_other_user = api_accessor(data.user_id)
+    user_api_key = "4hOn5aBx/nUiI0blDbTUPpKQsEbEn74rH9z5KctlXw6GrMKdicPGXKQg"
+    api_key_doc = {
+        "key":user_api_key,
+        "created":datetime.datetime.utcnow()
+    }
+    update_result = db.users.update_one(
+        {"_id":data.user_id},
+        {"$set":{"api_key":api_key_doc}}
+        )
+    assert update_result.modified_count == 1
+    api_as_other_user = api_accessor(user_api_key)
 
     roles_path = '/groups/' + data.group_id + '/roles'
     local_user_roles_path = roles_path + '/local/' + data.user_id

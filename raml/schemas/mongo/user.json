@@ -32,7 +32,7 @@
                           "title": "Preferences",
                           "type": "object"
                         },
-    "api_keys":         {
+    "api_key":         {
                           "type": "object",
                           "properties": {
                               "key":            {"type": "string"},
