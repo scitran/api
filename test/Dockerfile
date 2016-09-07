@@ -18,11 +18,7 @@ RUN echo "deb https://deb.nodesource.com/node_5.x trusty main" | tee /etc/apt/so
 RUN echo "deb-src https://deb.nodesource.com/node_5.x trusty main" |  tee -a /etc/apt/sources.list.d/nodesource.list
 RUN apt-get update && apt-get -y install nodejs
 
-# Install abao: https://github.com/cybertk/abao
-# Using our fork of abao to expand jsonschema refs
-RUN npm install -g git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref
-
 # Install newman for running postman collection tests from CLI
-RUN npm install -g newman@3.0.1
+RUN npm install -g /usr/src/tests
 
 ENTRYPOINT ["py.test"]

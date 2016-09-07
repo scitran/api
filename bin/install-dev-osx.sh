@@ -87,9 +87,4 @@ fi
 # Install testing dependencies
 echo "Installing testing dependencies"
 pip install -r "test/integration_tests/requirements-integration-test.txt"
-if [ ! -f "$SCITRAN_RUNTIME_PATH/bin/abao" ]; then
-  npm install -g git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref
-fi
-if [ ! -f "$SCITRAN_RUNTIME_PATH/bin/newman" ]; then
-  npm install -g newman@3.0.1
-fi
+npm install -g test/integration_tests

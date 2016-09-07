@@ -1,0 +1,13 @@
+{
+  "name": "scitran-core-integration-tests",
+  "version": "1.0.0",
+  "description": "SciTran Core integation test node dependencies",
+  "dependencies": {
+    "newman":"3.1.0",
+    "abao":"git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref"
+  },
+  "bin":{
+    "abao":"node_modules/.bin/abao",
+    "newman":"node_modules/.bin/newman"
+  }
+}
