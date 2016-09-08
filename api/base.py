@@ -15,19 +15,17 @@ from .types import Origin
 from . import validators
 from .dao import APIConsistencyException, APIConflictException, APINotFoundException
 
-log = config.log
-
 class RequestHandler(webapp2.RequestHandler):
 
     json_schema = None
 
     def __init__(self, request=None, response=None): # pylint: disable=super-init-not-called
+        """Set uid, source_site, public_request, and superuser"""
         self.initialize(request, response)
         self.debug = config.get_item('core', 'insecure')
-
-        # set uid, source_site, public_request, and superuser
         self.uid = None
         self.source_site = None
+
         drone_request = False
 
         user_agent = self.request.headers.get('User-Agent', '')
@@ -101,6 +99,10 @@ class RequestHandler(webapp2.RequestHandler):
 
         self.set_origin(drone_request)
 
+    def initialize(self, request, response):
+        super(RequestHandler, self).initialize(request, response)
+        request.logger.info("Initialized request")
+
     def authenticate_user_api_key(self, key):
         """
         AuthN for user accounts via api key. Calls self.abort on failure.
@@ -129,10 +131,10 @@ class RequestHandler(webapp2.RequestHandler):
 
         if cached_token:
             uid = cached_token['uid']
-            log.debug('looked up cached token in %dms', ((datetime.datetime.utcnow() - timestamp).total_seconds() * 1000.))
+            self.request.logger.debug('looked up cached token in %dms', ((datetime.datetime.utcnow() - timestamp).total_seconds() * 1000.))
         else:
             uid = self.validate_oauth_token(access_token, timestamp)
-            log.debug('looked up remote token in %dms', ((datetime.datetime.utcnow() - timestamp).total_seconds() * 1000.))
+            self.request.logger.debug('looked up remote token in %dms', ((datetime.datetime.utcnow() - timestamp).total_seconds() * 1000.))
 
             # Cache the token for future requests
             config.db.authtokens.replace_one({'_id': access_token}, {'uid': uid, 'timestamp': timestamp}, upsert=True)
@@ -153,7 +155,7 @@ class RequestHandler(webapp2.RequestHandler):
             err_msg = 'Invalid OAuth2 token.'
             site_id = config.get_item('site', 'id')
             headers = {'WWW-Authenticate': 'Bearer realm="{}", error="invalid_token", error_description="{}"'.format(site_id, err_msg)}
-            log.warn('{} Request headers: {}'.format(err_msg, str(self.request.headers.items())))
+            self.request.logger.warning('{} Request headers: {}'.format(err_msg, str(self.request.headers.items())))
             self.abort(401, err_msg, headers=headers)
 
         identity = json.loads(r.content)
@@ -271,7 +273,7 @@ class RequestHandler(webapp2.RequestHandler):
             code = exception.code
         elif isinstance(exception, validators.InputValidationException):
             code = 400
-            log.warn(str(exception))
+            self.request.logger.warning(str(exception))
         elif isinstance(exception, APIConsistencyException):
             code = 400
         elif isinstance(exception, APINotFoundException):
@@ -285,7 +287,7 @@ class RequestHandler(webapp2.RequestHandler):
 
         if code == 500:
             tb = traceback.format_exc()
-            log.error(tb)
+            self.request.logger.error(tb)
 
         util.send_json_http_exception(self.response, str(exception), code)
 
@@ -295,7 +297,7 @@ class RequestHandler(webapp2.RequestHandler):
         site_id = config.get_item('site', 'id')
         target_site = self.get_param('site', site_id)
         if target_site == site_id:
-            log.debug('from %s %s %s %s %s', self.source_site, self.uid, self.request.method, self.request.path, str(self.request.GET.mixed()))
+            self.request.logger.debug('from %s %s %s %s %s', self.source_site, self.uid, self.request.method, self.request.path, str(self.request.GET.mixed()))
             return super(RequestHandler, self).dispatch()
         else:
             if not site_id:
@@ -317,7 +319,7 @@ class RequestHandler(webapp2.RequestHandler):
             params = self.request.GET.mixed()
             if 'user' in params: del params['user']
             del params['site']
-            log.debug(' for %s %s %s %s %s', target_site, self.uid, self.request.method, self.request.path, str(self.request.GET.mixed()))
+            self.request.logger.debug(' for %s %s %s %s %s', target_site, self.uid, self.request.method, self.request.path, str(self.request.GET.mixed()))
             target_uri = target['api_uri'] + self.request.path.split('/api')[1]
             r = requests.request(
                     self.request.method,
@@ -342,5 +344,5 @@ class RequestHandler(webapp2.RequestHandler):
                 'validator': detail.validator,
                 'validator_value': detail.validator_value,
             }
-        log.warning(str(self.uid) + ' ' + str(code) + ' ' + str(detail))
+        self.request.logger.warning(str(self.uid) + ' ' + str(code) + ' ' + str(detail))
         webapp2.abort(code, detail=detail, **kwargs)

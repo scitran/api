@@ -10,8 +10,6 @@ from . import util
 from . import config
 from . import tempdir as tempfile
 
-log = config.log
-
 DEFAULT_HASH_ALG='sha384'
 
 def move_file(path, target_path):

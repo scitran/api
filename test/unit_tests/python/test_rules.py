@@ -1,5 +1,6 @@
-
+import mock
 import pytest
+
 from api.jobs import rules
 
 # Statefully holds onto some construction args and can return tuples to unroll for calling rules.eval_match.
@@ -22,13 +23,16 @@ class rulePart:
             container   if container   else self.container,
         )
 
-# DISCUSS: this basically asserts that the log helper doesn't throw, which is of non-zero but questionable value.
-# Could instead be marked for pytest et. al to ignore coverage? Desirability? Compatibility?
-def test_log_file_key_error():
+@mock.patch("api.jobs.rules.get_current_request")
+def test_log_file_key_error(mock_get_current_request):
+    fake_request = mock.MagicMock()
+    mock_get_current_request.return_value = fake_request
     rules._log_file_key_error({'name': 'wat'}, {'_id': 0}, 'example')
+    fake_request.logger.warning.assert_called_once_with("file wat in container 0 example")
 
 
-def test_eval_match_file_type():
+@mock.patch("api.jobs.rules.get_current_request")
+def test_eval_match_file_type(mock_get_current_request):
     part = rulePart(match_type='file.type', match_param='dicom')
 
     args = part.gen(file_={'type': 'dicom' })
@@ -66,7 +70,8 @@ def test_eval_match_file_name_match_relative():
     result = rules.eval_match(*args)
     assert result == False
 
-def test_eval_match_file_measurements():
+@mock.patch("api.jobs.rules.get_current_request")
+def test_eval_match_file_measurements(mock_get_current_request):
     part = rulePart(match_type='file.measurements', file_={'measurements': ['a', 'diffusion', 'b'] })
 
     args = part.gen(match_param='diffusion')

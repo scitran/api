@@ -5,11 +5,8 @@ Purpose of this module is to define all the permissions checker decorators for t
 
 import sys
 
-from .. import config
 from . import _get_access, INTEGER_ROLES
-
-log = config.log
-
+from ..request import get_current_request
 
 def default_sublist(handler, container):
     """
@@ -75,7 +72,8 @@ def permissions_sublist(handler, container):
     access = _get_access(handler.uid, handler.user_site, container)
     def g(exec_op):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
-            log.debug(query_params)
+            request = get_current_request()
+            request.logger.debug(query_params)
             if method in ['GET', 'DELETE']  and query_params.get('_id') == handler.uid and query_params.get('site') == handler.user_site:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             elif access >= INTEGER_ROLES['admin']:

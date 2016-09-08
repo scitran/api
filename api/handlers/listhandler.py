@@ -21,9 +21,6 @@ from ..dao import APIStorageException
 from ..dao import hierarchy
 from ..dao.containerutil import create_filereference_from_dictionary, create_containerreference_from_dictionary, create_containerreference_from_filereference
 
-
-log = config.log
-
 def initialize_list_configurations():
     """
     This configurations are used by the ListHandler class to load the storage, the permissions checker

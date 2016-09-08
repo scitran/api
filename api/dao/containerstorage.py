@@ -4,12 +4,10 @@ import pymongo.errors
 
 from .. import util
 from .. import config
+from ..request import get_current_request
 from . import consistencychecker
 from . import APIStorageException, APIConflictException
 from . import hierarchy
-
-log = config.log
-
 
 class ContainerStorage(object):
     """
@@ -50,7 +48,8 @@ class ContainerStorage(object):
         raise ValueError('action should be one of GET, POST, PUT, DELETE')
 
     def _create_el(self, payload):
-        log.debug(payload)
+        request = get_current_request()
+        request.logger.debug(payload)
         try:
             result = self.dbc.insert_one(payload)
         except pymongo.errors.DuplicateKeyError:
@@ -103,8 +102,9 @@ class ContainerStorage(object):
                 query['$and'] = [{'permissions': {'$elemMatch': user}}, {'permissions': query.pop('permissions')}]
             else:
                 query['permissions'] = {'$elemMatch': user}
-        log.debug(query)
-        log.debug(projection)
+        request = get_current_request()
+        request.logger.debug(query)
+        request.logger.debug(projection)
         result = self.dbc.find(query, projection)
         return list(result)
 
@@ -112,7 +112,8 @@ class ContainerStorage(object):
 class GroupStorage(ContainerStorage):
 
     def _create_el(self, payload):
-        log.debug(payload)
+        request = get_current_request()
+        request.logger.debug(payload)
         roles = payload.pop('roles')
         return self.dbc.update_one(
             {'_id': payload['_id']},
@@ -121,4 +122,3 @@ class GroupStorage(ContainerStorage):
                 '$setOnInsert': {'roles': roles}
             },
             upsert=True)
-

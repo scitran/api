@@ -4,8 +4,6 @@ import json
 from .. import base
 from .. import config
 
-log = config.log
-
 class SchemaHandler(base.RequestHandler):
 
     def __init__(self, request=None, response=None):

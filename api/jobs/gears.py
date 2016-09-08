@@ -3,9 +3,8 @@ Gears
 """
 
 from .. import config
+from ..request import get_current_request
 from .jobs import Job
-
-log = config.log
 
 # For now, gears are in a singleton, prefixed by a key
 SINGLETON_KEY = 'gear_list'
@@ -56,7 +55,8 @@ def insert_gear(doc):
     )
 
     if config.get_item('queue', 'prefetch'):
-        log.info('Queuing prefetch job for gear ' + doc['name'])
+        request = get_current_request()
+        request.logger.info('Queuing prefetch job for gear ' + doc['name'])
 
         job = Job(doc['name'], {}, destination={}, tags=['prefetch'], request={
             'inputs': [

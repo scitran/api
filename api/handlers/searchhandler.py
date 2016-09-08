@@ -6,8 +6,6 @@ from .. import config
 from .. import util
 from ..search import pathparser, queryprocessor, es_query
 
-log = config.log
-
 parent_container_dict = {
     'acquisitions': 'sessions',
     'sessions': 'projects',

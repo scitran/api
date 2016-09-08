@@ -2,14 +2,10 @@ import datetime
 
 from .. import base
 from .. import util
-from .. import config
 from .. import debuginfo
 from .. import validators
 from ..auth import groupauth
 from ..dao import containerstorage
-
-log = config.log
-
 
 class GroupHandler(base.RequestHandler):
 

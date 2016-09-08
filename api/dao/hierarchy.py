@@ -10,8 +10,7 @@ from .. import files
 from .. import util
 from .. import config
 from . import APIStorageException, APINotFoundException, containerutil
-
-log = config.log
+from ..request import get_current_request
 
 PROJECTION_FIELDS = ['group', 'name', 'label', 'timestamp', 'permissions', 'public']
 
@@ -280,13 +279,13 @@ def find_existing_hierarchy(metadata):
     project = metadata.get('project', {})
     session = metadata.get('session', {})
     acquisition = metadata.get('acquisition', {})
-
+    request = get_current_request()
     # Fail if some fields are missing
     try:
         acquisition_uid = acquisition['uid']
         session_uid = session['uid']
     except Exception as e:
-        log.error(metadata)
+        request.logger.error(metadata)
         raise APIStorageException(str(e))
 
     # Confirm session and acquisition exist
@@ -320,7 +319,8 @@ def upsert_bottom_up_hierarchy(metadata):
         _ = acquisition['uid']
         session_uid = session['uid']
     except Exception as e:
-        log.error(metadata)
+        request = get_current_request()
+        request.logger.error(metadata)
         raise APIStorageException(str(e))
 
     session_obj = config.db.sessions.find_one({'uid': session_uid}, ['project'])
@@ -411,12 +411,13 @@ def _update_container_nulls(base_query, update, container_type):
         bulk.find(base_query).update_one({'$set': {'metadata': m_update}})
 
     update_dict = util.mongo_dict(update)
+    request = get_current_request()
     for k,v in update_dict.items():
         q = {}
         q.update(base_query)
         q['$or'] = [{k: {'$exists': False}}, {k: None}]
         u = {'$set': {k: v}}
-        log.debug('the query is {} and the update is {}'.format(q,u))
+        request.logger.debug('the query is {} and the update is {}'.format(q,u))
         bulk.find(q).update_one(u)
     bulk.execute()
     return config.db[coll_name].find_one(base_query)

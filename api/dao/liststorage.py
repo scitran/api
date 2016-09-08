@@ -5,9 +5,7 @@ from .. import config
 from . import consistencychecker, containerutil
 from . import APIStorageException, APIConflictException
 from ..jobs.jobs import Job
-
-log = config.log
-
+from ..request import get_current_request
 
 class ListStorage(object):
     """
@@ -40,7 +38,8 @@ class ListStorage(object):
                 '$elemMatch': query_params
             }
             projection = {self.list_name + '.$': 1, 'permissions': 1, 'public': 1}
-        log.debug('query {}'.format(query))
+        request = get_current_request()
+        request.logger.debug('query {}'.format(query))
         return self.dbc.find_one(query, projection)
 
     def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None):
@@ -66,21 +65,23 @@ class ListStorage(object):
         raise ValueError('action should be one of GET, POST, PUT, DELETE')
 
     def _create_el(self, _id, payload, exclude_params):
-        log.debug('payload {}'.format(payload))
+        request = get_current_request()
+        request.logger.debug('payload {}'.format(payload))
         query = {'_id': _id}
         if exclude_params:
             query[self.list_name] = {'$not': {'$elemMatch': exclude_params} }
         update = {'$push': {self.list_name: payload} }
-        log.debug('query {}'.format(query))
-        log.debug('update {}'.format(update))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('update {}'.format(update))
         result = self.dbc.update_one(query, update)
         if result.matched_count < 1:
             raise APIConflictException('Item already exists in list.')
         return result
 
     def _update_el(self, _id, query_params, payload, exclude_params):
-        log.debug('query_params {}'.format(query_params))
-        log.debug('payload {}'.format(payload))
+        request = get_current_request()
+        request.logger.debug('query_params {}'.format(query_params))
+        request.logger.debug('payload {}'.format(payload))
         mod_elem = {}
         for k,v in payload.items():
             mod_elem[self.list_name + '.$.' + k] = v
@@ -95,24 +96,26 @@ class ListStorage(object):
         update = {
             '$set': mod_elem
         }
-        log.debug('query {}'.format(query))
-        log.debug('update {}'.format(update))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('update {}'.format(update))
         return self.dbc.update_one(query, update)
 
     def _delete_el(self, _id, query_params):
-        log.debug('query_params {}'.format(query_params))
+        request = get_current_request()
+        request.logger.debug('query_params {}'.format(query_params))
         query = {'_id': _id}
         update = {'$pull': {self.list_name: query_params} }
-        log.debug('query {}'.format(query))
-        log.debug('update {}'.format(update))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('update {}'.format(update))
         return self.dbc.update_one(query, update)
 
     def _get_el(self, _id, query_params):
-        log.debug('query_params {}'.format(query_params))
+        request = get_current_request()
+        request.logger.debug('query_params {}'.format(query_params))
         query = {'_id': _id, self.list_name: {'$elemMatch': query_params}}
         projection = {self.list_name + '.$': 1}
-        log.debug('query {}'.format(query))
-        log.debug('projection {}'.format(projection))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('projection {}'.format(projection))
         result = self.dbc.find_one(query, projection)
         if result and result.get(self.list_name):
             return result.get(self.list_name)[0]
@@ -149,19 +152,21 @@ class StringListStorage(ListStorage):
         return super(StringListStorage, self).exec_op(action, _id, query_params, payload, exclude_params)
 
     def _create_el(self, _id, payload, exclude_params):
-        log.debug('payload {}'.format(payload))
+        request = get_current_request()
+        request.logger.debug('payload {}'.format(payload))
         query = {'_id': _id, self.list_name: {'$ne': payload}}
         update = {'$push': {self.list_name: payload}}
-        log.debug('query {}'.format(query))
-        log.debug('update {}'.format(update))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('update {}'.format(update))
         result = self.dbc.update_one(query, update)
         if result.matched_count < 1:
             raise APIConflictException('Item already exists in list.')
         return result
 
     def _update_el(self, _id, query_params, payload, exclude_params):
-        log.debug('query_params {}'.format(payload))
-        log.debug('payload {}'.format(query_params))
+        request = get_current_request()
+        request.logger.debug('query_params {}'.format(payload))
+        request.logger.debug('payload {}'.format(query_params))
         query = {
             '_id': _id,
             '$and':[
@@ -170,16 +175,17 @@ class StringListStorage(ListStorage):
             ]
         }
         update = {'$set': {self.list_name + '.$': payload}}
-        log.debug('query {}'.format(query))
-        log.debug('update {}'.format(update))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('update {}'.format(update))
         return self.dbc.update_one(query, update)
 
     def _get_el(self, _id, query_params):
-        log.debug('query_params {}'.format(query_params))
+        request = get_current_request()
+        request.logger.debug('query_params {}'.format(query_params))
         query = {'_id': _id, self.list_name: query_params}
         projection = {self.list_name + '.$': 1}
-        log.debug('query {}'.format(query))
-        log.debug('projection {}'.format(projection))
+        request.logger.debug('query {}'.format(query))
+        request.logger.debug('projection {}'.format(projection))
         result = self.dbc.find_one(query, projection)
         if result and result.get(self.list_name):
             return result.get(self.list_name)[0]

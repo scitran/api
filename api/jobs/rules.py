@@ -2,12 +2,10 @@ import fnmatch
 
 from .. import config
 from ..dao.containerutil import FileReference
+from ..request import get_current_request
 
 from . import gears
 from .jobs import Job
-
-log = config.log
-
 
 #
 # {
@@ -45,7 +43,8 @@ def get_base_rules():
     return rule_doc.get('rule_list', [])
 
 def _log_file_key_error(file_, container, error):
-    log.warning('file ' + file_.get('name', '?') + ' in container ' + str(container.get('_id', '?')) + ' ' + error)
+    request = get_current_request()
+    request.logger.warning('file ' + file_.get('name', '?') + ' in container ' + str(container.get('_id', '?')) + ' ' + error)
 
 def eval_match(match_type, match_param, file_, container):
     """

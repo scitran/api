@@ -17,8 +17,6 @@ from .dao import containerutil, hierarchy
 from .jobs import rules
 from .types import Origin
 
-log = config.log
-
 class Placer(object):
     """
     Interface for a placer, which knows how to process files and place them where they belong - on disk and database.
@@ -583,4 +581,3 @@ class AnalysisJobPlacer(Placer):
                 # If the original job failed, update the analysis with the job that succeeded
                 u['$set'] = {'job': self.context['job_id']}
             config.db.sessions.update_one(q, u)
-

@@ -21,6 +21,7 @@ from .handlers import collectionshandler
 from .handlers import searchhandler
 from .handlers import schemahandler
 from .handlers import reporthandler
+from .request import SciTranRequest, set_current_request
 
 log = config.log
 
@@ -190,6 +191,7 @@ routes = [
 
 
 def dispatcher(router, request, response):
+    set_current_request(request)
     try:
         rv = router.default_dispatcher(request, response)
         if rv is not None:
@@ -198,11 +200,14 @@ def dispatcher(router, request, response):
     except webapp2.HTTPException as e:
         util.send_json_http_exception(response, str(e), e.code)
     except Exception as e: # pylint: disable=broad-except
+        request.logger.error("Error dispatching request", exc_info=True)
         if config.get_item('core', 'debug'):
             message = traceback.format_exc()
         else:
             message = 'Internal Server Error'
         util.send_json_http_exception(response, message, 500)
+    finally:
+        set_current_request(None)
 
 def app_factory(*_, **__):
     # pylint: disable=protected-access,unused-argument
@@ -210,6 +215,7 @@ def app_factory(*_, **__):
     # don't use config.get_item() as we don't want to require the database at startup
     application = webapp2.WSGIApplication(routes, debug=config.__config['core']['debug'])
     application.router.set_dispatcher(dispatcher)
+    application.request_class = SciTranRequest
 
     # configure new relic
     if config.__config['core']['newrelic']:
