@@ -19,6 +19,6 @@ sudo apt-get install -y \
     libpcre3-dev \
     git
 
-pip install -U pip
+curl https://bootstrap.pypa.io/get-pip.py | sudo python2
 
 pip install -r requirements.txt

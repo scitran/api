@@ -7,6 +7,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )/../.."
 IMAGE_NAME_SCITRAN_CORE=${IMAGE_NAME_SCITRAN_CORE:-"scitran-core"}
 IMAGE_NAME_MONGO=mongo
 CONTAINER_NAME_MONGO=scitran-core-test-mongo
+CONTAINER_NAME_SCITRAN_CORE=${CONTAINER_NAME_SCITRAN_CORE:-"scitran-core-test-uwsgi"}
 
 
 USAGE="
@@ -15,9 +16,11 @@ USAGE="
     Usage:\n
     \n
     --help: print help and exit\n
-    -r, --rebuild-image: Rebuild scitran-core base image\n
+    -b, --build-image: Rebuild scitran-core base image\n
 
 "
+
+SCITRAN_RUN_LINT="true"
 
 while [ "$#" -gt 0 ]; do
     key="$1"
@@ -26,8 +29,11 @@ while [ "$#" -gt 0 ]; do
         echo $USAGE >&2
         exit 1
         ;;
-        -r|--rebuild-image)
+        -b|--build-image)
         docker build -t "$IMAGE_NAME_SCITRAN_CORE" .
+        ;;
+        -L|--no-lint)
+        SCITRAN_RUN_LINT="false"
         ;;
         *)
         echo "Invalid option: $key" >&2
@@ -40,8 +46,11 @@ done
 
 
 clean_up () {
-  # Stop and remove mongo container
+  # Copy coverage file to host for possible further reporting
+  docker cp "$CONTAINER_NAME_SCITRAN_CORE":/var/scitran/code/api/.coverage .coverage || true
+  # Stop and remove containers
   docker rm -v -f "$CONTAINER_NAME_MONGO"
+  docker rm -v -f "$CONTAINER_NAME_SCITRAN_CORE"
 }
 trap clean_up EXIT
 
@@ -53,14 +62,12 @@ docker run --name "$CONTAINER_NAME_MONGO" -d "$IMAGE_NAME_MONGO"
 
 # Execute tests
 docker run \
-  --rm \
-  --name scitran-core-test-uwsgi \
+  --name "$CONTAINER_NAME_SCITRAN_CORE"\
   -e "SCITRAN_PERSISTENT_DB_URI=mongodb://$CONTAINER_NAME_MONGO:27017/scitran" \
+  -e "SCITRAN_RUN_LINT=$SCITRAN_RUN_LINT" \
   --link "$CONTAINER_NAME_MONGO" \
   -v $(pwd):/var/scitran/code/api \
   --entrypoint bash \
   "$IMAGE_NAME_SCITRAN_CORE" \
-    /var/scitran/code/api/test/bin/setup-integration-tests-ubuntu.sh && \
     /var/scitran/code/api/test/bin/run-tests-ubuntu.sh
-
 )

@@ -13,4 +13,4 @@ strict-rfc3339==0.7
 uwsgi==2.0.13.1
 webapp2==2.5.2
 WebOb==1.5.1
--e git://github.com/flywheel-io/gears.git@master#egg=gear_tools
+git+https://github.com/flywheel-io/gears.git@master#egg=gear_tools

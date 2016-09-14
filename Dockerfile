@@ -6,7 +6,7 @@
 
 FROM ubuntu:14.04
 
-
+# Install docker-specific pre-requisites
 RUN apt-get update \
 	&& apt-get install -y \
 		build-essential \
@@ -48,6 +48,9 @@ VOLUME /var/scitran/logs
 COPY . /var/scitran/code/api/
 
 RUN bash -e -x /var/scitran/code/api/bin/install-ubuntu.sh
+
+# Test setup goes in prod image so what we test and what we deploy are the same
+RUN bash -e -x /var/scitran/code/api/test/bin/setup-integration-tests-ubuntu.sh
 
 COPY docker/uwsgi-entrypoint.sh /var/scitran/
 COPY docker/uwsgi-config.ini /var/scitran/config/

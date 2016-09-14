@@ -125,7 +125,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;"
 					}
 				}
 			],
@@ -154,7 +154,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;"
 					}
 				}
 			],
@@ -183,7 +183,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-project-id\", jsonData._id);"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-project-id\", jsonData._id);"
 					}
 				}
 			],
@@ -212,7 +212,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-session-id\", jsonData._id);"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-session-id\", jsonData._id);"
 					}
 				}
 			],
@@ -241,7 +241,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-acquisition-id\", jsonData._id);"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-acquisition-id\", jsonData._id);"
 					}
 				}
 			],
@@ -270,7 +270,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\ntests[\"Upload complte\"] = jsonData[0].name === \"test-1.dcm\";"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;\n\nvar jsonData = JSON.parse(responseBody);\ntests[\"Upload complte\"] = jsonData[0].name === \"test-1.dcm\";"
 					}
 				}
 			],
@@ -313,7 +313,7 @@
 					"listen": "test",
 					"script": {
 						"type": "text/javascript",
-						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 400ms\"] = responseTime < 400;"
 					}
 				}
 			],
