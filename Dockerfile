@@ -6,24 +6,11 @@
 
 FROM ubuntu:14.04
 
-
-# Install pre-requisites
+# Install docker-specific pre-requisites
 RUN apt-get update \
 	&& apt-get install -y \
 		build-essential \
-		ca-certificates curl \
-		libatlas3-base \
-		numactl \
-		python-dev \
-		python-pip \
-		libffi-dev \
-		libssl-dev \
-		libpcre3 \
-		libpcre3-dev \
-		git \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& pip install -U pip
-
+		ca-certificates curl
 
 # Install gosu for docker-friendly stepdown from root
 RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4
@@ -56,29 +43,18 @@ VOLUME /var/scitran/keys
 VOLUME /var/scitran/data
 VOLUME /var/scitran/logs
 
-
-# Install pip modules
-#
-# Split this out for better cache re-use.
-#
-COPY requirements.txt docker/requirements-docker.txt /var/scitran/code/api/
-
-RUN pip install --upgrade pip wheel setuptools \
-  && pip install -r /var/scitran/code/api/requirements-docker.txt \
-  && pip install -r /var/scitran/code/api/requirements.txt
-
-COPY test /var/scitran/code/api/test/
-RUN bash -e -x /var/scitran/code/api/test/bin/setup-integration-tests-ubuntu.sh
-
-
 # Copy full repo
 #
 COPY . /var/scitran/code/api/
 
+RUN bash -e -x /var/scitran/code/api/bin/install-ubuntu.sh
+
+# Test setup goes in prod image so what we test and what we deploy are the same
+RUN bash -e -x /var/scitran/code/api/test/bin/setup-integration-tests-ubuntu.sh
+
 COPY docker/uwsgi-entrypoint.sh /var/scitran/
 COPY docker/uwsgi-config.ini /var/scitran/config/
 COPY docker/newrelic.ini /var/scitran/config/
-
 
 
 # Inject build information into image so the source of the container can be

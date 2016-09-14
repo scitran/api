@@ -1,21 +1,10 @@
 ## Run the tests
-### OSX
 ```
-./test/bin/run-tests-osx.sh
-```
-
-### Ubuntu
-```
-# Follow installation instructions in README first
-. /runtime/bin/activate # Or wherever your scitran virtualenv is
-./test/bin/setup-integration-tests-ubuntu.sh
-./test/bin/run-tests-ubuntu.sh
+./test/bin/run-tests-docker.sh -b
 ```
 
-### Docker
-```
-./test/bin/run-tests-docker.sh
-```
+On subsequent test runs the -b flag can be dropped to re-use the existing image,
+substantially reducing test runtime
 
 ### Tools
 - [abao](https://github.com/cybertk/abao/)

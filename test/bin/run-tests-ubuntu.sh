@@ -4,7 +4,21 @@ set -e
 unset CDPATH
 cd "$( dirname "${BASH_SOURCE[0]}" )/../.."
 
-./test/bin/lint.sh api
+USAGE="
+    Run scitran-core tests using docker
+\n
+    Usage:\n
+    \n
+    --help: print help and exit\n
+    -L, --no-lint: Disable linter\n
+
+"
+
+SCITRAN_RUN_LINT=${SCITRAN_RUN_LINT:-"true"}
+
+if [ "$SCITRAN_RUN_LINT" == "true" ]; then
+    ./test/bin/lint.sh api
+fi
 
 ./test/bin/run-unit-tests.sh
 

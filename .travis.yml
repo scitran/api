@@ -1,15 +1,13 @@
 sudo: required
 dist: trusty
 
-services:
-  - mongodb
-
 install:
-  - bin/install-ubuntu.sh
-  - test/bin/setup-integration-tests-ubuntu.sh
+  - test/bin/install-docker-travis.sh
+  - pip install -U coveralls
 
 script:
-  - SCITRAN_PERSISTENT_DB_PORT=27017 test/bin/run-tests-ubuntu.sh
+  - test/bin/run-tests-docker.sh -b
 
 after_success:
+  - sed -i "s|/var/scitran/code/api|`pwd`|g" .coverage # hack to make line coverage work for coverage.py
   - coveralls

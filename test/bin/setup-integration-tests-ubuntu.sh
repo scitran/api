@@ -12,7 +12,6 @@ curl https://nodejs.org/dist/v6.4.0/node-v6.4.0-linux-x64.tar.gz | tar xz -C "$n
 if [ -z "$VIRTUAL_ENV" ]; then
     sudo mv $node_source_dir/node-v6.4.0-linux-x64/bin/* /usr/local/bin
     sudo mv $node_source_dir/node-v6.4.0-linux-x64/lib/* /usr/local/lib
-    sudo npm install -g git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref
     sudo npm install -g test/integration_tests
 else
     mv $node_source_dir/node-v6.4.0-linux-x64/bin/* "$VIRTUAL_ENV/bin"
