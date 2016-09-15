@@ -5,19 +5,17 @@ set -eu
 unset CDPATH
 cd "$( dirname "${BASH_SOURCE[0]}" )/../.."
 
+echo "Checking for files with DOS encoding:"
+! git ls-files | xargs file | grep -I "with CRLF line terminators"
+
+echo "Checking for files with windows-style newlines:"
+! git ls-files | xargs grep -I $'\r'
+
 echo "Running pylint ..."
 # TODO: Enable Refactor and Convention reports
-pylint --reports=no --disable=C,R "$@"
-
-echo "Checking for files with DOS encoding:"
-! find * -path "runtime" -prune -o -path "persistent" -prune -o \
-  -type f -exec file {} \; | grep -I "with CRLF line terminators"
-
-echo "Checking for files with windows style newline:"
-! find * -path "runtime" -prune -o -path "persistent" -prune -o -type f \
-  -exec grep -rI $'\r' {} \+
+pylint --reports=no --disable=C,R api
 
 #echo
 #
 #echo "Running pep8 ..."
-#pep8 --max-line-length=150 --ignore=E402 "$@"
+#pep8 --max-line-length=150 --ignore=E402 api
