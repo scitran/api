@@ -4,7 +4,11 @@ set -e
 unset CDPATH
 cd "$( dirname "${BASH_SOURCE[0]}" )/../.."
 
-./test/bin/lint.sh api
+SCITRAN_RUN_LINT=${SCITRAN_RUN_LINT:-"true"}
+
+if [ "$SCITRAN_RUN_LINT" == "true" ]; then
+    ./test/bin/lint.sh api
+fi
 
 ./test/bin/run-unit-tests.sh
 

@@ -14,8 +14,11 @@
 
 ### Docker
 ```
-./test/bin/run-tests-docker.sh
+./test/bin/run-tests-docker.sh -b
 ```
+
+On subsequent test runs the -b flag can be dropped to re-use the existing image,
+substantially reducing test runtime
 
 ### Tools
 - [abao](https://github.com/cybertk/abao/)
