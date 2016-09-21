@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Collection",
+    "type": "object",
+    "properties": {
+        "public": {"$ref": "../definitions/container.json#/definitions/public"},
+        "label": {"$ref": "../definitions/container.json#/definitions/label"},
+        "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},
+        "curator": {"$ref": "../definitions/collection.json#/definitions/curator"},
+        "contents":{
+            "type":"object",
+            "properties":{
+                "operation":{"type":"string"},
+                "nodes":{
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "properties":{
+                            "level":{"type":"string"},
+                            "_id":{"$ref":"../definitions/objectid.json"}
+                        },
+                        "additionalProperties":false
+                    }
+                }
+            },
+            "additionalProperties":false
+        }
+    },
+    "additionalProperties": false
+}

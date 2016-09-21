@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "test",
-		"_postman_id": "76371a5e-113e-8773-bb5a-1fb6e3d7ec08",
+		"_postman_id": "df49d605-a6e0-9d94-4aab-fca3f5874be0",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -298,7 +298,7 @@
 							"src": "test/integration_tests/postman/test_files/test-1.dcm",
 							"type": "file",
 							"enabled": true,
-							"value": "test-1.dcm"
+							"value": ""
 						}
 					]
 				},
@@ -330,6 +330,93 @@
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"gear\": \"dcm_convert\",\n    \"inputs\": {\n        \"dicom\": {\n            \"type\": \"acquisition\",\n            \"id\": \"{{test-acquisition-id}}\",\n            \"name\" : \"1_1_dicom.zip\"\n        }\n    },\n    \"destination\": {\n        \"type\": \"acquisition\",\n        \"id\": \"{{test-acquisition-id}}\"\n    },\n    \"tags\": [\n        \"ad-hoc\"\n    ]\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-collection-id\", jsonData._id);"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-1\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Add test-session-1 to test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections/{{test-collection-id}}",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contents\":{\n    \t\"operation\":\"add\",\n    \t\"nodes\":[\n    \t\t{\n    \t\t\t\"level\":\"session\",\n    \t\t\t\"_id\":\"{{test-session-id}}\"\n    \t\t}\n    \t]\n    }\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create test-collection-2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-2\"\n}"
 				},
 				"description": ""
 			},

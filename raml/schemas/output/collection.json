@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "_id":{"$ref":"../definitions/objectid.json#"},
+        "public": {"$ref": "../definitions/container.json#/definitions/public"},
+        "label": {"$ref": "../definitions/container.json#/definitions/label"},
+        "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},
+        "curator": {"$ref": "../definitions/collection.json#/definitions/curator"},
+        "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+        "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+        "permissions":{
+            "type":"array",
+            "items":{"$ref":"../definitions/permission.json#"}
+        }
+    },
+    "required": ["_id", "label", "created", "modified", "permissions"],
+    "additionalProperties": false
+}

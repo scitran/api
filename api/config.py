@@ -119,7 +119,9 @@ expected_mongo_schemas = set([
 expected_input_schemas = set([
     'acquisition.json',
     'analysis.json',
+    'avatars.json',
     'collection.json',
+    'collection-update.json',
     'container.json',
     'file.json',
     'group-new.json',
@@ -132,7 +134,6 @@ expected_input_schemas = set([
     'subject.json',
     'user-new.json',
     'user-update.json',
-    'avatars.json',
     'download.json',
     'tag.json',
     'enginemetadata.json',
