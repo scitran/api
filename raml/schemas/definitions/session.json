@@ -1,0 +1,10 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions":{
+        "project":      {"type": "string"},
+        "uid":          {"type": "string"},
+        "timestamp":    {"type": ["string", "null"], "format": "date-time"},
+        "timezone":     {"type": "string"},
+        "subject":      {"$ref": "../input/subject.json#"}
+    }
+}
