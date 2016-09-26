@@ -78,9 +78,13 @@ fi
 
 # Install Node.js
 if [ ! -f "$SCITRAN_RUNTIME_PATH/bin/node" ]; then
-    echo "Installing Node.js"
+    echo "Installing nodejs"
     NODE_URL="https://nodejs.org/dist/v6.4.0/node-v6.4.0-darwin-x64.tar.gz"
-    curl $NODE_URL | tar xz -C $VIRTUAL_ENV --strip-components 1
+    node_source_dir=`mktemp -d`
+    curl "$NODE_URL" | tar xz -C "$node_source_dir"
+    mv $node_source_dir/node-v6.4.0-darwin-x64/bin/* "$SCITRAN_RUNTIME_PATH/bin"
+    mv $node_source_dir/node-v6.4.0-darwin-x64/lib/* "$SCITRAN_RUNTIME_PATH/lib"
+    rm -rf "$node_source_dir"
 fi
 
 
