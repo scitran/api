@@ -199,7 +199,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\"\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
+					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\",\n      \"files\":[\n      \t{\"name\":\"test-file\"}\n      ]\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
 				},
 				"description": ""
 			},
