@@ -26,4 +26,19 @@ post:
       application/json:
         example: !include ../examples/input/session.json
         schema: !include ../schemas/input/session.json
-    
+  /jobs:
+    get:
+      description: Return any jobs that use inputs from this session
+      queryParameters:
+        states:
+          type: string
+          description: filter results by job state
+        tags:
+          type: string
+          description: filter results by job tags
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include ../examples/output/session-jobs.json
+              schema: !include ../schemas/output/session-jobs.json

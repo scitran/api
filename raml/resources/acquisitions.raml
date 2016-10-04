@@ -1,0 +1,28 @@
+type: container
+get:
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/output/acquisition-list.json
+          schema: !include ../schemas/output/acquisition-list.json
+post:
+  description: Create a acquisition
+  body:
+    application/json:
+      example: !include ../examples/input/acquisition.json
+      schema: !include ../schemas/input/acquisition.json
+/{AcquisitionId}:
+  type: container-item
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/acquisition.json
+            schema: !include ../schemas/output/acquisition.json
+  put:
+    body:
+      application/json:
+        example: !include ../examples/input/acquisition-update.json
+        schema: !include ../schemas/input/acquisition-update.json

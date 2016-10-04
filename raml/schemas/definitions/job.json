@@ -84,9 +84,12 @@
           "items":{
             "type":"object",
             "properties":{
-              "uri":{"type":"string"}
+              "type":{"enum":["http", "scitran"]},
+              "uri":{"type":"string"},
+              "location":{"type":"string"},
+              "vu":{"type":"string"}
             },
-            "required":["uri"]
+            "required":["type", "uri", "location"]
           }
         }
       }

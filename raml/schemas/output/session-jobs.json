@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "patternProperties": {
+    "^[a-fA-F0-9]{24}$":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "properties":{
+          "id":{"$ref":"../definitions/job.json#/definitions/id"},
+          "name":{"$ref":"../definitions/job.json#/definitions/name"},
+          "inputs":{"$ref":"../definitions/job.json#/definitions/inputs-object"},
+          "destination":{"$ref":"../definitions/job.json#/definitions/destination"},
+          "tags":{"$ref":"../definitions/job.json#/definitions/tags"},
+          "state":{"$ref":"../definitions/job.json#/definitions/state"},
+          "attempt":{"$ref":"../definitions/job.json#/definitions/attempt"},
+          "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+          "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+          "config":{"$ref":"../definitions/job.json#/definitions/config"},
+          "request":{"$ref":"../definitions/job.json#/definitions/request"}
+        },
+        "additionalProperties":false,
+        "required":[
+           "id", "name", "inputs", "config",
+           "destination", "tags", "state", "attempt"
+        ]
+      }
+    }
+  },
+  "additionalProperties":false
+}
