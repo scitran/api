@@ -1,27 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
-  "properties": {
-    "_id": {
-      "type": "string"
-    },
-    "name": {
-      "type": "string"
-    },
-    "inputs": {
+  "definitions": {
+    "_id": {"$ref":"../definitions/objectid.json#"},
+    "id": {"$ref":"../definitions/objectid.json#"},
+    "name": {"type":"string"},
+    "inputs-property-type":{"type":"string"},
+    "inputs-property-id":{"type":"string"},
+    "inputs-property-name":{"type":"string"},
+    "inputs-object": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
           "properties": {
-            "type": {
-              "type": "string"
-            },
-              "id": {
-                "type": "string"
-              },
-                "name": {
-                  "type": "string"
-                }
+            "type": {"$ref":"#/definitions/inputs-property-type"},
+            "id": {"$ref":"#/definitions/inputs-property-id"},
+            "name": {"$ref":"#/definitions/inputs-property-name"}
           },
           "required": [
             "type",
@@ -30,7 +24,18 @@
           ],
           "additionalProperties":false
       }
-
+    },
+    "inputs-array":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "properties":{
+          "type": {"$ref":"#/definitions/inputs-property-type"},
+          "id": {"$ref":"#/definitions/inputs-property-id"},
+          "name": {"$ref":"#/definitions/inputs-property-name"},
+          "input":{"type":"string"}
+        }
+      }
     },
     "destination": {
       "type": "object",
@@ -52,6 +57,38 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+
+    "state":{
+      "type":"string"
+    },
+    "attempt":{
+      "type":"integer"
+    },
+    "config":{
+      "oneOf":[
+        {
+          "enum":[null]
+        },
+        {
+          "type":"object"
+        }
+      ]
+    },
+    "request":{
+      "type":"object",
+      "properties":{
+        "inputs":{
+          "type":"array",
+          "items":{
+            "type":"object",
+            "properties":{
+              "uri":{"type":"string"}
+            },
+            "required":["uri"]
+          }
+        }
       }
     }
   }

@@ -1,0 +1,18 @@
+{
+	"group": "scitran",
+	"created": "2016-09-19T17:13:48.164000+00:00",
+	"subject": {
+		"code": "ex4784",
+		"_id": "57e01cccb1dc04000fb83f02"
+	},
+	"modified": "2016-09-19T17:13:48.164000+00:00",
+	"label": "control_1",
+	"project": "57e01cccf6b5d5edbcb4e1cf",
+	"_id": "57e01cccb1dc04000fb83f03",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}

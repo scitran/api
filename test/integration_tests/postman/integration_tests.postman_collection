@@ -363,6 +363,93 @@
 				"description": ""
 			},
 			"response": []
+		},
+		{
+			"name": "Create test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-collection-id\", jsonData._id);"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-1\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Add test-session-1 to test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections/{{test-collection-id}}",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contents\":{\n    \t\"operation\":\"add\",\n    \t\"nodes\":[\n    \t\t{\n    \t\t\t\"level\":\"session\",\n    \t\t\t\"_id\":\"{{test-session-id}}\"\n    \t\t}\n    \t]\n    }\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create test-collection-2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-2\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
 		}
 	]
 }

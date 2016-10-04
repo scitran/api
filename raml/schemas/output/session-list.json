@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type":"array",
+    "items":{
+        "allOf":[{"$ref":"../definitions/session.json#/definitions/session-output"}],
+        "required":[
+            "_id", "label", "project", "created", "modified", "permissions",
+            "public", "group", "subject"
+        ]
+    }
+}

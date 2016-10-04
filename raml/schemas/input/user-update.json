@@ -3,6 +3,6 @@
   "title": "User",
   "type": "object",
   "allOf":[
-    {"$ref":"../definitions/user-input.json#"}
+    {"$ref":"../definitions/user.json#/definitions/user-input"}
   ]
 }

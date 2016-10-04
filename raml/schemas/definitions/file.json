@@ -1,0 +1,68 @@
+{
+    "definitions":{
+        "name":           { "type": "string" },
+        "file-type":           { "type": "string" },
+        "mimetype":       { "type": "string" },
+        "instrument":     { "type": "string" },
+        "measurements": {
+          "items": { "type": "string"},
+          "type": "array",
+          "uniqueItems": true
+        },
+        "tags": {
+          "items": { "type": "string"},
+          "type": "array",
+          "uniqueItems": true
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "origin":{
+            "type":"object",
+            "properties":{
+                "_id":{"type":"string"},
+                "method":{"type":"string"},
+                "type":{"type":"string"},
+                "name":{"type":"string"}
+            }
+        },
+        "hash":{"type":"string", "length":106},
+        "size":{"type":"integer"},
+        "file-input":{
+            "type": "object",
+            "properties": {
+              "name":           {"$ref":"#/definitions/name"},
+              "type":           {"$ref":"#/definitions/file-type"},
+              "mimetype":       {"$ref":"#/definitions/mimetype"},
+              "instrument":     {"$ref":"#/definitions/instrument"},
+              "measurements": {"$ref":"#/definitions/measurements"},
+              "tags": {"$ref":"#/definitions/tags"},
+              "metadata": {"$ref":"#/definitions/metadata"}
+          },
+          "additionalProperties": false
+        },
+        "file-output":{
+            "type": "object",
+            "properties": {
+              "name":           {"$ref":"#/definitions/name"},
+              "type":           {"$ref":"#/definitions/file-type"},
+              "mimetype":       {"$ref":"#/definitions/mimetype"},
+              "instrument":     {
+                  "oneOf":[
+                      {"$ref":"#/definitions/instrument"},
+                      {"type":"null"}
+                  ]
+              },
+              "measurements": {"$ref":"#/definitions/measurements"},
+              "tags": {"$ref":"#/definitions/tags"},
+              "metadata": {"$ref":"#/definitions/metadata"},
+              "origin":{"$ref":"#/definitions/origin"},
+              "hash":{"$ref":"#/definitions/hash"},
+              "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+              "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+              "size":{"$ref":"#/definitions/size"}
+            },
+            "additionalProperties": false
+        }
+    }
+}

@@ -1,25 +1,4 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "_id":              {"type": "string"},
-    "firstname":        { "type": "string", "maxLength": 64 },
-    "lastname":         { "type": "string", "maxLength": 64 },
-    "firstname_hash":   { "type": ["string", "null"] },
-    "lastname_hash":    { "type": ["string", "null"] },
-
-    "age":              { "type": ["number", "null"] },
-    "sex":              { "enum": ["male", "female", "other", "unknown", null] },
-    "race":             { "enum": ["American Indian or Alaska Native", "Asian", "Native Hawaiian or Other Pacific Islander", "Black or African American", "White", "More Than One Race", "Unknown or Not Reported", null] },
-    "ethnicity":        { "enum": ["Not Hispanic or Latino", "Hispanic or Latino", "Unknown or Not Reported", null] },
-
-    "code":             { "type": "string", "maxLength": 64 },
-    "tags":             { "type": "array", "items": {"type": "string"} },
-    "metadata":         { "type": "object" },
-    "files":            {
-                          "type": ["array", "null"],
-                          "items": {"$ref": "file.json"}
-    }
-  },
-  "additionalProperties": false
+  "allOf":[{"$ref":"../definitions/subject.json#/definitions/subject-input"}]
 }

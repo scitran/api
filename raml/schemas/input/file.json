@@ -1,24 +1,4 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "name":           { "type": "string" },
-    "type":           { "type": "string" },
-    "mimetype":       { "type": "string" },
-    "instrument":     { "type": "string" },
-    "measurements": {
-      "items": { "type": "string"},
-      "type": "array",
-      "uniqueItems": true
-    },
-    "tags": {
-      "items": { "type": "string"},
-      "type": "array",
-      "uniqueItems": true
-    },
-    "metadata": {
-      "type": "object"
-    }
-  },
-  "additionalProperties": false
+  "allOf":[{"$ref":"../definitions/file.json#/definitions/file-input"}]
 }

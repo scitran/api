@@ -4,4 +4,72 @@ get:
     200:
       body:
         application/json:
-          example:
+          example: !include ../examples/output/collection-list.json
+          schema: !include ../schemas/output/collection-list.json
+post:
+  is: ["validates-json-body"]
+  description: Create a collection
+  body:
+    application/json:
+      example: !include ../examples/input/collection.json
+      schema: !include ../schemas/input/collection.json
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/output/collection-new.json
+          schema: !include ../schemas/output/collection-new.json
+/{CollectionId}:
+  uriParameters:
+    CollectionId:
+      type: string
+  get:
+    description: Retrieve a single collection
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/collection.json
+            schema: !include ../schemas/output/collection.json
+  put:
+    is: ["validates-json-body"]
+    description: Update a collection and its contents
+    body:
+      application/json:
+        example: !include ../examples/input/collection-update.json
+        schema: !include ../schemas/input/collection-update.json
+    responses:
+      200:
+        description: Collection updated
+  delete:
+    description: Delete a collection
+    responses:
+      200:
+        description: Collection was deleted
+  /sessions:
+    get:
+      description: List sessions in a collection
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include ../examples/output/session-list.json
+              schema: !include ../schemas/output/session-list.json
+  /acquisitions:
+    get:
+      description: List acquisitions in a collection
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include ../examples/output/acquisition-list.json
+              schema: !include ../schemas/output/acquisition-list.json
+/curators:
+  get:
+    description: List all curators of collections
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/collection-curators-list.json
+            schema: !include ../schemas/output/collection-curators-list.json

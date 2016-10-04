@@ -3,13 +3,11 @@
   "type": "array",
   "items": {
     "allOf":[
-      {"$ref":"../definitions/user-output.json#"},
-      {
-        "required":[
-           "_id", "firstname", "lastname",
-           "root", "email", "created", "modified"
-           ]
-      }
+      {"$ref":"../definitions/user.json#/definitions/user-output"}
+    ],
+    "required":[
+       "_id", "firstname", "lastname",
+       "root", "email", "created", "modified"
     ]
   }
 }

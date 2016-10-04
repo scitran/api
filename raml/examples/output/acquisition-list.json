@@ -1,0 +1,122 @@
+[
+  {
+    "files": [
+      {
+        "origin": {
+          "method": "importer",
+          "type": "device",
+          "id": "importer_Admin_Import",
+          "name": "Admin Import"
+        },
+        "mimetype": "application/zip",
+        "measurements": [],
+        "hash": "v0-sha384-dd3c97bfe0ad1fcba75ae6718c6e81038c59af4f447f5db194d52732efa4f955b28455db02eb64cad3e4e55f11e3679f",
+        "name": "4784_1_1_localizer_dicom.zip",
+        "tags": [],
+        "created": "2016-09-21T14:56:09.943000+00:00",
+        "modified": "2016-09-21T14:56:09.943000+00:00",
+        "instrument": null,
+        "metadata": {},
+        "type": "dicom",
+        "size": 989933
+      }
+    ],
+    "created": "2016-09-21T14:56:10.026000+00:00",
+    "timestamp": "2016-09-21T19:24:45.539570+00:00",
+    "modified": "2016-09-21T14:56:10.026000+00:00",
+    "label": "4784_1_1_localizer",
+    "session": "57e29f8afab726000f7ec6b1",
+    "collections": [
+      "57e2a026675ca0000f0eeb0c"
+    ],
+    "_id": "57e29f8afab726000f7ec6b2",
+    "public": false,
+    "permissions": [
+      {
+        "access": "admin",
+        "_id": "coltonlw@flywheel.io",
+        "site": "local"
+      }
+    ]
+  },
+  {
+    "files": [
+      {
+        "origin": {
+          "method": "importer",
+          "type": "device",
+          "id": "importer_Admin_Import",
+          "name": "Admin Import"
+        },
+        "mimetype": "application/zip",
+        "measurements": [],
+        "hash": "v0-sha384-ca055fb36845db86e4278cf6e185f8674d11a96f4b29af27e401fc495cc82ef6b53a5729c3757713064649dc71c8c725",
+        "name": "4784_3_1_t1_dicom.zip",
+        "tags": [],
+        "created": "2016-09-21T14:56:11.224000+00:00",
+        "modified": "2016-09-21T14:56:11.224000+00:00",
+        "instrument": null,
+        "metadata": {},
+        "type": "dicom",
+        "size": 2921881
+      }
+    ],
+    "created": "2016-09-21T14:56:11.452000+00:00",
+    "timestamp": "2016-09-21T19:24:45.539580+00:00",
+    "modified": "2016-09-21T14:56:11.452000+00:00",
+    "label": "4784_3_1_t1",
+    "session": "57e29f8afab726000f7ec6b1",
+    "collections": [
+      "57e2a026675ca0000f0eeb0c"
+    ],
+    "_id": "57e29f8bfab726000e7ec6b0",
+    "public": false,
+    "permissions": [
+      {
+        "access": "admin",
+        "_id": "coltonlw@flywheel.io",
+        "site": "local"
+      }
+    ]
+  },
+  {
+    "files": [
+      {
+        "origin": {
+          "method": "importer",
+          "type": "device",
+          "id": "importer_Admin_Import",
+          "name": "Admin Import"
+        },
+        "mimetype": "application/zip",
+        "measurements": [],
+        "hash": "v0-sha384-537e42b1dd8f1feef9844fbfb4f60461361e71cafa7055556097e9d0b9f7fac68c8f234ed126af9412bd43a548948847",
+        "name": "4784_5_1_fmri_dicom.zip",
+        "tags": [],
+        "created": "2016-09-21T14:56:13.580000+00:00",
+        "modified": "2016-09-21T14:56:13.580000+00:00",
+        "instrument": null,
+        "metadata": {},
+        "type": "dicom",
+        "size": 4525137
+      }
+    ],
+    "created": "2016-09-21T14:56:13.886000+00:00",
+    "timestamp": "2016-09-21T19:24:45.539582+00:00",
+    "modified": "2016-09-21T14:56:13.886000+00:00",
+    "label": "4784_5_1_fmri",
+    "session": "57e29f8afab726000f7ec6b1",
+    "collections": [
+      "57e2a026675ca0000f0eeb0c"
+    ],
+    "_id": "57e29f8dfab726000e7ec6b3",
+    "public": false,
+    "permissions": [
+      {
+        "access": "admin",
+        "_id": "coltonlw@flywheel.io",
+        "site": "local"
+      }
+    ]
+  }
+]

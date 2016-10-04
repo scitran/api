@@ -2,14 +2,23 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "array",
   "items": {
-    "allOf":[
-      {"$ref":"../definitions/job-output.json#"},
-      {
-        "required":[
-           "_id", "name", "inputs",
-           "destination", "tags", "state", "attempt"
-           ]
-      }
+    "type":"object",
+    "properties":{
+      "_id":{"$ref":"../definitions/job.json#/definitions/id"},
+      "name":{"$ref":"../definitions/job.json#/definitions/name"},
+      "inputs":{"$ref":"../definitions/job.json#/definitions/inputs-array"},
+      "destination":{"$ref":"../definitions/job.json#/definitions/destination"},
+      "tags":{"$ref":"../definitions/job.json#/definitions/tags"},
+      "state":{"$ref":"../definitions/job.json#/definitions/state"},
+      "attempt":{"$ref":"../definitions/job.json#/definitions/attempt"},
+      "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+      "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+      "config":{"$ref":"../definitions/job.json#/definitions/config"}
+    },
+    "additionalProperties":false,
+    "required":[
+       "_id", "name", "inputs",
+       "destination", "tags", "state", "attempt"
     ]
   }
 }

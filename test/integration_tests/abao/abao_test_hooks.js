@@ -4,13 +4,15 @@ var hooks = require('hooks');
 var job_id = '';
 var gear_name = 'test-case-gear';
 var group_id = 'test_group';
+var collection_id = '';
+var delete_collection_id = '';
+var session_id = '';
+var delete_session_id = '';
 
 // Tests we're skipping, fix these
 
 // Fails only in travis
 hooks.skip("GET /version -> 200");
-
-// Skipped due to 500 when should 4xx
 
 // Should 400 to say invalid json
 hooks.skip("GET /download -> 400");
@@ -23,10 +25,6 @@ hooks.skip("POST /upload/uid-match -> 402");
 // Should 404
 hooks.skip("GET /jobs/{JobId} -> 404");
 
-// This does run after a job is added
-// 500 saying unknown gear
-hooks.skip("GET /jobs/next -> 200");
-
 // Can only retry a failed job
 hooks.skip("POST /jobs/{JobId}/retry -> 200");
 
@@ -34,7 +32,9 @@ hooks.skip("POST /jobs/{JobId}/retry -> 200");
 hooks.skip("GET /users/self/avatar -> 307");
 hooks.skip("GET /users/{UserId}/avatar -> 307");
 
-// Skipping some tests until we figure out how to test file fields
+// Tests that are skipped because we do them in postman or python
+
+// Skipping because abao doesn't support file fields
 hooks.skip("POST /download -> 200");
 hooks.skip("GET /download -> 200");
 hooks.skip("POST /upload/label -> 200");
@@ -42,6 +42,9 @@ hooks.skip("POST /upload/uid -> 200");
 hooks.skip("POST /upload/uid-match -> 200");
 hooks.skip("POST /upload/uid-match -> 404");
 hooks.skip("POST /engine -> 200");
+
+// Needs a project to be added, tested with postman workflow test
+hooks.skip("POST /sessions -> 200");
 
 hooks.beforeEach(function (test, done) {
     test.request.query.root = "true"
@@ -185,5 +188,59 @@ hooks.before("DELETE /groups/{GroupId} -> 200", function(test, done) {
     test.request.params = {
         GroupId: group_id
     };
+    done();
+});
+
+hooks.after("GET /collections -> 200", function(test, done) {
+    collection_id = test.response.body[0]._id;
+    delete_collection_id = test.response.body[1]._id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId} -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId}/sessions -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId}/acquisitions -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("POST /collections -> 400", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    test.request.body.foo = "not an allowed property";
+    done();
+});
+
+hooks.before("PUT /collections/{CollectionId} -> 400", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    test.request.body.foo = "not an allowed property";
+    done();
+});
+
+hooks.before("DELETE /collections/{CollectionId} -> 200", function(test, done) {
+    test.request.params.CollectionId = delete_collection_id;
+    done();
+});
+
+hooks.after("GET /sessions -> 200", function(test, done) {
+    session_id = test.response.body[0]._id;
+    delete_session_id = test.response.body[1]._id;
+    done();
+});
+
+hooks.before("GET /sessions/{SessionId} -> 200", function(test, done) {
+    test.request.params.SessionId = session_id;
+    done();
+});
+
+hooks.before("POST /sessions -> 400", function(test, done) {
+    test.request.body.foo = "not an allowed property";
     done();
 });
