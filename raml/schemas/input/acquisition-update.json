@@ -1,0 +1,6 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Acquisition",
+    "type": "object",
+    "allOf": [{"$ref": "../definitions/acquisition.json#/definitions/acquisition-input"}]
+}

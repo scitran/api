@@ -118,6 +118,7 @@ expected_mongo_schemas = set([
 ])
 expected_input_schemas = set([
     'acquisition.json',
+    'acquisition-update.json',
     'analysis.json',
     'avatars.json',
     'collection.json',
@@ -130,6 +131,7 @@ expected_input_schemas = set([
     'packfile.json',
     'permission.json',
     'project.json',
+    'project-update.json',
     'session.json',
     'session-update.json',
     'subject.json',

@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "origin": {
+        "method": "importer",
+        "type": "device",
+        "id": "importer_Admin_Import",
+        "name": "Admin Import"
+      },
+      "mimetype": "application/zip",
+      "measurements": [],
+      "hash": "v0-sha384-dd3c97bfe0ad1fcba75ae6718c6e81038c59af4f447f5db194d52732efa4f955b28455db02eb64cad3e4e55f11e3679f",
+      "name": "4784_1_1_localizer_dicom.zip",
+      "tags": [],
+      "created": "2016-09-21T14:56:09.943000+00:00",
+      "modified": "2016-09-21T14:56:09.943000+00:00",
+      "instrument": null,
+      "metadata": {},
+      "type": "dicom",
+      "size": 989933
+    }
+  ],
+  "created": "2016-09-21T14:56:10.026000+00:00",
+  "timestamp": "2016-09-21T19:24:45.539570+00:00",
+  "modified": "2016-09-21T14:56:10.026000+00:00",
+  "label": "4784_1_1_localizer",
+  "session": "57e29f8afab726000f7ec6b1",
+  "collections": [
+    "57e2a026675ca0000f0eeb0c"
+  ],
+  "_id": "57e29f8afab726000f7ec6b2",
+  "public": false,
+  "permissions": [
+    {
+      "access": "admin",
+      "_id": "coltonlw@flywheel.io",
+      "site": "local"
+    }
+  ]
+}

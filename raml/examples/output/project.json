@@ -1,0 +1,13 @@
+{
+	"group": "scitran",
+	"created": "2016-09-22T21:51:53.151000+00:00",
+	"modified": "2016-09-22T21:51:53.151000+00:00",
+	"label": "Neuroscience",
+	"_id": "57e452791cff88b85f9f9c97",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}

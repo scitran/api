@@ -8,7 +8,6 @@
         "acquisition-input":{
             "type": "object",
             "properties": {
-                "_id":{"$ref":"../definitions/objectid.json#"},
                 "public": {"$ref": "../definitions/container.json#/definitions/public"},
                 "label": {"$ref": "../definitions/container.json#/definitions/label"},
                 "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},

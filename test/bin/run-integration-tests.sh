@@ -54,8 +54,13 @@ BASE_URL="$SCITRAN_SITE_API_URL" \
 
 newman run test/integration_tests/postman/integration_tests.postman_collection -e test/integration_tests/postman/environments/integration_tests.postman_environment
 
+# Allow us to require modules from package.json,
+# since abao_test_hooks.js is not being called from the package directory
+integration_test_node_modules="$( npm config get prefix )/lib/node_modules/scitran-core-integration-tests/node_modules"
+
 # Have to change into definitions directory to resolve
 # relative $ref's in the jsonschema's
 pushd raml/schemas/definitions
-abao ../../api.raml "--server=$SCITRAN_SITE_API_URL" "--hookfiles=../../../test/integration_tests/abao/abao_test_hooks.js"
+
+NODE_PATH="$integration_test_node_modules" abao ../../api.raml "--server=$SCITRAN_SITE_API_URL" "--hookfiles=../../../test/integration_tests/abao/abao_test_hooks.js"
 popd
