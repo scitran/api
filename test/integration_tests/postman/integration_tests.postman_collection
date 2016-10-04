@@ -199,7 +199,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\",\n      \"files\":[\n      \t{\"name\":\"test-file\"}\n      ]\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
+					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\"\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
 				},
 				"description": ""
 			},
@@ -329,7 +329,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"name\": \"test-case-gear\",\n\t\"manifest\": {\n\t\t\"name\": \"test-case-gear\",\n\t\t\"label\": \"Test Case Gear\",\n\t\t\"version\": \"0\",\n\t\t\n\t\t\"author\": \"Nathaniel Kofalt\",\n\t\t\"description\": \"A gear built to drive test cases\",\n\t\t\n\t\t\"url\":     \"http://none.example\",\n\t\t\"source\":  \"http://none.example\",\n\t\t\"license\": \"MIT\",\n\t\t\n\t\t\"config\": {\n\t\t\t\"two-digit multiple of ten\": {\n\t\t\t\t\"exclusiveMaximum\": true,\n\t\t\t\t\"type\": \"number\",\n\t\t\t\t\"multipleOf\": 10,\n\t\t\t\t\"maximum\": 100\n\t\t\t}\n\t\t},\n\t\t\n\t\t\"inputs\": {\n\t\t\t\"any text file <= 100 KB\": {\n\t\t\t\t\"base\": \"file\",\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"pattern\": \"^.*.txt$\"\n\t\t\t\t},\n\t\t\t\t\"size\": {\n\t\t\t\t\t\"maximum\": 100000\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t},\n\t\"input\": {}\n}"
+					"raw": "{\n\t\"name\": \"test-case-gear\",\n\t\"manifest\": {\n\t\t\"name\": \"test-case-gear\",\n\t\t\"label\": \"Test Case Gear\",\n\t\t\"version\": \"0\",\n\t\t\n\t\t\"author\": \"Nathaniel Kofalt\",\n\t\t\"description\": \"A gear built to drive test cases\",\n\t\t\n\t\t\"url\":     \"http://none.example\",\n\t\t\"source\":  \"http://none.example\",\n\t\t\"license\": \"MIT\",\n\t\t\n\t\t\"config\": {\n\t\t\t\"two-digit multiple of ten\": {\n\t\t\t\t\"exclusiveMaximum\": true,\n\t\t\t\t\"type\": \"number\",\n\t\t\t\t\"multipleOf\": 10,\n\t\t\t\t\"maximum\": 100\n\t\t\t}\n\t\t},\n\t\t\n\t\t\"inputs\": {\n\t\t\t\"any text file <= 100 KB\": {\n\t\t\t\t\"base\": \"file\",\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"pattern\": \"^.*.txt$\"\n\t\t\t\t},\n\t\t\t\t\"size\": {\n\t\t\t\t\t\"maximum\": 100000\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t},\n\t\"input\": {\n\t\t\"uri\":\"https://somewhere.notarealtopleveldomain/gears/foo.tar.gz\",\n\t\t\"type\":\"http\",\n\t\t\"location\":\"/\",\n\t\t\"vu\": \"vu0:sha384:tXvdI2pspng-YH6lwa2UcLsww0yR6LfEKbLm89eIqEGicLRHW9d1V8bs7gXHTlZ3\"\n\t}\n}"
 				},
 				"description": ""
 			},
