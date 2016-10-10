@@ -4,7 +4,8 @@
   "description": "SciTran Core integation test node dependencies",
   "dependencies": {
     "newman":"3.1.0",
-    "abao":"git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref"
+    "abao":"git+https://github.com/flywheel-io/abao.git#better-jsonschema-ref",
+    "chai": "~3.5.0"
   },
   "bin":{
     "abao":"node_modules/.bin/abao",
