@@ -1,28 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "allOf":[
-    {"$ref":"../definitions/user.json#"},
-    {"$ref":"../definitions/created-modified.json"},
-    {
-      "type":"object",
-      "properties":{
-        "_id":{},
-        "firstname":{},
-        "lastname":{},
-        "email":{},
-        "avatars":{},
-        "root":{},
-        "disabled":{},
-        "preferences":{},
-        "created":{},
-        "modified":{},
-        "api_key": {"$ref":"../definitions/user-api_key.json"}
-      },
-      "additionalProperties":false,
-      "required":[
-         "_id", "firstname", "lastname",
-         "root", "email", "created", "modified"
-         ]
-    }
+  "type":"object",
+  "properties":{
+    "_id":{"$ref":"../definitions/user.json#/definitions/_id"},
+    "firstname":{"$ref":"../definitions/user.json#/definitions/firstname"},
+    "lastname":{"$ref":"../definitions/user.json#/definitions/lastname"},
+    "email":{"$ref":"../definitions/user.json#/definitions/email"},
+    "avatar":{"$ref":"../definitions/user.json#/definitions/avatar"},
+    "avatars":{"$ref":"../definitions/user.json#/definitions/avatars"},
+    "root":{"$ref":"../definitions/user.json#/definitions/root"},
+    "disabled":{"$ref":"../definitions/user.json#/definitions/disabled"},
+    "preferences":{"$ref":"../definitions/user.json#/definitions/preferences"},
+    "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+    "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+    "api_key":{"$ref":"../definitions/user.json#/definitions/api_key"}
+  },
+  "additionalProperties":false,
+  "required":[
+     "_id", "firstname", "lastname",
+     "root", "email", "created", "modified"
   ]
 }

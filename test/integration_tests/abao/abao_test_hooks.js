@@ -1,16 +1,22 @@
 var hooks = require('hooks');
+var chai = require("chai");
+var assert = chai.assert;
 
 // Variables for passing results as input to subsequent tests
 var job_id = '';
 var gear_name = 'test-case-gear';
 var group_id = 'test_group';
+var collection_id = '';
+var delete_collection_id = '';
+var test_session_1 = null;
+var test_session_2_id = null;
+var test_acquisition_1 = null;
+var test_project_1 = null;
 
 // Tests we're skipping, fix these
 
 // Fails only in travis
 hooks.skip("GET /version -> 200");
-
-// Skipped due to 500 when should 4xx
 
 // Should 400 to say invalid json
 hooks.skip("GET /download -> 400");
@@ -23,10 +29,6 @@ hooks.skip("POST /upload/uid-match -> 402");
 // Should 404
 hooks.skip("GET /jobs/{JobId} -> 404");
 
-// This does run after a job is added
-// 500 saying unknown gear
-hooks.skip("GET /jobs/next -> 200");
-
 // Can only retry a failed job
 hooks.skip("POST /jobs/{JobId}/retry -> 200");
 
@@ -34,7 +36,9 @@ hooks.skip("POST /jobs/{JobId}/retry -> 200");
 hooks.skip("GET /users/self/avatar -> 307");
 hooks.skip("GET /users/{UserId}/avatar -> 307");
 
-// Skipping some tests until we figure out how to test file fields
+// Tests that are skipped because we do them in postman or python
+
+// Skipping because abao doesn't support file fields
 hooks.skip("POST /download -> 200");
 hooks.skip("GET /download -> 200");
 hooks.skip("POST /upload/label -> 200");
@@ -185,5 +189,163 @@ hooks.before("DELETE /groups/{GroupId} -> 200", function(test, done) {
     test.request.params = {
         GroupId: group_id
     };
+    done();
+});
+
+hooks.after("GET /collections -> 200", function(test, done) {
+    collection_id = test.response.body[0]._id;
+    delete_collection_id = test.response.body[1]._id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId} -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId}/sessions -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("GET /collections/{CollectionId}/acquisitions -> 200", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    done();
+});
+
+hooks.before("POST /collections -> 400", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    test.request.body.foo = "not an allowed property";
+    done();
+});
+
+hooks.before("PUT /collections/{CollectionId} -> 400", function(test, done) {
+    test.request.params.CollectionId = collection_id;
+    test.request.body.foo = "not an allowed property";
+    done();
+});
+
+hooks.before("DELETE /collections/{CollectionId} -> 200", function(test, done) {
+    test.request.params.CollectionId = delete_collection_id;
+    done();
+});
+
+hooks.after("GET /sessions -> 200", function(test, done) {
+    test_session_1 = test.response.body[0];
+    assert.equal(test_session_1.label, "test-session-1");
+    done();
+});
+
+hooks.before("GET /sessions/{SessionId} -> 200", function(test, done) {
+    test.request.params.SessionId = test_session_1._id;
+    done();
+});
+
+hooks.before("POST /sessions -> 200", function(test, done) {
+    test.request.body.project = test_session_1.project;
+    done();
+});
+
+hooks.after("POST /sessions -> 200", function(test, done) {
+    test_session_2_id = test.response.body._id
+    done();
+});
+
+
+hooks.before("POST /sessions -> 400", function(test, done) {
+    test.request.body.foo = "not an allowed property";
+    test.request.body.project = test_session_1.project;
+    done();
+});
+
+hooks.before("PUT /sessions/{SessionId} -> 200", function(test, done) {
+    test.request.params.SessionId = test_session_1._id;
+    test.request.body = {
+        project: test_session_1.project,
+        label: "new-label-test-session-1"
+    };
+    done();
+});
+
+hooks.before("PUT /sessions/{SessionId} -> 400", function(test, done) {
+    test.request.params.SessionId = test_session_1._id;
+    test.request.body = {
+        project: test_session_1.project,
+        "not_a_real_property": "new-label-test-session-1"
+    };
+    done();
+});
+
+hooks.before("DELETE /sessions/{SessionId} -> 200", function(test, done) {
+    test.request.params.SessionId = test_session_2_id;
+    done();
+});
+
+
+hooks.before("GET /sessions/{SessionId}/jobs -> 200", function(test, done) {
+  test.request.params.SessionId = test_session_1._id;
+  done();
+});
+
+hooks.after("GET /acquisitions -> 200", function(test, done) {
+    test_acquisition_1 = test.response.body[0];
+    assert.equal(test_acquisition_1.label, "test-acquisition-1");
+    example_acquisition = test.response.body[1];
+    done();
+});
+
+hooks.before("GET /acquisitions/{AcquisitionId} -> 200", function(test, done) {
+    test.request.params.AcquisitionId = test_acquisition_1._id;
+    done();
+});
+
+hooks.before("POST /acquisitions -> 200", function(test, done) {
+    test.request.body.session = test_session_1._id;
+    done();
+});
+
+hooks.before("POST /acquisitions -> 400", function(test, done) {
+    test.request.body.session = test_session_1._id;
+    test.request.body.foo = "bar";
+    done();
+});
+
+hooks.before("PUT /acquisitions/{AcquisitionId} -> 200", function(test, done) {
+    test.request.params.AcquisitionId = test_acquisition_1._id;
+    test.request.body = {"label":"test-acquisition-1-new-label"};
+    done();
+});
+
+
+hooks.before("PUT /acquisitions/{AcquisitionId} -> 400", function(test, done) {
+    test.request.params.AcquisitionId = test_acquisition_1._id;
+    test.request.body = {"not-real":"an invalid property"};
+    done();
+});
+
+hooks.before("DELETE /acquisitions/{AcquisitionId} -> 200", function(test, done) {
+    test.request.params.AcquisitionId = example_acquisition._id;
+    done();
+});
+
+hooks.after("GET /projects -> 200", function(test, done) {
+    test_project_1 = test.response.body[0];
+    assert.equal(test_project_1.label, "test-project");
+    done();
+});
+
+hooks.before("POST /projects -> 400", function(test, done) {
+    test.request.body.not_real = "an invalid property";
+    done();
+});
+
+hooks.before("GET /projects/{ProjectId} -> 200", function(test, done) {
+    test.request.params.ProjectId = test_project_1._id;
+    done();
+});
+
+hooks.before("PUT /projects/{ProjectId} -> 400", function(test, done) {
+    test.request.params.ProjectId = test_project_1._id;
+    test.request.body = {"not_real":"fake property"};
     done();
 });

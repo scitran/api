@@ -1,0 +1,12 @@
+{
+	"created": "2016-08-30T17:22:05.299000+00:00",
+	"curator": "user@test.com",
+	"label": "test",
+	"modified": "2016-08-30T17:22:05.299000+00:00",
+	"_id": "57c5c0bd9e512c606dd3df09",
+	"permissions": [{
+		"access": "admin",
+		"_id": "user@test.com",
+		"site": "local"
+	}]
+}

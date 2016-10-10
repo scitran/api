@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions":{
+        "project-input":{
+            "type": "object",
+            "properties": {
+                "public": {"$ref": "../definitions/container.json#/definitions/public"},
+                "label": {"$ref": "../definitions/container.json#/definitions/label"},
+                "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},
+                "group":{"$ref":"../definitions/group.json#/definitions/name"},
+                "archived":     {"$ref":"../definitions/container.json#/definitions/archived"}
+            },
+            "additionalProperties": false
+        },
+        "project-output":{
+            "type": "object",
+            "properties": {
+                "_id": {"$ref":"../definitions/objectid.json#"},
+                "public": {"$ref": "../definitions/container.json#/definitions/public"},
+                "label": {"$ref": "../definitions/container.json#/definitions/label"},
+                "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},
+                "group":{"$ref":"../definitions/group.json#/definitions/name"},
+                "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+                "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
+                "permissions":{
+                    "type":"array",
+                    "items":{"$ref":"../definitions/permission.json#"}
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

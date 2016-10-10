@@ -8,3 +8,4 @@ bootstrap.json
 .cache
 /.coverage*
 coverage.xml
+node_modules/

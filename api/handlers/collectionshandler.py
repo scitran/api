@@ -126,10 +126,16 @@ class CollectionsHandler(ContainerHandler):
         for coll in results:
             coll['session_count'] = session_counts.get(coll['_id'], 0)
 
-
     def curators(self):
-        curator_ids = list(set((c['curator'] for c in self.get_all('collections'))))
-        return list(config.db.users.find({'_id': {'$in': curator_ids}}, ['firstname', 'lastname']))
+        curator_ids = []
+        for collection in self.get_all():
+            if collection['curator'] not in curator_ids:
+                curator_ids.append(collection['curator'])
+        curators = config.db.users.find(
+            {'_id': {'$in': curator_ids}},
+            ['firstname', 'lastname']
+            )
+        return list(curators)
 
     def get_sessions(self, cid):
         """Return the list of sessions in a collection."""

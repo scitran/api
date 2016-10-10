@@ -145,7 +145,7 @@ routes = [
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>'),                          containerhandler.ContainerHandler, name='cont_list', handler_method='get_all', methods=['GET']),
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>'),                          containerhandler.ContainerHandler, methods=['POST']),
     webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>'),           containerhandler.ContainerHandler, name='cont_details', methods=['GET','PUT','DELETE']),
-    webapp2.Route(_format(r'/api/<cont_name:{cont_name_re}>/<cid:{cid_re}>/jobs'),           containerhandler.ContainerHandler, name='cont_jobs', handler_method='get_jobs', methods=['GET']),
+    webapp2.Route(_format(r'/api/sessions/<cid:{cid_re}>/jobs'),           containerhandler.ContainerHandler, name='cont_jobs', handler_method='get_jobs', methods=['GET']),
 
     webapp2.Route(_format(r'/api/<cont_name:groups>/<cid:{group_id_re}>/<list_name:roles>'),                                        listhandler.ListHandler, name='group_roles_post'),
     webapp2.Route(_format(r'/api/<cont_name:groups>/<cid:{group_id_re}>/<list_name:roles>/<site:{site_id_re}>/<_id:{user_id_re}>'),    listhandler.ListHandler, name='group_roles', methods=['GET', 'PUT', 'DELETE']),

@@ -1,0 +1,28 @@
+type: container
+get:
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/output/project-list.json
+          schema: !include ../schemas/output/project-list.json
+post:
+  description: Create a project
+  body:
+    application/json:
+      example: !include ../examples/input/project.json
+      schema: !include ../schemas/input/project.json
+/{ProjectId}:
+  type: container-item
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/project.json
+            schema: !include ../schemas/output/project.json
+  put:
+    body:
+      application/json:
+        example: !include ../examples/input/project-update.json
+        schema: !include ../schemas/input/project-update.json

@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type":"array",
+    "items":{
+        "properties":{
+            "firstname":{"$ref":"../definitions/user.json#/definitions/firstname"},
+            "lastname":{"$ref":"../definitions/user.json#/definitions/lastname"},
+            "_id":{"$ref":"../definitions/user.json#/definitions/_id"}
+        }
+    }
+}

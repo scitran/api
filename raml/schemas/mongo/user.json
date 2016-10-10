@@ -33,7 +33,13 @@
                           "type": "object"
                         },
     "api_key":         {
-      "$ref":"../definitions/user-api_key.json"
+      "type":"object",
+      "properties":{
+        "key":            {"type": "string"},
+        "created":        {},
+        "last_used":      {}
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,

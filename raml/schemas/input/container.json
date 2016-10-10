@@ -2,10 +2,10 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "properties": {
-        "_id":          {"type": "string"},
-        "public":       {"type": "boolean"},
-        "archived":     {"type": "boolean"},
-        "label":        {"type": "string", "minLength": 1, "maxLength": 256},
-        "metadata":     {"type": "object"}
+        "_id":          {"$ref":"../definitions/container.json#/definitions/_id"},
+        "public":       {"$ref":"../definitions/container.json#/definitions/public"},
+        "archived":     {"$ref":"../definitions/container.json#/definitions/archived"},
+        "label":        {"$ref":"../definitions/container.json#/definitions/label"},
+        "metadata":     {"$ref":"../definitions/container.json#/definitions/metadata"}
     }
 }

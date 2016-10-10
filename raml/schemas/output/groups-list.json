@@ -2,6 +2,12 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "array",
   "items": {
-    "$ref":"../definitions/group-output.json#"
+    "allOf":[{"ref":"../definitions/group.json#/definitions/group-output"}],
+    "required": [
+           "roles",
+           "created",
+           "modified",
+           "_id"
+         ]
   }
 }

@@ -1,0 +1,60 @@
+{
+    "57ebe5adf0a2c90027d2bd44": [
+        {
+            "inputs": {
+                "dicom": {
+                    "type": "acquisition",
+                    "id": "57ebe5adf0a2c90027d2bd44",
+                    "name": "1_1_dicom.zip"
+                }
+            },
+            "attempt": 1,
+            "name": "dcm_convert",
+            "tags": [
+                "dcm_convert",
+                "spectroscopy"
+            ],
+            "destination": {
+                "type": "acquisition",
+                "id": "57ebe5adf0a2c90027d2bd44"
+            },
+            "request": {
+                "inputs": [
+                    {
+                        "type": "scitran",
+                        "uri": "/jobs/57ebe5adf0a2c90027d2bd48/config.json",
+                        "location": "/flywheel/v0"
+                    },
+                    {
+                        "type": "scitran",
+                        "uri": "/acquisitions/57ebe5adf0a2c90027d2bd44/files/1_1_dicom.zip",
+                        "location": "/flywheel/v0/input/dicom"
+                    }
+                ],
+                "target": {
+                    "command": [
+                        "bash",
+                        "-c",
+                        "rm -rf output; mkdir -p output; ./run; echo \"Exit was $?\""
+                    ],
+                    "env": {
+                        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    },
+                    "dir": "/flywheel/v0"
+                },
+                "outputs": [
+                    {
+                        "type": "scitran",
+                        "uri": "/engine?level=acquisition&id=57ebe5adf0a2c90027d2bd44&job=57ebe5adf0a2c90027d2bd48",
+                        "location": "/flywheel/v0/output"
+                    }
+                ]
+            },
+            "modified": "2016-09-28T15:45:52.607000+00:00",
+            "created": "2016-09-28T15:45:49.975000+00:00",
+            "state": "running",
+            "config": {},
+            "id": "57ebe5adf0a2c90027d2bd48"
+        }
+    ]
+}

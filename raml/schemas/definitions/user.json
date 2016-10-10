@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "properties": {
+  "definitions": {
     "_id":              {
                           "maxLength": 64,
                           "minLength": 2,
@@ -36,7 +36,47 @@
     "preferences":      {
                           "title": "Preferences",
                           "type": "object"
-                        }
+                        },
+    "api_key":{
+      "type":"object",
+      "properties":{
+        "key":            {"type": "string"},
+        "created":        {"$ref":"../definitions/created-modified.json#/definitions/created"},
+        "last_used":      {}
+      },
+      "additionalProperties":false
     },
-    "type":"object"
+    "user-input":{
+      "type":"object",
+      "properties":{
+        "_id":{"$ref":"#/definitions/_id"},
+        "firstname":{"$ref":"#/definitions/firstname"},
+        "lastname":{"$ref":"#/definitions/lastname"},
+        "email":{"$ref":"#/definitions/email"},
+        "avatar":{"$ref":"#/definitions/avatar"},
+        "avatars":{"$ref":"#/definitions/avatars"},
+        "root":{"$ref":"#/definitions/root"},
+        "disabled":{"$ref":"#/definitions/disabled"},
+        "preferences":{"$ref":"#/definitions/preferences"}
+      },
+      "additionalProperties":false
+    },
+    "user-output":{
+      "type":"object",
+      "properties":{
+        "_id":{"$ref":"#/definitions/_id"},
+        "firstname":{"$ref":"#/definitions/firstname"},
+        "lastname":{"$ref":"#/definitions/lastname"},
+        "email":{"$ref":"#/definitions/email"},
+        "avatar":{"$ref":"#/definitions/avatar"},
+        "avatars":{"$ref":"#/definitions/avatars"},
+        "root":{"$ref":"#/definitions/root"},
+        "disabled":{"$ref":"#/definitions/disabled"},
+        "preferences":{"$ref":"#/definitions/preferences"},
+        "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
+        "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"}
+      },
+      "additionalProperties":false
+    }
+  }
 }

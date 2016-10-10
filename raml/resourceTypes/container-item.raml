@@ -1,0 +1,25 @@
+get:
+  description: Get a single <<resourcePathName|!singularize>>
+  responses:
+    200:
+      body:
+        application/json:
+put:
+  description: Update a <<resourcePathName|!singularize>>
+  is: ["validates-json-body"]
+  body:
+    application/json:
+  responses:
+    200:
+      body:
+        application/json:
+          schema: !include ../schemas/output/container-update.json
+          example: !include ../examples/output/container-update.json
+delete:
+  description: Delete a <<resourcePathName|!singularize>>
+  responses:
+    200:
+      body:
+        application/json:
+          schema: !include ../schemas/output/container-delete.json
+          example: !include ../examples/output/container-delete.json
