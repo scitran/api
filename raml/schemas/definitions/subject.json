@@ -31,11 +31,7 @@
 
               "code":             {"$ref":"#/definitions/code"},
               "tags":             {"$ref":"#/definitions/tags"},
-              "metadata":         {"$ref":"#/definitions/metadata"},
-              "files":            {
-                                    "type": ["array", "null"],
-                                    "items": {"$ref": "../definitions/file.json#/definitions/file-input"}
-              }
+              "metadata":         {"$ref":"#/definitions/metadata"}
             },
             "additionalProperties": false
         },

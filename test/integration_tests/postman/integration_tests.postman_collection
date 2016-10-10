@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "test",
-		"_postman_id": "0326ffc8-f33a-78dd-1b31-ce70f75b427c",
+		"_postman_id": "de8315f8-0e87-1ede-cbd7-3a3d7dc77b39",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -199,7 +199,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\",\n      \"files\":[\n      \t{\"name\":\"test-file\"}\n      ]\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
+					"raw": "  {\n    \"subject\": {\n      \"code\": \"test-subject-1\"\n    },\n    \"label\": \"test-session-1\",\n    \"project\": \"{{test-project-id}}\",\n    \"public\": false\n  }"
 				},
 				"description": ""
 			},
