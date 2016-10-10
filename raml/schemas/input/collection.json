@@ -2,13 +2,11 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Collection",
     "type": "object",
-    "allOf": [{"$ref": "container.json"}],
     "properties": {
-        "public": {},
-        "label": {},
-        "metadata": {},
-
-        "curator": {"type": "string"}
+        "public": {"$ref": "../definitions/container.json#/definitions/public"},
+        "label": {"$ref": "../definitions/container.json#/definitions/label"},
+        "metadata": {"$ref": "../definitions/container.json#/definitions/metadata"},
+        "curator": {"$ref": "../definitions/collection.json#/definitions/curator"}
     },
     "required": ["label"],
     "additionalProperties": false

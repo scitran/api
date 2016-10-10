@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "test",
-		"_postman_id": "fc8f9020-aa70-327d-4e99-9c8a98db1009",
+		"_postman_id": "de8315f8-0e87-1ede-cbd7-3a3d7dc77b39",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -329,7 +329,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"name\": \"test-case-gear\",\n\t\"manifest\": {\n\t\t\"name\": \"test-case-gear\",\n\t\t\"label\": \"Test Case Gear\",\n\t\t\"version\": \"0\",\n\t\t\n\t\t\"author\": \"Nathaniel Kofalt\",\n\t\t\"description\": \"A gear built to drive test cases\",\n\t\t\n\t\t\"url\":     \"http://none.example\",\n\t\t\"source\":  \"http://none.example\",\n\t\t\"license\": \"MIT\",\n\t\t\n\t\t\"config\": {\n\t\t\t\"two-digit multiple of ten\": {\n\t\t\t\t\"exclusiveMaximum\": true,\n\t\t\t\t\"type\": \"number\",\n\t\t\t\t\"multipleOf\": 10,\n\t\t\t\t\"maximum\": 100\n\t\t\t}\n\t\t},\n\t\t\n\t\t\"inputs\": {\n\t\t\t\"any text file <= 100 KB\": {\n\t\t\t\t\"base\": \"file\",\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"pattern\": \"^.*.txt$\"\n\t\t\t\t},\n\t\t\t\t\"size\": {\n\t\t\t\t\t\"maximum\": 100000\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t},\n\t\"input\": {}\n}"
+					"raw": "{\n\t\"name\": \"test-case-gear\",\n\t\"manifest\": {\n\t\t\"name\": \"test-case-gear\",\n\t\t\"label\": \"Test Case Gear\",\n\t\t\"version\": \"0\",\n\t\t\n\t\t\"author\": \"Nathaniel Kofalt\",\n\t\t\"description\": \"A gear built to drive test cases\",\n\t\t\n\t\t\"url\":     \"http://none.example\",\n\t\t\"source\":  \"http://none.example\",\n\t\t\"license\": \"MIT\",\n\t\t\n\t\t\"config\": {\n\t\t\t\"two-digit multiple of ten\": {\n\t\t\t\t\"exclusiveMaximum\": true,\n\t\t\t\t\"type\": \"number\",\n\t\t\t\t\"multipleOf\": 10,\n\t\t\t\t\"maximum\": 100\n\t\t\t}\n\t\t},\n\t\t\n\t\t\"inputs\": {\n\t\t\t\"any text file <= 100 KB\": {\n\t\t\t\t\"base\": \"file\",\n\t\t\t\t\"name\": {\n\t\t\t\t\t\"pattern\": \"^.*.txt$\"\n\t\t\t\t},\n\t\t\t\t\"size\": {\n\t\t\t\t\t\"maximum\": 100000\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t},\n\t\"input\": {\n\t\t\"uri\":\"https://somewhere.notarealtopleveldomain/gears/foo.tar.gz\",\n\t\t\"type\":\"http\",\n\t\t\"location\":\"/\",\n\t\t\"vu\": \"vu0:sha384:tXvdI2pspng-YH6lwa2UcLsww0yR6LfEKbLm89eIqEGicLRHW9d1V8bs7gXHTlZ3\"\n\t}\n}"
 				},
 				"description": ""
 			},
@@ -359,6 +359,93 @@
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"gear\": \"test-case-gear\",\n    \"inputs\": {\n        \"dicom\": {\n            \"type\": \"acquisition\",\n            \"id\": \"{{test-acquisition-id}}\",\n            \"name\" : \"1_1_dicom.zip\"\n        }\n    },\n    \"config\": {\n\t\t\"two-digit multiple of ten\": 20\n\t},\n    \"destination\": {\n        \"type\": \"acquisition\",\n        \"id\": \"{{test-acquisition-id}}\"\n    },\n    \"tags\": [\n        \"ad-hoc\"\n    ]\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;\n\nvar jsonData = JSON.parse(responseBody);\n\npostman.setGlobalVariable(\"test-collection-id\", jsonData._id);"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-1\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Add test-session-1 to test-collection-1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections/{{test-collection-id}}",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contents\":{\n    \t\"operation\":\"add\",\n    \t\"nodes\":[\n    \t\t{\n    \t\t\t\"level\":\"session\",\n    \t\t\t\"_id\":\"{{test-session-id}}\"\n    \t\t}\n    \t]\n    }\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create test-collection-2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": "tests[\"Status code is 200\"] = responseCode.code === 200;\n\ntests[\"Response time is less than 200ms\"] = responseTime < 200;"
+					}
+				}
+			],
+			"request": {
+				"url": "{{baseUri}}/collections",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "scitran-user {{test_user_api_key}}",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\":\"test-collection-2\"\n}"
 				},
 				"description": ""
 			},

@@ -1,0 +1,5 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Session",
+    "allOf":[{"$ref":"../definitions/session.json#/definitions/session-input"}]
+}

@@ -11,6 +11,10 @@ traits:
                 description: |
                     JSON did not validate against schema for this endpoint
 
+resourceTypes:
+  - container: !include resourceTypes/container.raml
+  - container-item: !include resourceTypes/container-item.raml
+
 /download: !include resources/download.raml
 /upload/label: !include resources/upload-by-label.raml
 /upload/uid: !include resources/upload-by-uid.raml
@@ -26,3 +30,7 @@ traits:
 /gears: !include resources/gears.raml
 /rules: !include resources/rules.raml
 /groups: !include resources/groups.raml
+/collections: !include resources/collections.raml
+/sessions: !include resources/sessions.raml
+/acquisitions: !include resources/acquisitions.raml
+/projects: !include resources/projects.raml

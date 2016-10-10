@@ -1,0 +1,60 @@
+[{
+	"group": "scitran",
+	"created": "2016-09-22T21:51:53.151000+00:00",
+	"modified": "2016-09-22T21:51:53.151000+00:00",
+	"label": "Neuroscience",
+	"_id": "57e452791cff88b85f9f9c97",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}, {
+	"group": "scitran",
+	"created": "2016-09-22T21:52:27.576000+00:00",
+	"modified": "2016-09-22T21:52:27.576000+00:00",
+	"label": "Psychology",
+	"_id": "57e4529b1cff88b85f9f9c98",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}, {
+	"group": "scitran",
+	"created": "2016-09-22T21:52:52.539000+00:00",
+	"modified": "2016-09-22T21:52:52.539000+00:00",
+	"label": "Testdata",
+	"_id": "57e452b41cff88b85f9f9c99",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}, {
+	"group": "test-group",
+	"created": "2016-09-22T21:54:47.925000+00:00",
+	"modified": "2016-09-22T21:54:47.925000+00:00",
+	"label": "test-project",
+	"_id": "57e45327466d8e000e33a859",
+	"public": false,
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}, {
+	"group": "scitran",
+	"created": "2016-09-29T18:53:06.199000+00:00",
+	"modified": "2016-09-29T18:53:06.199000+00:00",
+	"label": "test2",
+	"_id": "57ed6312466d8e01c91ee427",
+	"permissions": [{
+		"access": "admin",
+		"_id": "coltonlw@flywheel.io",
+		"site": "local"
+	}]
+}]

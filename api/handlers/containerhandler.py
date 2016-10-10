@@ -172,63 +172,10 @@ class ContainerHandler(base.RequestHandler):
         if user_perm.get('access') != 'admin':
             result['permissions'] = [user_perm] if user_perm else []
 
-    def get_jobs(self, cont_name, cid):
-        """
-        .. http:get:: /api/(cont_name)/(cid)/jobs
-
-            Return any jobs that mention this container as an input.
-
-            :query states: filter results by job state
-            :type states: string
-
-            :query tags: filter results by job tags
-            :type cid: string
-
-            :statuscode 200: no error
-
-            **Example request**:
-
-            .. sourcecode:: http
-
-                GET /api/sessions/3/jobs?states=pending&states=failed&tags=a&tags=b HTTP/1.1
-                Host: demo.flywheel.io
-                Accept: */*
-
-
-            **Example response**:
-
-            .. sourcecode:: http
-
-                HTTP/1.1 200 OK
-                Vary: Accept-Encoding
-                Content-Type: application/json; charset=utf-8
-                [
-                    {
-                        "_id": "57336257ea360500272c2f11",
-                        "algorithm_id": "dicom_mr_classifier",
-                        "state": "pending",
-                        "tags": [
-                            "a"
-                        ]
-                        //...
-                    },
-                    {
-                        "_id": "57336257ea360500272c2f12",
-                        "algorithm_id": "dcm_convert",
-                        "state": "failed",
-                        "tags": [
-                            "b"
-                        ]
-                       // ...
-                    }
-                ]
-        """
-
-        self.config = self.container_handler_configurations[cont_name]
+    def get_jobs(self, cid):
+        # Only enabled for sessions container type per url rule in api.py
+        self.config = self.container_handler_configurations["sessions"]
         self.storage = self.config['storage']
-        if cont_name != 'sessions':
-            self.abort(400, 'Can only request jobs at the session level.')
-
         cont = self._get_container(cid, projection={'permissions': 0}, get_children=True)
         permchecker = self._get_permchecker(cont)
         permchecker(noop)('GET', cid)

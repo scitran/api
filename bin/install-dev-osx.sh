@@ -87,4 +87,4 @@ fi
 # Install testing dependencies
 echo "Installing testing dependencies"
 pip install -r "test/integration_tests/requirements-integration-test.txt"
-npm install -g test/integration_tests
+npm install test/integration_tests

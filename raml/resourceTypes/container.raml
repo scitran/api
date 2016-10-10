@@ -1,0 +1,19 @@
+description: <<resourcePathName|!pluralize>> in the Scitran Core API
+get:
+    description: Get a list of <<resourcePathName>>
+    responses:
+      200:
+        body:
+          application/json:
+post:
+    description: |
+      Add a new <<resourcePathName|!singularize>>
+    is: ["validates-json-body"]
+    body:
+      application/json:
+    responses:
+      200:
+        body:
+          application/json:
+            schema: !include ../schemas/output/container-new.json
+            example: !include ../examples/output/container-new.json

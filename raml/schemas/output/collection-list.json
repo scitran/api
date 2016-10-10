@@ -1,0 +1,8 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type":"array",
+    "items":{
+        "allOf":[{"$ref":"../definitions/collection.json#/definitions/collection-output"}],
+        "required":["_id", "label", "created", "modified", "permissions"]
+    }
+}

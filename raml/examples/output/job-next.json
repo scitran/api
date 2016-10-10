@@ -1,0 +1,44 @@
+{
+	"inputs": [{
+		"input": "dicom",
+		"type": "acquisition",
+		"id": "57e45279a74e91000ed6898f",
+		"name": "4784_1_1_localizer_dicom.zip"
+	}],
+	"attempt": 1,
+	"name": "dicom-mr-classifier",
+	"tags": ["dicom-mr-classifier"],
+	"destination": {
+		"type": "acquisition",
+		"id": "57e45279a74e91000ed6898f"
+	},
+	"request": {
+		"inputs": [{
+			"vu": "vu0:sha384:tXvdI2pspng-YH6lwa2UcLsww0yR6LfEKbLm89eIqEGicLRHW9d1V8bs7gXHTlZ3",
+			"type": "http",
+			"location": "/",
+			"uri": "https://storage.googleapis.com/flywheel/gears/v1/scitran/dicom-mr-classifier/dicom-mr-classifier_latest_20160803T220847.856417Z.tar.gz"
+		}, {
+			"type": "scitran",
+			"uri": "/acquisitions/57e45279a74e91000ed6898f/files/4784_1_1_localizer_dicom.zip",
+			"location": "/flywheel/v0/input/dicom"
+		}],
+		"target": {
+			"command": ["bash", "-c", "rm -rf output; mkdir -p output; ./run; echo \"Exit was $?\""],
+			"env": {
+				"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+			},
+			"dir": "/flywheel/v0"
+		},
+		"outputs": [{
+			"type": "scitran",
+			"uri": "/engine?level=acquisition&id=57e45279a74e91000ed6898f&job=57e45279a74e91000ed68991",
+			"location": "/flywheel/v0/output"
+		}]
+	},
+	"modified": "2016-09-28T16:11:36.260000+00:00",
+	"created": "2016-09-22T21:51:53.174000+00:00",
+	"state": "running",
+	"_id": "57e45279a74e91000ed68991",
+	"config": null
+}

@@ -1,0 +1,44 @@
+type: container
+get:
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/output/session-list.json
+          schema: !include ../schemas/output/session-list.json
+post:
+  description: Create a session
+  body:
+    application/json:
+      example: !include ../examples/input/session.json
+      schema: !include ../schemas/input/session.json
+/{SessionId}:
+  type: container-item
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/session.json
+            schema: !include ../schemas/output/session.json
+  put:
+    body:
+      application/json:
+        example: !include ../examples/input/session.json
+        schema: !include ../schemas/input/session.json
+  /jobs:
+    get:
+      description: Return any jobs that use inputs from this session
+      queryParameters:
+        states:
+          type: string
+          description: filter results by job state
+        tags:
+          type: string
+          description: filter results by job tags
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include ../examples/output/session-jobs.json
+              schema: !include ../schemas/output/session-jobs.json

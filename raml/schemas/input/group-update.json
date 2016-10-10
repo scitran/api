@@ -1,6 +1,4 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "allOf":[
-      {"$ref":"../definitions/group-input.json#"}
-    ]
+    "allOf":[{"$ref":"../definitions/group.json#/definitions/group-input"}]
 }

@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "definitions": {
+        "_id":          {"type": "string"},
+        "public":       {"type": "boolean"},
+        "archived":     {"type": "boolean"},
+        "label":        {"type": "string", "minLength": 1, "maxLength": 256},
+        "metadata":     {"type": "object"}
+    }
+}
