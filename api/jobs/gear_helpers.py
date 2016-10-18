@@ -1,10 +1,10 @@
 """
-Gears
+Gear Helpers
 """
 
 # import jsonschema
 from jsonschema import Draft4Validator, ValidationError
-import gear_tools
+import gears
 
 from .. import config
 from .jobs import Job
@@ -41,7 +41,7 @@ def get_gear_by_name(name):
     return gear_doc
 
 def get_invocation_schema(gear):
-    return gear_tools.derive_invocation_schema(gear['gear'])
+    return gears.derive_invocation_schema(gear['gear'])
 
 def suggest_container(gear, cont_name, cid):
     """
@@ -53,7 +53,7 @@ def suggest_container(gear, cont_name, cid):
 
     schemas = {}
     for x in gear['gear']['inputs']:
-        schema = gear_tools.isolate_file_invocation(invocation_schema, x)
+        schema = gears.isolate_file_invocation(invocation_schema, x)
         schemas[x] = Draft4Validator(schema)
 
     # It would be nice to have use a visitor here instead of manual key loops.
@@ -79,7 +79,7 @@ def suggest_for_files(gear, files):
     invocation_schema = get_invocation_schema(gear)
     schemas = {}
     for x in gear['gear']['inputs']:
-        schema = gear_tools.isolate_file_invocation(invocation_schema, x)
+        schema = gears.isolate_file_invocation(invocation_schema, x)
         schemas[x] = Draft4Validator(schema)
 
     suggested_files = {}
@@ -94,8 +94,8 @@ def suggest_for_files(gear, files):
 
 def validate_gear_config(gear, config_):
     if len(gear.get('manifest', {}).get('config', {})) > 0:
-        invocation = gear_tools.derive_invocation_schema(gear['manifest'])
-        ci = gear_tools.isolate_config_invocation(invocation)
+        invocation = gears.derive_invocation_schema(gear['manifest'])
+        ci = gears.isolate_config_invocation(invocation)
         validator = Draft4Validator(ci)
 
         try:
@@ -113,7 +113,7 @@ def validate_gear_config(gear, config_):
     return True
 
 def insert_gear(doc):
-    gear_tools.validate_manifest(doc['gear'])
+    gears.validate_manifest(doc['gear'])
 
     # This can be mongo-escaped and re-used later
     if doc.get("invocation-schema"):
@@ -146,7 +146,7 @@ def remove_gear(name):
     config.db.gears.remove({'gear.name': name})
 
 def upsert_gear(doc):
-    gear_tools.validate_manifest(doc['gear'])
+    gears.validate_manifest(doc['gear'])
 
     remove_gear(doc['gear']['name'])
     insert_gear(doc)

@@ -11,7 +11,7 @@ from ..dao.containerutil import create_filereference_from_dictionary, create_con
 from ..dao.liststorage import AnalysesStorage
 from .jobs import Job
 from .queue import Queue
-from . import gears
+from . import gear_helpers
 
 log = config.log
 
@@ -67,7 +67,7 @@ def find_matching_conts(gear, containers, container_type):
     for c in containers:
         files = c.get('files')
         if files:
-            suggestions = gears.suggest_for_files(gear, files)
+            suggestions = gear_helpers.suggest_for_files(gear, files)
 
             # Determine if any of the inputs are ambiguous or not satisfied
             ambiguous = False # Are any of the inputs ambiguous?
@@ -135,7 +135,7 @@ def run(batch_job):
         raise APIStorageException('The batch job is not formatted correctly.')
     proposed_inputs = proposal.get('inputs', [])
     gear_name = batch_job.get('gear')
-    gear = gears.get_gear_by_name(gear_name)
+    gear = gear_helpers.get_gear_by_name(gear_name)
     config_ = batch_job.get('config')
     origin = batch_job.get('origin')
     tags = proposal.get('tags', [])

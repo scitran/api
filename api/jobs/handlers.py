@@ -14,7 +14,7 @@ from ..web import base
 from .. import config
 from . import batch
 
-from .gears import validate_gear_config, get_gears, get_gear_by_name, get_invocation_schema, remove_gear, upsert_gear, suggest_container
+from .gear_helpers import validate_gear_config, get_gears, get_gear_by_name, get_invocation_schema, remove_gear, upsert_gear, suggest_container
 from .jobs import Job
 from .queue import Queue
 

@@ -3,7 +3,7 @@ import fnmatch
 from .. import config
 from ..dao.containerutil import FileReference
 
-from . import gears
+from . import gear_helpers
 from .jobs import Job
 
 log = config.log
@@ -111,7 +111,7 @@ def queue_job_legacy(algorithm_id, input_):
     Takes a single FileReference instead of a map.
     """
 
-    gear = gears.get_gear_by_name(algorithm_id)
+    gear = gear_helpers.get_gear_by_name(algorithm_id)
 
     if len(gear['gear']['inputs']) != 1:
         raise Exception("Legacy gear enqueue attempt of " + algorithm_id + " failed: must have exactly 1 input in manifest")
