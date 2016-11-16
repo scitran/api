@@ -2,6 +2,7 @@ import os
 import bson
 import copy
 import datetime
+import urllib
 
 from .. import base
 from .. import util
@@ -293,6 +294,7 @@ class FileListHandler(ListHandler):
         return ticket
 
     def get(self, cont_name, list_name, **kwargs):
+        kwargs['name'] = urllib.quote(kwargs.get('name'), '')
         log.error('{} {} {}'.format(cont_name, list_name, kwargs))
         _id = kwargs.pop('cid')
         container, permchecker, storage, _, _, keycheck = self._initialize_request(cont_name, list_name, _id)
@@ -349,9 +351,10 @@ class FileListHandler(ListHandler):
                     self.response.headers['Content-Type'] = str(util.guess_mimetype(fileinfo.get('name')))
                 else:
                     self.response.headers['Content-Type'] = 'application/octet-stream'
-                    self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+                    self.response.headers['Content-Disposition'] = 'attachment; filename="' + os.path.basename(urllib.url2pathname(filename)) + '"'
 
     def delete(self, cont_name, list_name, **kwargs):
+        kwargs['name'] = urllib.quote(kwargs.get('name'), '')
         filename = kwargs.get('name')
         _id = kwargs.get('cid')
         result = super(FileListHandler, self).delete(cont_name, list_name, **kwargs)

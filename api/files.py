@@ -5,6 +5,7 @@ import shutil
 import hashlib
 import zipfile
 import datetime
+import urllib
 
 from . import util
 from . import config
@@ -38,7 +39,7 @@ def getHashingFieldStorage(upload_dir, hash_alg):
     class HashingFieldStorage(cgi.FieldStorage):
         bufsize = 2**20
         def make_file(self, binary=None):
-            self.open_file = HashingFile(os.path.join(upload_dir, os.path.basename(self.filename)), hash_alg)
+            self.open_file = HashingFile(os.path.join(upload_dir, urllib.quote(self.filename, '')), hash_alg)
             return self.open_file
 
         # override private method __write of superclass FieldStorage
@@ -97,7 +98,7 @@ class FileStore(object):
         form = getHashingFieldStorage(dest_path, hash_alg)(fp=self.body, environ=self.environ, keep_blank_values=True)
 
         self.received_file = form['file'].file
-        self.filename = os.path.basename(form['file'].filename)
+        self.filename = urllib.quote(form['file'].filename, '')
         self.tags = json.loads(form['tags'].file.getvalue()) if 'tags' in form else None
         self.metadata = json.loads(form['metadata'].file.getvalue()) if 'metadata' in form else None
 

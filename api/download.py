@@ -5,6 +5,7 @@ import os.path
 import tarfile
 import datetime
 import cStringIO
+import urllib
 
 from . import base
 from . import validators
@@ -42,7 +43,7 @@ def _append_targets(targets, container, prefix, total_size, total_cnt, optional,
         if optional or not f.get('optional', False):
             filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
             if os.path.exists(filepath): # silently skip missing files
-                targets.append((filepath, prefix + '/' + f['name'], f['size']))
+                targets.append((filepath, prefix + '/' + urllib.url2pathname(f['name']), f['size']))
                 total_size += f['size']
                 total_cnt += 1
     return total_size, total_cnt
