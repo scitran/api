@@ -12,6 +12,8 @@ from . import config
 
 log = config.log
 
+def get_tempname(filename):
+    return hashlib.sha384(filename).hexdigest()
 
 def move_file(path, target_path):
     target_dir = os.path.dirname(target_path)
@@ -39,7 +41,7 @@ def getHashingFieldStorage(upload_dir, hash_alg):
     class HashingFieldStorage(cgi.FieldStorage):
         bufsize = 2**20
         def make_file(self, binary=None):
-            self.open_file = HashingFile(os.path.join(upload_dir, urllib.quote(self.filename, '')), hash_alg)
+            self.open_file = HashingFile(os.path.join(upload_dir, get_tempname(self.filename)), hash_alg)
             return self.open_file
 
         # override private method __write of superclass FieldStorage
@@ -84,9 +86,9 @@ class FileStore(object):
             self.payload = request.POST.mixed()
         else:
             self.payload = request.POST.mixed()
-            self.filename = filename or self.payload.get('filename')
+            filename = filename or self.payload.get('filename')
             self._save_body_file(dest_path, filename, hash_alg)
-        self.path = os.path.join(dest_path, self.filename)
+        self.path = os.path.join(dest_path, self.temp_filename)
         self.duration = datetime.datetime.utcnow() - start_time
         # the hash format is:
         # <version>-<hashing algorithm>-<actual hash>
@@ -99,14 +101,16 @@ class FileStore(object):
 
         self.received_file = form['file'].file
         self.filename = urllib.quote(form['file'].filename, '')
+        self.temp_filename = get_tempname(form['file'].filename)
         self.tags = json.loads(form['tags'].file.getvalue()) if 'tags' in form else None
         self.metadata = json.loads(form['metadata'].file.getvalue()) if 'metadata' in form else None
 
     def _save_body_file(self, dest_path, filename, hash_alg):
         if not filename:
             raise FileStoreException('filename is required for body uploads')
-        self.filename = os.path.basename(filename)
-        self.received_file = HashingFile(os.path.join(dest_path, filename), hash_alg)
+        self.temp_filename = get_tempname(filename)
+        self.filename = urllib.quote(filename, '')
+        self.received_file = HashingFile(os.path.join(dest_path, self.temp_filename), hash_alg)
         for chunk in iter(lambda: self.body.read(2**20), ''):
             self.received_file.write(chunk)
         self.tags = None
@@ -152,9 +156,10 @@ class MultiFileStore(object):
         self.metadata = json.loads(form['metadata'].file.getvalue()) if 'metadata' in form else None
         for field in form:
             if form[field].filename:
-                filename = os.path.basename(form[field].filename)
+                temp_filename = get_tempname(form[field].filename)
+                filename = urllib.quote(form[field].filename, '')
                 self.files[filename] = {
                     'hash': util.format_hash(hash_alg, form[field].file.get_hash()),
                     'size': os.path.getsize(os.path.join(dest_path, filename)),
-                    'path': os.path.join(dest_path, filename)
+                    'path': os.path.join(dest_path, temp_filename)
                 }
