@@ -39,6 +39,7 @@ fi
 
 if [ "$1" = 'uwsgi' ]; then
 
+	python /var/scitran/code/api/docker/build-info-load.py
 	exec gosu ${RUNAS_USER} "$@"
 fi
 
