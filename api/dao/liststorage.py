@@ -46,7 +46,7 @@ class ListStorage(object):
         log.debug('query {}'.format(query))
         return self.dbc.find_one(query, projection)
 
-    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None):
+    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None, replace_classification=False):
         """
         Generic method to exec an operation.
         The request is dispatched to the corresponding private methods.
@@ -63,7 +63,7 @@ class ListStorage(object):
         if action == 'DELETE':
             return self._delete_el(_id, query_params)
         if action == 'PUT':
-            return self._update_el(_id, query_params, payload, exclude_params)
+            return self._update_el(_id, query_params, payload, exclude_params, replace_classification=replace_classification)
         if action == 'POST':
             return self._create_el(_id, payload, exclude_params)
         raise ValueError('action should be one of GET, POST, PUT, DELETE')
@@ -342,3 +342,31 @@ class AnalysesStorage(ListStorage):
 
         analysis['job'] = job
         return analysis
+
+
+class FileStorage(ListStorage):
+
+    def _update_el(self, _id, query_params, payload, exclude_params, replace_classification=False):
+        mod_elem = {}
+        update = {}
+
+        # If we want to add to the classification lists rather than replace
+        # the entirity of the classification map, use $addToSet.
+        # This allows some endpoints to only make additive changes
+        if not replace_classification:
+            classification = payload.get('classification')
+            if classification:
+                add_to_set = {}
+                for k,array in classification.items():
+                    add_to_set[self.list_name + '.$.classification.' + k] = array
+                update['$addToSet'] = add_to_set
+
+        for k,v in payload.items():
+            mod_elem[self.list_name + '.$.' + k] = v
+        query = {
+            '_id': _id,
+            self.list_name: {'$elemMatch': query_params}
+        }
+        update['$set'] = mod_elem
+
+        return self.dbc.update_one(query, update)

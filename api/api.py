@@ -7,6 +7,7 @@ from .handlers.collectionshandler import CollectionsHandler
 from .handlers.confighandler      import Config, Version
 from .handlers.containerhandler   import ContainerHandler
 from .handlers.devicehandler      import DeviceHandler
+from .handlers.modalityhandler    import ModalityHandler
 from .handlers.grouphandler       import GroupHandler
 from .handlers.listhandler        import AnalysesHandler, ListHandler, FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
 from .handlers.reporthandler      import ReportHandler
@@ -168,6 +169,14 @@ endpoints = [
             route('/<device_id:[^/]+>', DeviceHandler,                 m=['GET']),
         ]),
 
+        # Modalities
+
+        route( '/modalities',               ModalityHandler, h='get_all',    m=['GET']),
+        route( '/modalities',               ModalityHandler,                 m=['POST']),
+        prefix('/modalities', [
+            route('/<modality_name:[^/]+>', ModalityHandler,                 m=['GET', 'PUT', 'DELETE']),
+        ]),
+
 
         # Groups
 
@@ -245,7 +254,7 @@ endpoints = [
                 route('/packfile',                              FileListHandler, h='packfile',       m=['POST']),
                 route('/packfile-end',                          FileListHandler, h='packfile_end'),
                 route('/<list_name:files>',                     FileListHandler,                     m=['POST']),
-                route('/<list_name:files>/<name:{fname}>',      FileListHandler,                     m=['GET', 'DELETE']),
+                route('/<list_name:files>/<name:{fname}>',      FileListHandler,                     m=['GET', 'DELETE', 'PUT']),
                 route('/<list_name:files>/<name:{fname}>/info', FileListHandler, h='get_info',       m=['GET']),
 
 

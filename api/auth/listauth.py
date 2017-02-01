@@ -20,6 +20,7 @@ def default_sublist(handler, container):
     access = _get_access(handler.uid, handler.user_site, container)
     def g(exec_op):
         def f(method, _id, query_params=None, payload=None, exclude_params=None):
+            log.debug('Im actually in here')
             if method == 'GET' and container.get('public', False):
                 min_access = -1
             elif method == 'GET':
