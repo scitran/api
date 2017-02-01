@@ -521,10 +521,11 @@ class FileListHandler(ListHandler):
             if not ModalityHandler.check_classification(modality, classification):
                 self.abort(400, 'Classification does not match allowable values for modality {}.'.format(modality))
 
-        rc = self.is_true('replace_classification')
+        rf = self.is_true('replace_fields')
 
         try:
-            result = keycheck(mongo_validator(permchecker(storage.exec_op)))('PUT', _id=_id, query_params=kwargs, payload=payload)
+            keycheck(mongo_validator(permchecker(noop)))('PUT', _id=_id, query_params=kwargs, payload=payload)
+            result = storage.update_file(_id, kwargs, payload, replace_fields=rf)
         except APIStorageException as e:
             self.abort(400, e.message)
         # abort if the query of the update wasn't able to find any matching documents

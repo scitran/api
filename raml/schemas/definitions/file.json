@@ -5,10 +5,8 @@
         "file-type":      { "type": "string" },
         "mimetype":       { "type": "string" },
         "modality":       { "type": "string" },
-        "measurements": {
-          "items": { "type": "string"},
-          "type": "array",
-          "uniqueItems": true
+        "classification": {
+          "type": "object"
         },
         "tags": {
           "items": { "type": "string"},
@@ -37,7 +35,7 @@
               "type":           {"$ref":"#/definitions/file-type"},
               "mimetype":       {"$ref":"#/definitions/mimetype"},
               "modality":       {"$ref":"#/definitions/modality"},
-              "measurements":   {"$ref":"#/definitions/measurements"},
+              "classification":   {"$ref":"#/definitions/classification"},
               "tags": {"$ref":"#/definitions/tags"},
               "info": {"$ref":"#/definitions/info"}
           },
@@ -55,7 +53,7 @@
                       {"type":"null"}
                   ]
               },
-              "measurements": {"$ref":"#/definitions/measurements"},
+              "classification": {"$ref":"#/definitions/classification"},
               "tags": {"$ref":"#/definitions/tags"},
               "info": {"$ref":"#/definitions/info"},
               "origin":{"$ref":"#/definitions/origin"},

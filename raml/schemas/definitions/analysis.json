@@ -49,7 +49,7 @@
 			                        {"type":"null"}
 			                    ]
 			                },
-			                "measurements": {"$ref":"../definitions/file.json#/definitions/measurements"},
+			                "classification": {"$ref":"../definitions/file.json#/definitions/classification"},
 			                "tags": {"$ref":"../definitions/file.json#/definitions/tags"},
 			                "info": {"$ref":"../definitions/file.json#/definitions/info"},
 			                "origin":{"$ref":"../definitions/file.json#/definitions/origin"},
