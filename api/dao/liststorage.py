@@ -1,6 +1,6 @@
 import bson.errors
-import bson.objectid
 
+from .. import util
 from .. import config
 from . import APIStorageException
 
@@ -30,7 +30,7 @@ class ListStorage(object):
         For simplicity we load its full content.
         """
         if self.use_object_id:
-            _id = bson.objectid.ObjectId(_id)
+            _id = util.ObjectId(_id)
         query = {'_id': _id}
         projection = None
         if query_params:
@@ -48,7 +48,7 @@ class ListStorage(object):
         """
         if self.use_object_id:
             try:
-                _id = bson.objectid.ObjectId(_id)
+                _id = util.ObjectId(_id)
             except bson.errors.InvalidId as e:
                 raise APIStorageException(e.message)
         if action == 'GET':
@@ -122,7 +122,7 @@ class StringListStorage(ListStorage):
             raise RuntimeError('collection not initialized before calling get_container')
         if self.use_object_id:
             try:
-                _id = bson.objectid.ObjectId(_id)
+                _id = util.ObjectId(_id)
             except bson.errors.InvalidId as e:
                 raise APIStorageException(e.message)
         query = {'_id': _id}

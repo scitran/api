@@ -1,6 +1,6 @@
-import bson
 import datetime
 
+from .. import util
 from .. import config
 from ..auth import containerauth, always_ok
 from ..dao import containerstorage
@@ -72,9 +72,9 @@ class CollectionsHandler(ContainerHandler):
             return
         acq_ids = []
         for item in contents['nodes']:
-            if not bson.ObjectId.is_valid(item.get('_id')):
+            if not util.ObjectId.is_valid(item.get('_id')):
                 self.abort(400, 'not a valid object id')
-            item_id = bson.ObjectId(item['_id'])
+            item_id = util.ObjectId(item['_id'])
             if item['level'] == 'project':
                 sess_ids = [s['_id'] for s in config.db.sessions.find({'project': item_id}, [])]
                 acq_ids += [a['_id'] for a in config.db.acquisitions.find({'session': {'$in': sess_ids}}, [])]
@@ -84,14 +84,14 @@ class CollectionsHandler(ContainerHandler):
                 acq_ids += [item_id]
         operator = '$addToSet' if contents['operation'] == 'add' else '$pull'
         log.info(' '.join(['collection', _id, operator, str(acq_ids)]))
-        if not bson.ObjectId.is_valid(_id):
+        if not util.ObjectId.is_valid(_id):
             self.abort(400, 'not a valid object id')
-        config.db.acquisitions.update_many({'_id': {'$in': acq_ids}}, {operator: {'collections': bson.ObjectId(_id)}})
+        config.db.acquisitions.update_many({'_id': {'$in': acq_ids}}, {operator: {'collections': util.ObjectId(_id)}})
 
     def delete(self, cont_name, **kwargs):
         _id = kwargs.get('cid')
         super(CollectionsHandler, self).delete(cont_name, **kwargs)
-        config.db.acquisitions.update_many({'collections': bson.ObjectId(_id)}, {'$pull': {'collections': bson.ObjectId(_id)}})
+        config.db.acquisitions.update_many({'collections': util.ObjectId(_id)}, {'$pull': {'collections': util.ObjectId(_id)}})
 
     def get_all(self, cont_name):
         self.config = self.container_handler_configurations[cont_name]
@@ -143,9 +143,9 @@ class CollectionsHandler(ContainerHandler):
         # FIXME use storage and permission checking abstractions
         self.config = self.container_handler_configurations['collections']
         self.storage = self.config['storage']
-        if not bson.ObjectId.is_valid(cid):
+        if not util.ObjectId.is_valid(cid):
             self.abort(400, 'not a valid object id')
-        _id = bson.ObjectId(cid)
+        _id = util.ObjectId(cid)
         if not self.storage.dbc.find_one({'_id': _id}):
             self.abort(404, 'no such Collection')
         agg_res = config.db.acquisitions.aggregate([
@@ -176,15 +176,15 @@ class CollectionsHandler(ContainerHandler):
         # FIXME use storage and permission checking abstractions
         self.config = self.container_handler_configurations['collections']
         self.storage = self.config['storage']
-        if not bson.ObjectId.is_valid(cid):
+        if not util.ObjectId.is_valid(cid):
             self.abort(400, 'not a valid object id')
-        _id = bson.ObjectId(cid)
+        _id = util.ObjectId(cid)
         if not self.storage.dbc.find_one({'_id': _id}):
             self.abort(404, 'no such Collection')
         query = {'collections': _id}
         sid = self.get_param('session', '')
-        if bson.ObjectId.is_valid(sid):
-            query['session'] = bson.ObjectId(sid)
+        if util.ObjectId.is_valid(sid):
+            query['session'] = util.ObjectId(sid)
         elif sid != '':
             self.abort(400, sid + ' is not a valid ObjectId')
         projection = self.container_handler_configurations['acquisitions']['list_projection']

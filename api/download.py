@@ -1,4 +1,3 @@
-import bson
 import json
 import pytz
 import os.path
@@ -63,7 +62,7 @@ class Download(base.RequestHandler):
         # FIXME: check permissions of everything
         used_subpaths = {}
         for item in req_spec['nodes']:
-            item_id = bson.ObjectId(item['_id'])
+            item_id = util.ObjectId(item['_id'])
             if item['level'] == 'project':
                 project = config.db[project_cont_name].find_one({'_id': item_id}, ['group', 'label', 'files'])
                 prefix = '/'.join([arc_prefix, project['group'], project['label']])
@@ -144,7 +143,7 @@ class Download(base.RequestHandler):
         if len(req_spec['nodes']) != 1:
             self.abort(400, 'bids downloads are limited to single dataset downloads')
         for item in req_spec['nodes']:
-            item_id = bson.ObjectId(item['_id'])
+            item_id = util.ObjectId(item['_id'])
             if item['level'] == 'project':
                 project = config.db[project_cont_name].find_one({'_id': item_id}, ['group', 'label', 'files', 'notes'])
                 projects.append(item_id)

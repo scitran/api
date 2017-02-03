@@ -1,5 +1,4 @@
 import bson.errors
-import bson.objectid
 
 from .. import util
 from .. import config
@@ -44,7 +43,7 @@ class ContainerStorage(object):
     def _create_el(self, payload):
         log.debug(payload)
         if payload['_id']:
-            payload['_id'] = bson.objectid.ObjectId(str(payload['_id']))
+            payload['_id'] = util.ObjectId(str(payload['_id']))
         return self.dbc.insert_one(payload)
 
     def _update_el(self, _id, payload):
@@ -53,7 +52,7 @@ class ContainerStorage(object):
         }
         if self.use_object_id:
             try:
-                _id = bson.objectid.ObjectId(_id)
+                _id = util.ObjectId(_id)
             except bson.errors.InvalidId as e:
                 raise APIStorageException(e.message)
         return self.dbc.update_one({'_id': _id}, update)
@@ -61,7 +60,7 @@ class ContainerStorage(object):
     def _delete_el(self, _id):
         if self.use_object_id:
             try:
-                _id = bson.objectid.ObjectId(_id)
+                _id = util.ObjectId(_id)
             except bson.errors.InvalidId as e:
                 raise APIStorageException(e.message)
         return self.dbc.delete_one({'_id':_id})
@@ -69,7 +68,7 @@ class ContainerStorage(object):
     def _get_el(self, _id, projection=None):
         if self.use_object_id:
             try:
-                _id = bson.objectid.ObjectId(_id)
+                _id = util.ObjectId(_id)
             except bson.errors.InvalidId as e:
                 raise APIStorageException(e.message)
         return self.dbc.find_one(_id, projection)

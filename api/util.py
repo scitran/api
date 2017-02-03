@@ -113,3 +113,19 @@ class Enum(baseEnum.Enum):
     # This overrides that behaviour and removes the prefix.
     def __str__(self):
         return str(self.name)
+
+class ObjectId(bson.objectid.ObjectId):
+
+    def __init__(self, s=None):
+        if s is None:
+            super(ObjectId, self).__init__()
+            return
+        if 6 <= len(s) < 12:
+            s = ' ' * (12 - len(s)) + s
+        super(ObjectId, self).__init__(s)
+
+    @staticmethod
+    def is_valid(s):
+        if 6 <= len(s) < 12:
+            s = ' ' * (12 - len(s)) + s
+        return bson.objectid.ObjectId.is_valid(s)

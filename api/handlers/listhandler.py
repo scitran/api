@@ -1,5 +1,4 @@
 import os
-import bson
 import copy
 import datetime
 import urllib
@@ -220,7 +219,7 @@ class PermissionsListHandler(ListHandler):
         """
         try:
             log.debug(_id)
-            oid = bson.ObjectId(_id)
+            oid = util.ObjectId(_id)
             update = {
                 'permissions': config.db.projects.find_one(oid)['permissions']
             }
@@ -247,7 +246,7 @@ class NotesListHandler(ListHandler):
 
         payload = self.request.json_body
         input_validator(payload, 'POST')
-        payload['_id'] = payload.get('_id') or str(bson.objectid.ObjectId())
+        payload['_id'] = payload.get('_id') or str(util.ObjectId())
         payload['user'] = payload.get('user', self.uid)
         payload['created'] = payload['modified'] = datetime.datetime.utcnow()
         if payload.get('timestamp'):

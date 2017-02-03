@@ -41,7 +41,7 @@ routing_regexes = {
     'group_id_re': '[0-9a-z][0-9a-z.@_-]{0,30}[0-9a-z]',
     # container id regex
     # hexadecimal string exactly of length 24
-    'cid_re': '[0-9a-f]{24}|[^/]{12}',
+    'cid_re': '[0-9a-f]{24}|[^/]{6,12}',
     # site id regex
     # length less than 24 characters
     # allowed characters are [0-9a-z]

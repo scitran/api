@@ -1,4 +1,3 @@
-import bson
 import copy
 import datetime
 
@@ -123,7 +122,7 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         else:
             permchecker = containerauth.list_permission_checker(self)
         query = {
-            'original': bson.ObjectId(proj_id)
+            'original': util.ObjectId(proj_id)
         }
         try:
             results = permchecker(self.storage.exec_op)('GET', query=query, projection=projection, public=self.public_request)
