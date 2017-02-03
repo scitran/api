@@ -42,7 +42,7 @@ class ContainerStorage(object):
 
     def _create_el(self, payload):
         log.debug(payload)
-        if payload['_id']:
+        if payload.get('_id') and self.use_object_id:
             payload['_id'] = util.ObjectId(str(payload['_id']))
         return self.dbc.insert_one(payload)
 

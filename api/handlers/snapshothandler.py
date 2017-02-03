@@ -60,7 +60,7 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.abort(500, 'method not supported on snapshots')
 
     def create(self, **kwargs):
-        snap_id = kwargs.pop('cid')
+        snap_id = kwargs.pop('cid', None)
         if snap_id:
             payload = {
                 '_id': snap_id
