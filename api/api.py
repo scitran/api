@@ -41,7 +41,7 @@ routing_regexes = {
     'group_id_re': '[0-9a-z][0-9a-z.@_-]{0,30}[0-9a-z]',
     # container id regex
     # hexadecimal string exactly of length 24
-    'cid_re': '[0-9a-f]{24}',
+    'cid_re': '[0-9a-f]{24}|[^/]{12}',
     # site id regex
     # length less than 24 characters
     # allowed characters are [0-9a-z]
@@ -135,6 +135,7 @@ routes = [
 
     webapp2.Route(_format(r'/api/snapshots'),                                                                       snapshothandler.SnapshotHandler, name='snap_post', handler_method='create', methods=['POST']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>'),                                                  snapshothandler.SnapshotHandler, name='snap_proj', handler_method='get_all', methods=['GET']),
+    webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>'),                                   snapshothandler.SnapshotHandler, name='snap_post_with_id', handler_method='create', methods=['POST']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>'),                                   snapshothandler.SnapshotHandler, name='snap_delete', handler_method='remove', methods=['DELETE']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/public'),                            snapshothandler.SnapshotHandler, name='snap_publish', handler_method='publish', methods=['PUT']),
     webapp2.Route(_format(r'/api/snapshots/<cont_name:projects>/<cid:{cid_re}>/acquisitions'),                      snapshothandler.SnapshotHandler, name='snap_proj_acq', handler_method='get_acquisitions_in_project', methods=['GET']),

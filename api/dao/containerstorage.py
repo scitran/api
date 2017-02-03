@@ -43,6 +43,8 @@ class ContainerStorage(object):
 
     def _create_el(self, payload):
         log.debug(payload)
+        if payload['_id']:
+            payload['_id'] = bson.objectid.ObjectId(str(payload['_id']))
         return self.dbc.insert_one(payload)
 
     def _update_el(self, _id, payload):

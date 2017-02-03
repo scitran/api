@@ -25,9 +25,11 @@ def _new_version(project_id):
     return version
 
 
-def _store(hierarchy):
+def _store(hierarchy, snap_id=None):
     project = hierarchy['snapshot']
     project['original'] = project.pop('_id')
+    if snap_id:
+        project['_id'] = bson.objectid.ObjectId(snap_id)
     result = config.db.project_snapshots.insert_one(project)
     project_id = result.inserted_id
     subjects = []
@@ -68,7 +70,11 @@ def _store(hierarchy):
 
 def create(method, _id, payload=None):
     hierarchy = _new_version(_id)
-    return _store(hierarchy)
+    if payload:
+        snap_id = payload['_id']
+    else:
+        snap_id = None
+    return _store(hierarchy, snap_id)
 
 
 def remove(method, _id, payload=None):

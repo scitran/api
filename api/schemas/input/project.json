@@ -4,6 +4,7 @@
     "type": "object",
     "allOf": [{"$ref": "container.json"}],
     "properties": {
+        "_id": {},
         "public": {},
         "label": {},
         "metadata": {},

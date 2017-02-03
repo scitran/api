@@ -61,6 +61,13 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.abort(500, 'method not supported on snapshots')
 
     def create(self, **kwargs):
+        snap_id = kwargs.pop('cid')
+        if snap_id:
+            payload = {
+                '_id': snap_id
+            }
+        else:
+            payload = None
         origin_storage = containerstorage.ContainerStorage('projects', use_object_id=True)
         origin_id = self.get_param('project')
         if not origin_id:
@@ -68,7 +75,7 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.config = self.container_handler_configurations['projects']
         container = origin_storage.get_container(origin_id)
         permchecker = self._get_permchecker(container, container)
-        result = permchecker(snapshot.create)('POST', _id=origin_id)
+        result = permchecker(snapshot.create)('POST', _id=origin_id, payload=payload)
         return {'_id': result.inserted_id}
 
     def remove(self, cont_name, **kwargs):
