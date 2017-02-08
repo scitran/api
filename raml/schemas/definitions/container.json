@@ -6,7 +6,7 @@
         "public":       {"type": "boolean"},
         "archived":     {"type": "boolean"},
         "label":        {"type": "string", "minLength": 1, "maxLength": 256},
-        "info":     {"type": "object"},
+        "info":     {"type": ["object", "null"]},
         "uid":          {"type":"string"},
         "timestamp":    {"type": ["string", "null"], "format": "date-time"},
         "timezone":     {"type": "string"}

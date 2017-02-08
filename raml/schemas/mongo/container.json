@@ -12,6 +12,6 @@
         "archived":     {"type": "boolean"},
         "label":        {"type": "string"},
         "tags":         {"type": "array", "items": {"type": "string"}},
-        "info":         {"type": "object"}
+        "info":         {"type": ["object", "null"]}
     }
 }
