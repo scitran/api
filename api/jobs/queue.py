@@ -9,7 +9,7 @@ import datetime
 
 from .. import config
 from .jobs import Job
-from .gears import get_gear_by_name
+from .gear_helpers import get_gear_by_name
 
 log = config.log
 

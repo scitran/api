@@ -11,7 +11,7 @@ import sys
 from api import config
 from api.dao import containerutil
 from api.jobs.jobs import Job
-from api.jobs import gears
+from api.jobs import gear_helpers
 from api.types import Origin
 
 CURRENT_DATABASE_VERSION = 21 # An int that is bumped when a new schema change is made
@@ -497,7 +497,7 @@ def upgrade_to_18():
         gear_list = gear_doc.get('gear_list', [])
         for gear in gear_list:
             try:
-                gears.upsert_gear(gear)
+                gear_helpers.upsert_gear(gear)
             except Exception as e:
                 logging.error("")
                 logging.error("Error upgrading gear:")
