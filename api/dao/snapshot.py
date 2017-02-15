@@ -1,11 +1,12 @@
 from .. import config
-import bson.objectid
+from .. import util
+
 from pymongo import ReturnDocument
 
 log = config.log
 
 def _new_version(project_id):
-    project_id = bson.objectid.ObjectId(project_id)
+    project_id = util.ObjectId(project_id)
     project = config.db.projects.find_one_and_update(
         {'_id': project_id},
         {'$inc': {'snapshot_version': 1}},
@@ -25,9 +26,11 @@ def _new_version(project_id):
     return version
 
 
-def _store(hierarchy):
+def _store(hierarchy, snap_id=None):
     project = hierarchy['snapshot']
     project['original'] = project.pop('_id')
+    if snap_id:
+        project['_id'] = util.ObjectId(snap_id)
     result = config.db.project_snapshots.insert_one(project)
     project_id = result.inserted_id
     subjects = []
@@ -68,11 +71,15 @@ def _store(hierarchy):
 
 def create(method, _id, payload=None):
     hierarchy = _new_version(_id)
-    return _store(hierarchy)
+    if payload:
+        snap_id = payload['_id']
+    else:
+        snap_id = None
+    return _store(hierarchy, snap_id)
 
 
 def remove(method, _id, payload=None):
-    snapshot_id = bson.objectid.ObjectId(_id)
+    snapshot_id = util.ObjectId(_id)
     result = config.db.project_snapshots.find_one_and_delete({'_id': snapshot_id})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': snapshot_id})]
     config.db.session_snapshots.delete_many({'_id': {'$in': session_snapshot_ids}})
@@ -80,7 +87,7 @@ def remove(method, _id, payload=None):
     return result
 
 def remove_private_snapshots_for_project(pid):
-    pid = bson.objectid.ObjectId(pid)
+    pid = util.ObjectId(pid)
     project_snapshot_ids = [sn['_id'] for sn in config.db.project_snapshots.find({'original': pid, 'public': False})]
     result = config.db.project_snapshots.delete_many({'original': pid, 'public': False})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': {'$in': project_snapshot_ids}})]
@@ -89,7 +96,7 @@ def remove_private_snapshots_for_project(pid):
     return result
 
 def remove_permissions_from_snapshots(pid):
-    pid = bson.objectid.ObjectId(pid)
+    pid = util.ObjectId(pid)
     project_snapshot_ids = [sn['_id'] for sn in config.db.project_snapshots.find({'original': pid})]
     result = config.db.project_snapshots.update_many({'original': pid}, {'$set':{'permissions': []}})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': {'$in': project_snapshot_ids}})]
@@ -99,7 +106,7 @@ def remove_permissions_from_snapshots(pid):
 
 def make_public(method, _id, payload=None):
     public = payload['value']
-    snapshot_id = bson.objectid.ObjectId(_id)
+    snapshot_id = util.ObjectId(_id)
     result = config.db.project_snapshots.find_one_and_update({'_id': snapshot_id}, {'$set':{'public': public}})
     session_snapshot_ids = [s['_id'] for s in config.db.session_snapshots.find({'project': snapshot_id})]
     config.db.session_snapshots.update_many({'_id': {'$in': session_snapshot_ids}}, {'$set':{'public': public}})

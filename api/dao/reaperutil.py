@@ -1,4 +1,3 @@
-import bson
 import difflib
 import pymongo
 import datetime

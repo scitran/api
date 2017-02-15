@@ -1,4 +1,3 @@
-import bson
 import copy
 import datetime
 
@@ -61,6 +60,13 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.abort(500, 'method not supported on snapshots')
 
     def create(self, **kwargs):
+        snap_id = kwargs.pop('cid', None)
+        if snap_id:
+            payload = {
+                '_id': snap_id
+            }
+        else:
+            payload = None
         origin_storage = containerstorage.ContainerStorage('projects', use_object_id=True)
         origin_id = self.get_param('project')
         if not origin_id:
@@ -68,7 +74,7 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         self.config = self.container_handler_configurations['projects']
         container = origin_storage.get_container(origin_id)
         permchecker = self._get_permchecker(container, container)
-        result = permchecker(snapshot.create)('POST', _id=origin_id)
+        result = permchecker(snapshot.create)('POST', _id=origin_id, payload=payload)
         return {'_id': result.inserted_id}
 
     def remove(self, cont_name, **kwargs):
@@ -116,7 +122,7 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         else:
             permchecker = containerauth.list_permission_checker(self)
         query = {
-            'original': bson.ObjectId(proj_id)
+            'original': util.ObjectId(proj_id)
         }
         try:
             results = permchecker(self.storage.exec_op)('GET', query=query, projection=projection, public=self.public_request)

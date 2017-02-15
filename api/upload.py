@@ -1,4 +1,3 @@
-import bson
 import copy
 import os.path
 import datetime
@@ -67,7 +66,7 @@ class Upload(base.RequestHandler):
         if not acquisition_id:
             self.abort(404, 'container id is required')
         else:
-            acquisition_id = bson.ObjectId(acquisition_id)
+            acquisition_id = util.ObjectId(acquisition_id)
         if not self.superuser_request:
             self.abort(402, 'uploads must be from an authorized drone')
         with tempfile.TemporaryDirectory(prefix='.tmp', dir=config.get_item('persistent', 'data_path')) as tempdir_path:

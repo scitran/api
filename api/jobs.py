@@ -5,7 +5,6 @@ API request handlers for process-job-handling.
 # We shadow the standard library; this is a workaround.
 from __future__ import absolute_import
 
-import bson
 import pymongo
 import datetime
 from collections import namedtuple
@@ -332,7 +331,7 @@ class Job(base.RequestHandler):
         if not self.superuser_request:
             self.abort(403, 'Request requires superuser')
 
-        result = config.db.jobs.find_one({'_id': bson.ObjectId(_id)})
+        result = config.db.jobs.find_one({'_id': util.ObjectId(_id)})
         return result
 
     def put(self, _id):
@@ -345,7 +344,7 @@ class Job(base.RequestHandler):
             self.abort(403, 'Request requires superuser')
 
         mutation = self.request.json
-        job = config.db.jobs.find_one({'_id': bson.ObjectId(_id)})
+        job = config.db.jobs.find_one({'_id': util.ObjectId(_id)})
 
         if job is None:
             self.abort(404, 'Job not found')
@@ -371,5 +370,5 @@ class Job(base.RequestHandler):
 
         # If the job did not succeed, check to see if job should be retried.
         if 'state' in mutation and mutation['state'] == 'failed':
-            job = config.db.jobs.find_one({'_id': bson.ObjectId(_id)})
+            job = config.db.jobs.find_one({'_id': util.ObjectId(_id)})
             retry_job(config.db, job)

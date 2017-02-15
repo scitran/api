@@ -1,4 +1,3 @@
-import bson
 import datetime
 
 from .. import base
@@ -128,9 +127,9 @@ class ContainerHandler(base.RequestHandler):
             if not par_id:
                 self.abort(500, 'par_id is required when par_cont_name is provided')
             if self.use_object_id.get(par_cont_name):
-                if not bson.ObjectId.is_valid(par_id):
+                if not util.ObjectId.is_valid(par_id):
                     self.abort(400, 'not a valid object id')
-                par_id = bson.ObjectId(par_id)
+                par_id = util.ObjectId(par_id)
             query = {par_cont_name[:-1]: par_id}
         else:
             query = {}
@@ -277,7 +276,7 @@ class ContainerHandler(base.RequestHandler):
         target_parent_container, parent_id_property = self._get_parent_container(payload)
         if target_parent_container:
             if cont_name in ['sessions', 'acquisitions']:
-                payload[parent_id_property] = bson.ObjectId(payload[parent_id_property])
+                payload[parent_id_property] = util.ObjectId(payload[parent_id_property])
             if cont_name == 'sessions':
                 payload['group'] = target_parent_container['group']
             if cont_name == 'projects':
