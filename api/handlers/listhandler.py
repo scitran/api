@@ -508,8 +508,8 @@ class FileListHandler(ListHandler):
 
         payload = self.request.json_body
         payload_validator(payload, 'PUT')
-        if not set(payload.keys()).issubset({'info', 'modality', 'classification'}):
-            self.abort(400, 'Can only update info, modality an classification keys on file.')
+        if not set(payload.keys()).issubset({'info', 'modality', 'classification', 'archived'}):
+            self.abort(400, 'Can only update info, modality, classification and archived status keys on file.')
 
         classification = payload.get('classification')
         if classification:

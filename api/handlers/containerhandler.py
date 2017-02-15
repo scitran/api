@@ -102,6 +102,8 @@ class ContainerHandler(base.RequestHandler):
             self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, _id))
         if not self.superuser_request:
             self._filter_permissions(result, self.uid, self.user_site)
+        if not self.is_true('archived'):
+            result['files'][:] = [x for x in result['files'] if not x.get('archived', False)]
         # build and insert file paths if they are requested
         if self.is_true('paths'):
             for fileinfo in result['files']:
@@ -270,6 +272,12 @@ class ContainerHandler(base.RequestHandler):
             query = {par_cont_name[:-1]: par_id}
         else:
             query = {}
+            # For top level get_alls of containers, don't include files.
+            # Do include if there is a parent container
+            if not projection:
+                projection = {'files': 0}
+            else:
+                projection['files'] = 0
         if not self.is_true('archived'):
             query['archived'] = {'$ne': True}
         # this request executes the actual reqeust filtering containers based on the user permissions
@@ -293,6 +301,8 @@ class ContainerHandler(base.RequestHandler):
                 result = self.handle_analyses(result)
             if self.is_true('stats'):
                 result = containerutil.get_stats(result, cont_name)
+            if not self.is_true('archived') and par_cont_name:
+                result.get('files', [])[:] = [x for x in result.get('files', []) if not x.get('archived', False)]
             result = self.handle_origin(result)
             modified_results.append(result)
 
