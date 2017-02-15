@@ -366,9 +366,12 @@ class FileStorage(ListStorage):
         for k,v in payload.items():
             mod_elem[self.list_name + '.$.' + k] = v
         query = {
-            '_id': _id,
+            '_id': bson.objectid.ObjectId(_id),
             self.list_name: {'$elemMatch': query_params}
         }
         update['$set'] = mod_elem
+
+        log.debug('query {}'.format(query))
+        log.debug('update {}'.format(update))
 
         return self.dbc.update_one(query, update)

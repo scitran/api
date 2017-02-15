@@ -4,6 +4,7 @@
         "name":           { "type": "string" },
         "file-type":      { "type": "string" },
         "mimetype":       { "type": "string" },
+        "archived":       {"$ref":"../definitions/container.json#/definitions/archived"},
         "modality":       { "type": "string" },
         "classification": {
           "type": "object"
@@ -34,6 +35,7 @@
               "name":           {"$ref":"#/definitions/name"},
               "type":           {"$ref":"#/definitions/file-type"},
               "mimetype":       {"$ref":"#/definitions/mimetype"},
+              "archived":       {"$ref":"#/definitions/archived"},
               "modality":       {"$ref":"#/definitions/modality"},
               "classification":   {"$ref":"#/definitions/classification"},
               "tags": {"$ref":"#/definitions/tags"},
@@ -47,6 +49,7 @@
               "name":           {"$ref":"#/definitions/name"},
               "type":           {"$ref":"#/definitions/file-type"},
               "mimetype":       {"$ref":"#/definitions/mimetype"},
+              "archived":       {"$ref":"#/definitions/archived"},
               "modality":       {
                   "oneOf":[
                       {"$ref":"#/definitions/modality"},
