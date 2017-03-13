@@ -127,7 +127,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
 
             'type': None,
             'modality': None,
-            'measurements': [],
+            'classification': {},
             'tags': [],
             'info': {}
         }

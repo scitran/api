@@ -242,15 +242,16 @@ class EnginePlacer(Placer):
                 job = Job.get(self.context.get('job_id'))
                 input_names = [{'name': v.name} for v in job.inputs.itervalues()]
 
-                measurement = self.metadata.get(self.container_type, {}).pop('measurement', None)
+                classification = self.metadata.get(self.container_type, {}).pop('measurement', None)
                 info = self.metadata.get(self.container_type,{}).pop('metadata', None)
                 modality = self.metadata.get(self.container_type, {}).pop('instrument', None)
-                if measurement or info or modality:
+                if classification or info or modality:
                     files_ = self.metadata[self.container_type].get('files', [])
                     files_ += input_names
                     for f in files_:
-                        if measurement:
-                            f['measurements'] = [measurement]
+                        if classification:
+                            custom = {'custom': [classification]}
+                            f['classification'] = custom
                         if info:
                             f['info'] = info
                         if modality:
@@ -502,7 +503,7 @@ class PackfilePlacer(Placer):
 
             # OPPORTUNITY: packfile endpoint could be extended someday to take additional metadata.
             'modality': None,
-            'measurements': [],
+            'classification': {},
             'tags': [],
             'info': {},
 

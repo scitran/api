@@ -18,6 +18,7 @@ from ..dao import noop
 from ..dao import liststorage
 from ..dao import APIStorageException
 from ..dao import hierarchy
+from .modalityhandler import ModalityHandler
 from ..web.request import log_access, AccessType
 
 
@@ -38,7 +39,7 @@ def initialize_list_configurations():
             'input_schema_file': 'tag.json'
         },
         'files': {
-            'storage': liststorage.ListStorage,
+            'storage': liststorage.FileStorage,
             'permchecker': listauth.default_sublist,
             'use_object_id': True,
             'storage_schema_file': 'file.json',
@@ -500,6 +501,38 @@ class FileListHandler(ListHandler):
         permchecker(noop)('POST', _id=_id)
 
         return upload.process_upload(self.request, upload.Strategy.targeted, container_type=cont_name, id_=_id, origin=self.origin)
+
+    def put(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        permchecker, storage, mongo_validator, payload_validator, keycheck = self._initialize_request(cont_name, list_name, _id, query_params=kwargs)
+
+        payload = self.request.json_body
+        payload_validator(payload, 'PUT')
+        if not set(payload.keys()).issubset({'info', 'modality', 'classification', 'archived'}):
+            self.abort(400, 'Can only update info, modality, classification and archived status keys on file.')
+
+        classification = payload.get('classification')
+        if classification:
+            modality = payload.get('modality')
+            if not modality:
+                file_obj = storage.exec_op('GET', _id, query_params=kwargs)
+                modality = file_obj.get('modality')
+
+            if not ModalityHandler.check_classification(modality, classification):
+                self.abort(400, 'Classification does not match allowable values for modality {}.'.format(modality))
+
+        rf = self.is_true('replace_fields')
+
+        try:
+            keycheck(mongo_validator(permchecker(noop)))('PUT', _id=_id, query_params=kwargs, payload=payload)
+            result = storage.update_file(_id, kwargs, payload, replace_fields=rf)
+        except APIStorageException as e:
+            self.abort(400, e.message)
+        # abort if the query of the update wasn't able to find any matching documents
+        if result.matched_count == 0:
+            self.abort(404, 'Element not updated in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
+        else:
+            return {'modified':result.modified_count}
 
     def delete(self, cont_name, list_name, **kwargs):
         # Overriding base class delete to audit action before completion

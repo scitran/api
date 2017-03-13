@@ -3,6 +3,7 @@ import bson.objectid
 import datetime
 
 from .. import config
+from .. import util
 from . import consistencychecker, containerutil
 from . import APIStorageException, APIConflictException
 from .containerstorage import SessionStorage, AcquisitionStorage
@@ -352,3 +353,35 @@ class AnalysesStorage(ListStorage):
 
         analysis['job'] = job
         return analysis
+
+
+class FileStorage(ListStorage):
+
+    def update_file(self, _id, query_params, payload, replace_fields=False):
+        mod_elem = {}
+        update = {}
+
+        # If we want to add to the classification lists rather than replace
+        # the entirity of the classification map, use $addToSet.
+        # This allows some endpoints to only make additive changes
+        if not replace_fields:
+            classification = payload.pop('classification', None)
+            if classification:
+                add_to_set = {}
+                for k,array in classification.items():
+                    add_to_set[self.list_name + '.$.classification.' + k] = array
+                update['$addToSet'] = add_to_set
+            payload = util.mongo_dict(payload)
+
+        for k,v in payload.items():
+            mod_elem[self.list_name + '.$.' + k] = v
+        query = {
+            '_id': bson.objectid.ObjectId(_id),
+            self.list_name: {'$elemMatch': query_params}
+        }
+        update['$set'] = mod_elem
+
+        log.debug('query {}'.format(query))
+        log.debug('update {}'.format(update))
+
+        return self.dbc.update_one(query, update)
