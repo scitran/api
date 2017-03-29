@@ -8,62 +8,49 @@ sh = logging.StreamHandler()
 log.addHandler(sh)
 
 
-@pytest.fixture(scope="module")
-def with_two_groups(as_admin, bunch, request, data_builder):
-    group_1 = data_builder.create_group('test_group_' + str(int(time.time() * 1000)))
-    group_2 = data_builder.create_group('test_group_' + str(int(time.time() * 1000)))
+@pytest.fixture(scope='module')
+def module_state(session_state, module_data_builder):
+    builder = module_data_builder
+    return attrdict.AttrDict(
+        group_1       = builder.create_group(_id='test-group-1'),
+        project_1     = builder.create_project(label='test-project-1'),
+        session_1     = builder.create_session(label='test-session-1'),
+        acquisition_1 = builder.create_acquisition(label='test-acquisition-1'),
 
-    def teardown_db():
-        data_builder.delete_group(group_1)
-        data_builder.delete_group(group_2)
-
-    request.addfinalizer(teardown_db)
-
-    fixture_data = bunch.create()
-    fixture_data.group_1 = group_1
-    fixture_data.group_2 = group_2
-    return fixture_data
+        group_2       = session_state.group,
+        project_2     = session_state.project,
+        session_2     = session_state.session,
+        acquisition_2 = session_state.acquisition,
+    )
 
 
-# Create project
-# Add it to a group
-# Switch the project to the second group
-# Delete the project
-def test_switching_project_between_groups(with_two_groups, data_builder, as_user):
-    data = with_two_groups
+def test_switching_project_between_groups(module_state, as_admin):
+    data = module_state
 
-    pid = data_builder.create_project(data.group_1)
-    assert as_user.get('/projects/' + pid).ok
-    r = as_user.get('/groups/' + data.group_1 + '/projects')
-    print json.loads(r.content)
+    r = as_admin.get('/projects/' + data.project_1)
+    assert r.ok
+    assert r.json()['group'] == data.group_1
 
-    payload = json.dumps({'group': with_two_groups.group_2})
-    r = as_user.put('/projects/' + pid, data=payload)
+    r = as_admin.put('/projects/' + data.project_1, json={'group': data.group_2})
     assert r.ok
 
-    r = as_user.get('/projects/' + pid)
-    assert r.ok and json.loads(r.content)['group'] == data.group_2
+    r = as_admin.get('/projects/' + data.project_1)
+    assert r.ok
+    assert r.json()['group'] == data.group_2
 
-    data_builder.delete_project(pid)
 
+def test_switching_session_between_projects(function_data_builder, as_admin):
+    builder = function_data_builder
+    project_1 = builder.create_project(label='test-project-1')
+    project_2 = builder.create_project(label='test-project-2')
+    session = builder.create_session(project=project_1, label='test-session')
 
-def test_switching_session_between_projects(with_two_groups, data_builder, as_user):
-    data = with_two_groups
-
-    project_1_id = data_builder.create_project(data.group_1)
-    project_2_id = data_builder.create_project(data.group_1)
-    session_id = data_builder.create_session(project_1_id)
-
-    payload = json.dumps({'project': project_2_id})
-    r = as_user.put('/sessions/' + session_id, data=payload)
+    r = as_admin.put('/sessions/' + session, json={'project': project_2})
     assert r.ok
 
-    r = as_user.get('/sessions/' + session_id)
-    assert r.ok and json.loads(r.content)['project'] == project_2_id
-
-    data_builder.delete_session(session_id)
-    data_builder.delete_project(project_1_id)
-    data_builder.delete_project(project_2_id)
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json()['project'] == project_2
 
 
 def test_switching_acquisition_between_projects(with_two_groups, data_builder, as_user):

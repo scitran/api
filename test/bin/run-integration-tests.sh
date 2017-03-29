@@ -8,15 +8,15 @@ rm -f .coverage.integration-tests
 
 USAGE="
     Usage:\n
-    $0 <api-base-url> <mongodb-uri> <drone-secret>\n
+    $0 <api-base-url> <mongodb-uri> <mongodb-log-uri> <drone-secret>\n
     \n
 "
 
 if [ "$#" -eq 4 ]; then
-  SCITRAN_SITE_API_URL=$1
-  MONGODB_URI=$2
-  ACCESS_LOG_MONGODB_URI=$3
-  SCITRAN_CORE_DRONE_SECRET=$4
+    SCITRAN_SITE_API_URL=$1
+    SCITRAN_PERSISTENT_DB_URI=$2
+    SCITRAN_PERSISTENT_DB_LOG_URI=$3
+    SCITRAN_CORE_DRONE_SECRET=$4
 else
     echo "Wrong number of positional arguments"
     echo $USAGE >&2
@@ -29,31 +29,17 @@ until $(curl --output /dev/null --silent --head --fail "$SCITRAN_SITE_API_URL");
     sleep 1
 done
 
-echo "Bootstrapping test data..."
-# Don't call things bootstrap.json because that's in root .gitignore
-
-PYTHONPATH="$( pwd )" \
-SCITRAN_PERSISTENT_DB_URI="$MONGODB_URI" \
-  python "bin/load_users_drone_secret.py" \
-  --secret "$SCITRAN_CORE_DRONE_SECRET" \
-  "$SCITRAN_SITE_API_URL" \
-  "test/integration_tests/bootstrap-test-accounts.json"
-
 # Remove __pycache__ directory for issue with __file__ attribute
 # Due to running the tests on the host creating bytecode files
 # Which have a mismatched __file__ attribute when loaded in docker container
 rm -rf test/integration_tests/python/__pycache__
 
 PYTHONPATH="$( pwd )" \
-    SCITRAN_PERSISTENT_DB_URI="$MONGODB_URI" \
-    python test/bin/inject_api_key.py admin@user.com \
-    "XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK"
-
-PYTHONPATH="$( pwd )" \
-BASE_URL="$SCITRAN_SITE_API_URL" \
-    MONGO_PATH="$MONGODB_URI" \
-    ACCESS_LOG_MONGO_PATH="$ACCESS_LOG_MONGODB_URI" \
-    py.test test/integration_tests/python
+SCITRAN_SITE_API_URL="$SCITRAN_SITE_API_URL" \
+SCITRAN_PERSISTENT_DB_URI="$SCITRAN_PERSISTENT_DB_URI" \
+SCITRAN_PERSISTENT_DB_LOG_URI="$SCITRAN_PERSISTENT_DB_LOG_URI" \
+SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
+    py.test test/integration_tests/python -k test_switching_session_between_projects; exit
 
 # Load fixtures that Abao relies on:
 # - test-group
@@ -62,13 +48,13 @@ BASE_URL="$SCITRAN_SITE_API_URL" \
 # - test-acquisition-1 (+analysis upload)
 # - test-case-gear
 # - test-collection-1 (+analysis upload)
-BASE_URL="$SCITRAN_SITE_API_URL" \
+SCITRAN_SITE_API_URL="$SCITRAN_SITE_API_URL" \
     python test/integration_tests/abao/load_fixture.py
 
 set +u
 # If no VIRTUAL_ENV, make sure /usr/local/bin is in the path
 if [ -z "$VIRTUAL_ENV" ]; then
-  PATH="/usr/local/bin:$PATH"
+    PATH="/usr/local/bin:$PATH"
 fi
 set -u
 
