@@ -39,7 +39,7 @@ SCITRAN_SITE_API_URL="$SCITRAN_SITE_API_URL" \
 SCITRAN_PERSISTENT_DB_URI="$SCITRAN_PERSISTENT_DB_URI" \
 SCITRAN_PERSISTENT_DB_LOG_URI="$SCITRAN_PERSISTENT_DB_LOG_URI" \
 SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
-    py.test test/integration_tests/python -k test_switching_session_between_projects; exit
+    py.test test/integration_tests/python -k test_containers; exit
 
 # Load fixtures that Abao relies on:
 # - test-group
