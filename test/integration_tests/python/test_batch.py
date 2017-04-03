@@ -1,4 +1,3 @@
-import json
 import logging
 
 
@@ -7,10 +6,11 @@ sh = logging.StreamHandler()
 log.addHandler(sh)
 
 
-def test_batch(with_hierarchy, with_gear, with_invalid_gear, as_user, as_admin):
-    data = with_hierarchy
-    gear = with_gear
-    invalid_gear = with_invalid_gear
+def test_batch(data_builder, as_user, as_admin):
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
+    gear = data_builder.create_gear()
+    invalid_gear = data_builder.create_gear(gear={'custom': {'flywheel': {'invalid': True}}})
 
     # get all
     r = as_user.get('/batch')
@@ -42,7 +42,7 @@ def test_batch(with_hierarchy, with_gear, with_invalid_gear, as_user, as_admin):
     assert r.status_code == 400
 
     # create a batch
-    r = as_admin.post('/acquisitions/' + data.acquisition + '/files', files={
+    r = as_admin.post('/acquisitions/' + acquisition + '/files', files={
         'file': ('test.txt', 'test\ncontent\n')
     })
     assert r.ok
@@ -50,9 +50,9 @@ def test_batch(with_hierarchy, with_gear, with_invalid_gear, as_user, as_admin):
     r = as_admin.post('/batch', json={
         'gear_id': gear,
         'targets': [
-            {'type': 'acquisition', 'id': data.acquisition},
+            {'type': 'acquisition', 'id': acquisition},
         ],
-        'target_context': {'type': 'session', 'id': data.session}
+        'target_context': {'type': 'session', 'id': session}
     })
     assert r.ok
     batch_id = r.json()['_id']

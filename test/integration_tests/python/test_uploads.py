@@ -1,92 +1,80 @@
-import datetime
-import dateutil.parser
-import os
 import json
-import time
-import pytest
 import logging
+
+import dateutil.parser
+
 
 log = logging.getLogger(__name__)
 sh = logging.StreamHandler()
 log.addHandler(sh)
 
-@pytest.fixture()
-def with_group_and_file_data(as_admin, data_builder, bunch, request):
-    group_id = 'test_group_' + str(int(time.time() * 1000))
-    data_builder.create_group(group_id)
-    files = {}
-    for i, cont in enumerate(['project', 'subject', 'session', 'acquisition', 'unused']):
-        files['file' + str(i+1)] = (cont + '.csv', 'some,data,to,send\nanother,row,to,send\n')
-    files['metadata'] = {
-        'group': {'_id': group_id},
-        'project': {
-            'label': 'test_project',
-            'files': [{'name': 'project.csv'}]
-        },
-        'session': {
-            'subject': {
-                'code': 'test_subject_code',
-                'files': [{'name': 'subject.csv'}]
-            },
-            'files': [{'name': 'session.csv'}]
-        },
-        'acquisition': {
-            'files': [{'name': 'acquisition.csv'}]
-        }
-    }
 
-    def teardown_db():
-        r = as_admin.get('/groups/{}/projects'.format(group_id))
-        content = json.loads(r.content)
-        if content:
-            project_id = content[0]['_id']
-            r = as_admin.get('/projects/{}/sessions'.format(project_id))
-            content = json.loads(r.content)
-            if content:
-                session_id = content[0]['_id']
-                r = as_admin.get('/sessions/{}/acquisitions'.format(session_id))
-                content = json.loads(r.content)
-                if content:
-                    acquisition_id = content[0]['_id']
-                    as_admin.delete('/acquisitions/' + acquisition_id)
-                as_admin.delete('/sessions/' + session_id)
-            as_admin.delete('/projects/' + project_id)
-        as_admin.delete('/groups/' + group_id)
-
-    request.addfinalizer(teardown_db)
-
-    fixture_data = bunch.create()
-    fixture_data.files = files
-    return fixture_data
-
-
-def test_uid_upload(with_group_and_file_data, as_admin):
-    data = with_group_and_file_data
-    metadata = data.files['metadata']
-    metadata['session']['uid'] = 'test_session_uid'
-    metadata['acquisition']['uid'] = 'test_acquisition_uid'
+def test_uid_upload(data_builder, file_form, as_admin):
+    group = data_builder.create_group()
 
     # try to uid-upload w/o metadata
-    del data.files['metadata']
-    r = as_admin.post('/upload/uid', files=data.files)
+    r = as_admin.post('/upload/uid', files=file_form('test.csv'))
     assert r.status_code == 500
 
     # uid-upload files
-    data.files['metadata'] = ('', json.dumps(metadata))
-    r = as_admin.post('/upload/uid', files=data.files)
+    r = as_admin.post('/upload/uid', files=file_form(
+        'project.csv', 'subject.csv', 'session.csv', 'acquisition.csv', 'unused.csv',
+        meta={
+            'group': {'_id': group},
+            'project': {
+                'label': 'test_project',
+                'files': [{'name': 'project.csv'}]
+            },
+            'session': {
+                'uid': 'test_session_uid',
+                'subject': {
+                    'code': 'test_subject_code',
+                    'files': [{'name': 'subject.csv'}]
+                },
+                'files': [{'name': 'session.csv'}]
+            },
+            'acquisition': {
+                'uid': 'test_acquisition_uid',
+                'files': [{'name': 'acquisition.csv'}]
+            }
+        })
+    )
     assert r.ok
 
+    # delete group and children recursively (created by upload)
+    data_builder.delete('group', group, recursive=True)
 
-def test_label_upload(with_group_and_file_data, as_admin):
-    data = with_group_and_file_data
-    metadata = data.files['metadata']
-    metadata['session']['label'] = 'test_session_label'
-    metadata['acquisition']['label'] = 'test_acquisition_label'
+
+def test_label_upload(data_builder, file_form, as_admin):
+    group = data_builder.create_group()
 
     # label-upload files
-    data.files['metadata'] = ('', json.dumps(metadata))
-    r = as_admin.post('/upload/label', files=data.files)
+    r = as_admin.post('/upload/label', files=file_form(
+        'project.csv', 'subject.csv', 'session.csv', 'acquisition.csv', 'unused.csv',
+        meta={
+            'group': {'_id': group},
+            'project': {
+                'label': 'test_project',
+                'files': [{'name': 'project.csv'}]
+            },
+            'session': {
+                'label': 'test_session_label',
+                'subject': {
+                    'code': 'test_subject_code',
+                    'files': [{'name': 'subject.csv'}]
+                },
+                'files': [{'name': 'session.csv'}]
+            },
+            'acquisition': {
+                'label': 'test_acquisition_label',
+                'files': [{'name': 'acquisition.csv'}]
+            }
+        })
+    )
     assert r.ok
+
+    # delete group and children recursively (created by upload)
+    data_builder.delete('group', group, recursive=True)
 
 
 def find_file_in_array(filename, files):
@@ -94,9 +82,11 @@ def find_file_in_array(filename, files):
         if f.get('name') == filename:
             return f
 
-def test_acquisition_engine_upload(with_hierarchy_and_file_data, as_admin):
+def test_acquisition_engine_upload(data_builder, file_form, as_root):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
 
-    data = with_hierarchy_and_file_data
     metadata = {
         'project':{
             'label': 'engine project',
@@ -125,45 +115,48 @@ def test_acquisition_engine_upload(with_hierarchy_and_file_data, as_admin):
             ]
         }
     }
-    data.files['metadata'] = ('', json.dumps(metadata))
-
-    r = as_admin.post('/engine?level=acquisition&id='+data.acquisition, files=data.files)
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition},
+        files=file_form('one.csv', 'two.csv', meta=metadata)
+    )
     assert r.ok
 
-    r = as_admin.get('/projects/' + data.project)
+    r = as_root.get('/projects/' + project)
     assert r.ok
-    p = json.loads(r.content)
+    p = r.json()
     # Engine metadata should not replace existing fields
     assert p['label'] != metadata['project']['label']
-    assert cmp(p['info'], metadata['project']['info']) == 0
+    assert p['info'] == metadata['project']['info']
 
-    r = as_admin.get('/sessions/' + data.session)
+    r = as_root.get('/sessions/' + session)
     assert r.ok
-    s = json.loads(r.content)
+    s = r.json()
     # Engine metadata should not replace existing fields
     assert s['label'] != metadata['session']['label']
-    assert cmp(s['info'], metadata['session']['info']) == 0
+    assert s['info'] == metadata['session']['info']
     assert s['subject']['code'] == metadata['session']['subject']['code']
 
-    r = as_admin.get('/acquisitions/' + data.acquisition)
+    r = as_root.get('/acquisitions/' + acquisition)
     assert r.ok
-    a = json.loads(r.content)
+    a = r.json()
     # Engine metadata should not replace existing fields
     assert a['label'] != metadata['acquisition']['label']
+    assert a['info'] == metadata['acquisition']['info']
     a_timestamp = dateutil.parser.parse(a['timestamp'])
     m_timestamp = dateutil.parser.parse(metadata['acquisition']['timestamp'])
     assert a_timestamp == m_timestamp
-    assert cmp(a['info'], metadata['acquisition']['info']) == 0
 
     for f in a['files']:
         mf = find_file_in_array(f['name'], metadata['acquisition']['files'])
         assert mf is not None
         assert f['type'] == mf['type']
-        assert cmp(f['info'], mf['info']) == 0
+        assert f['info'] == mf['info']
 
-def test_session_engine_upload(with_hierarchy_and_file_data, as_admin):
 
-    data = with_hierarchy_and_file_data
+def test_session_engine_upload(data_builder, file_form, as_root):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+
     metadata = {
         'project':{
             'label': 'engine project',
@@ -188,25 +181,26 @@ def test_session_engine_upload(with_hierarchy_and_file_data, as_admin):
             ]
         }
     }
-    data.files['metadata'] = ('', json.dumps(metadata))
 
-    r = as_admin.post('/engine?level=session&id='+data.session, files=data.files)
+    r = as_root.post('/engine',
+        params={'level': 'session', 'id': session},
+        files=file_form('one.csv', 'two.csv', meta=metadata)
+    )
     assert r.ok
 
-    r = as_admin.get('/projects/' + data.project)
+    r = as_root.get('/projects/' + project)
     assert r.ok
-    p = json.loads(r.content)
+    p = r.json()
     # Engine metadata should not replace existing fields
     assert p['label'] != metadata['project']['label']
-    assert cmp(p['info'], metadata['project']['info']) == 0
+    assert p['info'] == metadata['project']['info']
 
-    r = as_admin.get('/sessions/' + data.session)
+    r = as_root.get('/sessions/' + session)
     assert r.ok
-    s = json.loads(r.content)
+    s = r.json()
     # Engine metadata should not replace existing fields
     assert s['label'] != metadata['session']['label']
-    assert cmp(s['info'], metadata['session']['info']) == 0
-
+    assert s['info'] == metadata['session']['info']
     assert s['subject']['code'] == metadata['session']['subject']['code']
     s_timestamp = dateutil.parser.parse(s['timestamp'])
     m_timestamp = dateutil.parser.parse(metadata['session']['timestamp'])
@@ -216,11 +210,10 @@ def test_session_engine_upload(with_hierarchy_and_file_data, as_admin):
         mf = find_file_in_array(f['name'], metadata['session']['files'])
         assert mf is not None
         assert f['type'] == mf['type']
-        assert cmp(f['info'], mf['info']) == 0
+        assert f['info'] == mf['info']
 
-def test_project_engine_upload(with_hierarchy_and_file_data, as_admin):
-
-    data = with_hierarchy_and_file_data
+def test_project_engine_upload(data_builder, file_form, as_root):
+    project = data_builder.create_project()
     metadata = {
         'project':{
             'label': 'engine project',
@@ -239,99 +232,91 @@ def test_project_engine_upload(with_hierarchy_and_file_data, as_admin):
             ]
         }
     }
-    data.files['metadata'] = ('', json.dumps(metadata))
 
-    r = as_admin.post('/engine?level=project&id='+data.project, files=data.files)
+    r = as_root.post('/engine',
+        params={'level': 'project', 'id': project},
+        files=file_form('one.csv', 'two.csv', meta=metadata)
+    )
     assert r.ok
 
-    r = as_admin.get('/projects/' + data.project)
+    r = as_root.get('/projects/' + project)
     assert r.ok
-    p = json.loads(r.content)
+    p = r.json()
     # Engine metadata should not replace existing fields
     assert p['label'] != metadata['project']['label']
-    assert cmp(p['info'], metadata['project']['info']) == 0
+    assert p['info'] == metadata['project']['info']
 
     for f in p['files']:
         mf = find_file_in_array(f['name'], metadata['project']['files'])
         assert mf is not None
         assert f['type'] == mf['type']
-        assert cmp(f['info'], mf['info']) == 0
+        assert f['info'] == mf['info']
 
-def test_acquisition_file_only_engine_upload(with_hierarchy_and_file_data, as_admin):
 
-    data = with_hierarchy_and_file_data
+def test_acquisition_file_only_engine_upload(data_builder, file_form, as_root):
+    acquisition = data_builder.create_acquisition()
+    file_names = ['one.csv', 'two.csv']
 
-    r = as_admin.post('/engine?level=acquisition&id='+data.acquisition, files=data.files)
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition},
+        files=file_form(*file_names)
+    )
     assert r.ok
 
-    r = as_admin.get('/acquisitions/' + data.acquisition)
+    r = as_root.get('/acquisitions/' + acquisition)
     assert r.ok
-    a = json.loads(r.content)
+    assert set(f['name'] for f in r.json()['files']) == set(file_names)
 
-    for k,v in data.files.items():
-        mf = find_file_in_array(v[0], a['files'])
-        assert mf is not None
 
-def test_acquisition_subsequent_file_engine_upload(with_hierarchy_and_file_data, as_admin):
+def test_acquisition_subsequent_file_engine_upload(data_builder, file_form, as_root):
+    acquisition = data_builder.create_acquisition()
 
-    data = with_hierarchy_and_file_data
-
-    filedata_1 = {}
-    filedata_1['file1'] = ('file-one.csv', 'some,data,to,send\nanother,row,to,send\n')
-    filedata_1['metadata'] = ('', json.dumps({
-        'acquisition':{
-            'files':[
-                {
-                    'name': 'file-one.csv',
+    file_name_1 = 'one.csv'
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition},
+        files=file_form(file_name_1, meta={
+            'acquisition': {
+                'files': [{
+                    'name': file_name_1,
                     'type': 'engine type 1',
                     'info': {'test': 'f1'}
-                }
-            ]
-        }
-    }))
-
-    r = as_admin.post('/engine?level=acquisition&id='+data.acquisition, files=filedata_1)
+                }]
+            }
+        })
+    )
     assert r.ok
 
-    r = as_admin.get('/acquisitions/' + data.acquisition)
+    r = as_root.get('/acquisitions/' + acquisition)
     assert r.ok
-    a = json.loads(r.content)
+    assert set(f['name'] for f in r.json()['files']) == set([file_name_1])
 
-    mf = find_file_in_array('file-one.csv', a['files'])
-    assert mf is not None
-
-    filedata_2 = {}
-    filedata_2['file1'] = ('file-two.csv', 'some,data,to,send\nanother,row,to,send\n')
-    filedata_2['metadata'] = ('', json.dumps({
-        'acquisition':{
-            'files':[
-                {
-                    'name': 'file-two.csv',
-                    'type': 'engine type 1',
-                    'info': {'test': 'f1'}
-                }
-            ]
-        }
-    }))
-
-    r = as_admin.post('/engine?level=acquisition&id='+data.acquisition, files=filedata_2)
+    file_name_2 = 'two.csv'
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition},
+        files=file_form(file_name_2, meta={
+            'acquisition': {
+                'files': [{
+                    'name': file_name_2,
+                    'type': 'engine type 2',
+                    'info': {'test': 'f2'}
+                }]
+            }
+        })
+    )
     assert r.ok
 
-    r = as_admin.get('/acquisitions/' + data.acquisition)
+    r = as_root.get('/acquisitions/' + acquisition)
     assert r.ok
-    a = json.loads(r.content)
+    assert set(f['name'] for f in r.json()['files']) == set([file_name_1, file_name_2])
 
-    # Assert both files are still present after upload
-    mf = find_file_in_array('file-one.csv', a['files'])
-    assert mf is not None
-    mf = find_file_in_array('file-two.csv', a['files'])
-    assert mf is not None
 
-def test_acquisition_metadata_only_engine_upload(with_hierarchy_and_file_data, as_admin):
+def test_acquisition_metadata_only_engine_upload(data_builder, file_form, as_root):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
 
-    data = with_hierarchy_and_file_data
     metadata = {
-        'project':{
+        'project': {
             'label': 'engine project',
             'info': {'test': 'p'}
         },
@@ -346,184 +331,179 @@ def test_acquisition_metadata_only_engine_upload(with_hierarchy_and_file_data, a
             'info': {'test': 'a'}
         }
     }
-    data.files = {}
-    data.files['metadata'] = ('', json.dumps(metadata))
 
-    r = as_admin.post('/engine?level=acquisition&id='+data.acquisition, files=data.files)
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition},
+        files=file_form(meta=metadata)
+    )
     assert r.ok
 
-    r = as_admin.get('/projects/' + data.project)
+    r = as_root.get('/projects/' + project)
     assert r.ok
-    p = json.loads(r.content)
+    p = r.json()
     # Engine metadata should not replace existing fields
     assert p['label'] != metadata['project']['label']
-    assert cmp(p['info'], metadata['project']['info']) == 0
+    assert p['info'] == metadata['project']['info']
 
-    r = as_admin.get('/sessions/' + data.session)
+    r = as_root.get('/sessions/' + session)
     assert r.ok
-    s = json.loads(r.content)
+    s = r.json()
     # Engine metadata should not replace existing fields
     assert s['label'] != metadata['session']['label']
-    assert cmp(s['info'], metadata['session']['info']) == 0
+    assert s['info'] == metadata['session']['info']
     assert s['subject']['code'] == metadata['session']['subject']['code']
 
-    r = as_admin.get('/acquisitions/' + data.acquisition)
+    r = as_root.get('/acquisitions/' + acquisition)
     assert r.ok
-    a = json.loads(r.content)
+    a = r.json()
     # Engine metadata should not replace existing fields
     assert a['label'] != metadata['acquisition']['label']
+    assert a['info'] == metadata['acquisition']['info']
     a_timestamp = dateutil.parser.parse(a['timestamp'])
     m_timestamp = dateutil.parser.parse(metadata['acquisition']['timestamp'])
     assert a_timestamp == m_timestamp
-    assert cmp(a['info'], metadata['acquisition']['info']) == 0
 
 
-def test_analysis_upload(with_gear, with_hierarchy, as_user):
-    gear = with_gear
-    data = with_hierarchy
-    file_data = {
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb').read()),
-        'metadata': ('', json.dumps({
-            'label': 'test analysis',
-            'inputs': [ { 'name': 'test-1.dcm' } ]
-        }))
-    }
+def test_analysis_upload(data_builder, file_form, as_admin):
+    gear = data_builder.create_gear()
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
 
     # create session analysis
-    r = as_user.post('/sessions/' + data.session + '/analyses', files=file_data)
+    r = as_admin.post('/sessions/' + session + '/analyses', files=file_form(
+        'one.csv', meta={'label': 'test analysis', 'inputs': [{'name': 'one.csv'}]}
+    ))
     assert r.ok
-    session_analysis_upload = r.json()['_id']
+    session_analysis = r.json()['_id']
 
     # delete session analysis
-    r = as_user.delete('/sessions/' + data.session + '/analyses/' + session_analysis_upload)
+    r = as_admin.delete('/sessions/' + session + '/analyses/' + session_analysis)
     assert r.ok
 
     # create acquisition analysis
-    r = as_user.post('/acquisitions/' + data.acquisition + '/analyses', files=file_data)
+    r = as_admin.post('/acquisitions/' + acquisition + '/analyses', files=file_form(
+        'one.csv', meta={'label': 'test analysis', 'inputs': [{'name': 'one.csv'}]}
+    ))
     assert r.ok
-    acquisition_analysis_upload = r.json()['_id']
+    acquisition_analysis = r.json()['_id']
 
     # delete acquisition analysis
-    r = as_user.delete('/acquisitions/' + data.acquisition + '/analyses/' + acquisition_analysis_upload)
+    r = as_admin.delete('/acquisitions/' + acquisition + '/analyses/' + acquisition_analysis)
     assert r.ok
 
     # create acquisition file (for the fixture acquisition)
-    r = as_user.post('/acquisitions/' + data.acquisition + '/files', files={
-        'file': file_data['file']
-    })
+    r = as_admin.post('/acquisitions/' + acquisition + '/files', files=file_form('one.csv'))
     assert r.ok
 
     # try to create analysis+job w/ missing analysis/job info
-    r = as_user.post('/sessions/' + data.session + '/analyses', params={'job': 'true'}, json={})
+    r = as_admin.post('/sessions/' + session + '/analyses', params={'job': 'true'}, json={})
     assert r.status_code == 400
 
     # create session analysis (job) using acquisition's file as input
-    r = as_user.post('/sessions/' + data.session + '/analyses', params={'job': 'true'}, json={
-        'analysis': { 'label': 'test analysis job' },
+    r = as_admin.post('/sessions/' + session + '/analyses', params={'job': 'true'}, json={
+        'analysis': {'label': 'test analysis job'},
         'job': {
             'gear_id': gear,
             'inputs': {
-                'dicom': {
+                'csv': {
                     'type': 'acquisition',
-                    'id': data.acquisition,
-                    'name': 'test-1.dcm'
+                    'id': acquisition,
+                    'name': 'one.csv'
                 }
             },
             'tags': ['example']
         }
     })
     assert r.ok
-    session_analysis_job = r.json()['_id']
+    session_analysis = r.json()['_id']
 
     # delete session analysis (job)
-    r = as_user.delete('/sessions/' + data.session + '/analyses/' + session_analysis_job)
+    r = as_admin.delete('/sessions/' + session + '/analyses/' + session_analysis)
     assert r.ok
 
 
-def test_analysis_engine_upload(with_hierarchy_and_file_data, as_admin):
-    data = with_hierarchy_and_file_data
-    data.files['metadata'] = ('', json.dumps({
-        'label': 'test analysis',
-        'inputs': [{'name': 'one.csv'}, {'name': 'two.csv'}]
-    }))
+def test_analysis_engine_upload(data_builder, file_form, as_root):
+    acquisition = data_builder.create_acquisition()
 
     # create acquisition analysis
-    r = as_admin.post('/acquisitions/' + data.acquisition + '/analyses', files=data.files)
+    r = as_root.post('/acquisitions/' + acquisition + '/analyses', files=file_form(
+        'one.csv', meta={'label': 'test analysis', 'inputs': [{'name': 'one.csv'}]}
+    ))
     assert r.ok
-    acquisition_analysis_upload = r.json()['_id']
+    acquisition_analysis = r.json()['_id']
 
-    r = as_admin.post('/engine?level=analysis&id=' + data.acquisition, files={
-        'file': ('engine-analysis.txt', 'test analysis output content\n'),
-        'metadata': ('', json.dumps({
-            'value': {'label': 'test'},
+    r = as_root.post('/engine',
+        params={'level': 'analysis', 'id': acquisition_analysis},
+        files=file_form('out.csv', meta={
             'type': 'text',
-            'enabled': True
-        }))
-    })
+            'value': {'label': 'test'},
+            'enabled': True}
+    ))
     assert r.ok
 
     # delete acquisition analysis
-    r = as_admin.delete('/acquisitions/' + data.acquisition + '/analyses/' + acquisition_analysis_upload)
+    r = as_root.delete('/acquisitions/' + acquisition + '/analyses/' + acquisition_analysis)
     assert r.ok
 
 
-def test_packfile(with_hierarchy_and_file_data, as_user):
-    data = with_hierarchy_and_file_data
+def test_packfile(data_builder, file_form, as_admin):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
 
     # try to start packfile-upload to non-project target
-    r = as_user.post('/sessions/' + data.session + '/packfile-start')
+    r = as_admin.post('/sessions/' + session + '/packfile-start')
     assert r.status_code == 500
 
-    # try to start packfile-upload to non-existent project (using session id)
-    r = as_user.post('/projects/' + data.session + '/packfile-start')
+    # try to start packfile-upload to non-existent project
+    r = as_admin.post('/projects/000000000000000000000000/packfile-start')
     assert r.status_code == 500
 
     # start packfile-upload
-    r = as_user.post('/projects/' + data.project + '/packfile-start')
+    r = as_admin.post('/projects/' + project + '/packfile-start')
     assert r.ok
     token = r.json()['token']
 
     # try to upload to packfile w/o token
-    r = as_user.post('/projects/' + data.project + '/packfile')
+    r = as_admin.post('/projects/' + project + '/packfile')
     assert r.status_code == 500
 
     # upload to packfile
-    r = as_user.post('/projects/' + data.project + '/packfile', params={'token': token}, files=data.files)
+    r = as_admin.post('/projects/' + project + '/packfile',
+        params={'token': token}, files=file_form('one.csv'))
     assert r.ok
 
-    metadata = {
-        'project': {'_id': data.project},
+    metadata_json = json.dumps({
+        'project': {'_id': project},
         'session': {'label': 'test-packfile-label'},
         'acquisition': {
             'label': 'test-packfile-label',
             'timestamp': '1979-01-01T00:00:00+00:00'
         },
         'packfile': {'type': 'test'}
-    }
+    })
 
     # try to finish packfile-upload w/o token
-    r = as_user.post('/projects/' + data.project + '/packfile-end', params={'metadata': json.dumps(metadata)})
+    r = as_admin.post('/projects/' + project + '/packfile-end',
+        params={'metadata': metadata_json})
     assert r.status_code == 500
 
     # try to finish packfile-upload with files in the request
-    r = as_user.post('/projects/' + data.project + '/packfile-end',
-        params={'token': token, 'metadata': json.dumps(metadata)},
+    r = as_admin.post('/projects/' + project + '/packfile-end',
+        params={'token': token, 'metadata': metadata_json},
         files={'file': ('packfile-end.txt', 'sending files to packfile-end is not allowed\n')}
     )
     assert r.status_code == 500
 
     # finish packfile-upload (creates new session/acquisition)
-    r = as_user.post('/projects/' + data.project + '/packfile-end', params={
-        'token': token,
-        'metadata': json.dumps(metadata)
-    })
+    r = as_admin.post('/projects/' + project + '/packfile-end',
+        params={'token': token, 'metadata': metadata_json})
     assert r.ok
 
     # clean up added session/acquisition
     event_data_start_str = 'event: result\ndata: '
     event_data_start_pos = r.text.find(event_data_start_str)
     event_data = json.loads(r.text[event_data_start_pos + len(event_data_start_str):])
-    r = as_user.delete('/acquisitions/' + event_data['acquisition_id'])
+    r = as_admin.delete('/acquisitions/' + event_data['acquisition_id'])
     assert r.ok
-    r = as_user.delete('/sessions/' + event_data['session_id'])
+    r = as_admin.delete('/sessions/' + event_data['session_id'])
     assert r.ok

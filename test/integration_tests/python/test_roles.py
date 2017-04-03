@@ -1,86 +1,36 @@
-import datetime
-import json
-import time
-
-import pytest
-
-
-@pytest.fixture()
-def with_a_group_and_a_user(data_builder, as_admin, request, bunch):
-    user_id = 'other@user.com'
-    group_id = 'test_group_' + str(int(time.time() * 1000))
-    data_builder.create_group(group_id)
-
-    r = as_admin.post('/users', json={
-        '_id': user_id,
-        'firstname': 'Other',
-        'lastname': 'User',
-    })
-    assert r.ok
-
-    def teardown_db():
-        data_builder.delete_group(group_id)
-        as_admin.delete('/users/' + user_id)
-
-    request.addfinalizer(teardown_db)
-
-    fixture_data = bunch.create()
-    fixture_data.user_id = user_id
-    fixture_data.group_id = group_id
-    return fixture_data
-
-
-def create_role_payload(user, site, access):
-    return json.dumps({
-        '_id': user,
-        'site': site,
-        'access': access
-    })
-
-
-def test_roles(as_admin, with_a_group_and_a_user, as_public, db):
-    data = with_a_group_and_a_user
-
+def test_roles(data_builder, as_admin, as_public):
     api_key = '4hOn5aBx/nUiI0blDbTUPpKQsEbEn74rH9z5KctlXw6GrMKdicPGXKQg'
-    update_result = db.users.update_one(
-        {'_id': data.user_id},
-        {'$set': {'api_key': {
-            'key': api_key,
-            'created': datetime.datetime.utcnow()
-        }}}
-    )
-    assert update_result.modified_count == 1
+    user = data_builder.create_user(api_key=api_key)
+    group = data_builder.create_group()
 
     as_other_user = as_public
     as_other_user.headers.update({'Authorization': 'scitran-user ' + api_key})
 
-    roles_path = '/groups/' + data.group_id + '/roles'
-    local_user_roles_path = roles_path + '/local/' + data.user_id
-    admin_user_roles_path = roles_path + '/local/' + 'admin@user.com'
+    roles_path = '/groups/' + group + '/roles'
+    local_user_roles_path = roles_path + '/local/' + user
+    admin_user_roles_path = roles_path + '/local/' + as_admin.get('/users/self').json()['_id']
 
     # Cannot retrieve roles that don't exist
     r = as_admin.get(local_user_roles_path)
     assert r.status_code == 404
 
     # Create role for user
-    payload = create_role_payload(data.user_id, 'local', 'rw')
-    r = as_admin.post(roles_path, data=payload)
+    r = as_admin.post(roles_path, json={'_id': user, 'site': 'local', 'access': 'rw'})
     assert r.ok
 
     # Verify new user role
     r = as_admin.get(local_user_roles_path)
     assert r.ok
-    content = json.loads(r.content)
-    assert content['access'] == 'rw'
-    assert content['_id'] == data.user_id
+    role = r.json()
+    assert role['_id'] == user
+    assert role['access'] == 'rw'
 
     # 'rw' users cannot access other user roles
     r = as_other_user.get(admin_user_roles_path)
     assert r.status_code == 403
 
     # Upgrade user to admin
-    payload = json.dumps({'access': 'admin'})
-    r = as_admin.put(local_user_roles_path, data=payload)
+    r = as_admin.put(local_user_roles_path, json={'access': 'admin'})
     assert r.ok
 
     # User should now be able to access other roles
@@ -88,8 +38,7 @@ def test_roles(as_admin, with_a_group_and_a_user, as_public, db):
     assert r.ok
 
     # Change user back to 'rw' access
-    payload = json.dumps({'access': 'rw'})
-    r = as_admin.put(local_user_roles_path, data=payload)
+    r = as_admin.put(local_user_roles_path, json={'access': 'rw'})
     assert r.ok
 
     # User is now forbidden again

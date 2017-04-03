@@ -1,6 +1,3 @@
-import json
-import time
-import pytest
 import logging
 
 log = logging.getLogger(__name__)
@@ -8,59 +5,59 @@ sh = logging.StreamHandler()
 log.addHandler(sh)
 
 
-def test_notes(with_a_group_and_a_project, as_user):
-    data = with_a_group_and_a_project
-    notes_path = '/projects/' + data.project_id + '/notes'
+def test_notes(data_builder, as_admin):
+    project = data_builder.create_project()
 
     # Add a note
-    new_note = json.dumps({'text': 'test note'})
-    r = as_user.post(notes_path, data=new_note)
+    note_text = 'test note'
+    r = as_admin.post('/projects/' + project + '/notes', json={'text': note_text})
     assert r.ok
 
     # Verify note is present in project
-    r = as_user.get('/projects/' + data.project_id)
+    r = as_admin.get('/projects/' + project)
     assert r.ok
-    project = json.loads(r.content)
-    assert len(project['notes']) == 1
+    assert len(r.json()['notes']) == 1
+    note = r.json()['notes'][0]['_id']
 
-    note_id = project['notes'][0]['_id']
-    note_path = '/projects/' + data.project_id + '/notes/' + note_id
-    r = as_user.get(note_path)
-    assert r.ok and json.loads(r.content)['_id'] == note_id
+    r = as_admin.get('/projects/' + project + '/notes/' + note)
+    assert r.ok
+    assert r.json()['text'] == note_text
 
     # Modify note
-    modified_note = json.dumps({'text': 'modified test note'})
-    r = as_user.put(note_path, data=modified_note)
+    note_text_2 = 'modified note'
+    r = as_admin.put('/projects/' + project + '/notes/' + note, json={'text': note_text_2})
     assert r.ok
 
     # Verify modified note
-    r = as_user.get(note_path)
-    assert r.ok and json.loads(r.content)['text'] == 'modified test note'
+    r = as_admin.get('/projects/' + project + '/notes/' + note)
+    assert r.ok
+    assert r.json()['text'] == note_text_2
 
     # Delete note
-    r = as_user.delete(note_path)
+    r = as_admin.delete('/projects/' + project + '/notes/' + note)
     assert r.ok
 
-    r = as_user.get(note_path)
+    r = as_admin.get('/projects/' + project + '/notes/' + note)
     assert r.status_code == 404
 
 
-def test_analysis_notes(with_hierarchy_and_file_data, as_user):
-    data = with_hierarchy_and_file_data
-    data.files['metadata'] = ('', json.dumps({
-        'label': 'test analysis',
-        'inputs': [{'name': 'one.csv'}, {'name': 'two.csv'}]
-    }))
+def test_analysis_notes(data_builder, file_form, as_admin):
+    acquisition = data_builder.create_acquisition()
 
     # create acquisition analysis
-    r = as_user.post('/acquisitions/' + data.acquisition + '/analyses', files=data.files)
+    file_name = 'one.csv'
+    r = as_admin.post('/acquisitions/' + acquisition + '/analyses', files=file_form(
+        file_name, meta={'label': 'test analysis', 'inputs': [{'name': file_name}]}))
     assert r.ok
-    acquisition_analysis_upload = r.json()['_id']
+    analysis = r.json()['_id']
 
-    note = {'text': 'test'}
-    r = as_user.post('/acquisitions/' + data.acquisition + '/analyses/' + acquisition_analysis_upload + '/notes', json=note)
+    # create analysis note
+    note_text = 'test note'
+    r = as_admin.post('/acquisitions/' + acquisition + '/analyses/' + analysis + '/notes', json={
+        'text': note_text
+    })
     assert r.ok
 
     # delete acquisition analysis
-    r = as_user.delete('/acquisitions/' + data.acquisition + '/analyses/' + acquisition_analysis_upload)
+    r = as_admin.delete('/acquisitions/' + acquisition + '/analyses/' + analysis)
     assert r.ok

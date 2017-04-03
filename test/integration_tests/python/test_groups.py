@@ -9,21 +9,21 @@ log.addHandler(sh)
 
 
 def test_groups(as_admin, data_builder):
-    group_id = 'test_group_' + str(int(time.time() * 1000))
-
     # Cannot find a non-existant group
-    r = as_admin.get('/groups/' + group_id)
+    r = as_admin.get('/groups/non-existent')
     assert r.status_code == 404
 
-    data_builder.create_group(group_id)
+    group = data_builder.create_group()
 
     # Able to find new group
-    r = as_admin.get('/groups/' + group_id)
+    r = as_admin.get('/groups/' + group)
     assert r.ok
 
     # Able to change group name
-    payload = json.dumps({'name': 'Test group'})
-    r = as_admin.put('/groups/' + group_id, data=payload)
+    group_name = 'New group name'
+    r = as_admin.put('/groups/' + group, json={'name': group_name})
     assert r.ok
 
-    data_builder.delete_group(group_id)
+    r = as_admin.get('/groups/' + group)
+    assert r.ok
+    assert r.json()['name'] == group_name

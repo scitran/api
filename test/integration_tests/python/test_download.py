@@ -1,86 +1,55 @@
-import os
-import json
-import time
-import pytest
-import logging
-import tarfile
 import cStringIO
+import logging
+import os
+import tarfile
 
 log = logging.getLogger(__name__)
 sh = logging.StreamHandler()
 log.addHandler(sh)
 
 
-@pytest.fixture()
-def with_a_download_available(as_admin, data_builder, bunch, request):
-    file_name = "test.csv"
-    group_id = 'test_group_' + str(int(time.time() * 1000))
-
-    data_builder.create_group(group_id)
-    project_id = data_builder.create_project(group_id)
-    session_id = data_builder.create_session(project_id)
-    acquisition_id = data_builder.create_acquisition(session_id)
-
-    # multiform fields for the file upload
-    files = {'file1': (file_name, 'some,data,to,send\nanother,row,to,send\n')}
-    metadata = {
-        'name': file_name,
-        'type': 'csv',
-        'modality': 'MRI'
-    }
+def test_download(data_builder, file_form, as_admin, api_db):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
 
     # upload the same file to each container created and use different tags to
     # facilitate download filter tests:
     # acquisition: [], session: ['plus'], project: ['plus', 'minus']
-    files['metadata'] = ('', json.dumps(metadata))
-    as_admin.post('/acquisitions/' + acquisition_id + '/files', files=files)
-    files['metadata'] = ('', json.dumps(dict(tags=['plus'], **metadata)))
-    as_admin.post('/sessions/' + session_id + '/files', files=files)
-    files['metadata'] = ('', json.dumps(dict(tags=['plus', 'minus'], **metadata)))
-    as_admin.post('/projects/' + project_id + '/files', files=files)
+    file_name = 'test.csv'
+    as_admin.post('/acquisitions/' + acquisition + '/files', files=file_form(
+        file_name, meta={'name': file_name, 'type': 'csv'}))
 
-    def teardown_download():
-        as_admin.delete('/acquisitions/' + acquisition_id)
-        as_admin.delete('/sessions/' + session_id)
-        as_admin.delete('/projects/' + project_id)
-        as_admin.delete('/groups/' + group_id)
+    as_admin.post('/sessions/' + session + '/files', files=file_form(
+        file_name, meta={'name': file_name, 'type': 'csv', 'tags': ['plus']}))
 
-    request.addfinalizer(teardown_download)
+    as_admin.post('/projects/' + project + '/files', files=file_form(
+        file_name, meta={'name': file_name, 'type': 'csv', 'tags': ['plus', 'minus']}))
 
-    fixture_data = bunch.create()
-    fixture_data.project_id = project_id
-    fixture_data.session_id = session_id
-    fixture_data.acquisition_id = acquisition_id
-    fixture_data.file_name = file_name
-    return fixture_data
-
-
-def test_download(with_a_download_available, as_user, db):
-    data = with_a_download_available
     missing_object_id = '000000000000000000000000'
 
     # Try to download w/ nonexistent ticket
-    r = as_user.get('/download', params={'ticket': missing_object_id})
+    r = as_admin.get('/download', params={'ticket': missing_object_id})
     assert r.status_code == 404
 
     # Retrieve a ticket for a batch download
-    r = as_user.post('/download', json={
+    r = as_admin.post('/download', json={
         'optional': False,
         'filters': [{'tags': {
             '-': ['minus'],
             '+': ['plus']
         }}],
         'nodes': [
-            {'level': 'project', '_id': data.project_id},
-            {'level': 'session', '_id': data.session_id},
-            {'level': 'acquisition', '_id': data.acquisition_id},
+            {'level': 'project', '_id': project},
+            {'level': 'session', '_id': session},
+            {'level': 'acquisition', '_id': acquisition},
         ]
     })
     assert r.ok
     ticket = r.json()['ticket']
 
     # Perform the download
-    r = as_user.get('/download', params={'ticket': ticket})
+    r = as_admin.get('/download', params={'ticket': ticket})
     assert r.ok
 
     tar_file = cStringIO.StringIO(r.content)
@@ -88,20 +57,20 @@ def test_download(with_a_download_available, as_user, db):
 
     # Verify a single file in tar with correct file name
     for tarinfo in tar:
-        assert os.path.basename(tarinfo.name) == data.file_name
+        assert os.path.basename(tarinfo.name) == file_name
     tar.close()
 
     # Try to perform the download from a different IP
-    update_result = db.downloads.update_one(
+    update_result = api_db.downloads.update_one(
         {'_id': ticket},
         {'$set': {'ip': '0.0.0.0'}})
     assert update_result.modified_count == 1
 
-    r = as_user.get('/download', params={'ticket': ticket})
+    r = as_admin.get('/download', params={'ticket': ticket})
     assert r.status_code == 400
 
     # Try to retrieve a ticket referencing nonexistent containers
-    r = as_user.post('/download', json={
+    r = as_admin.post('/download', json={
         'optional': False,
         'nodes': [
             {'level': 'project', '_id': missing_object_id},
@@ -113,24 +82,24 @@ def test_download(with_a_download_available, as_user, db):
 
     # Try to retrieve ticket for bulk download w/ invalid container name
     # (not project|session|acquisition)
-    r = as_user.post('/download', params={'bulk': 'true'}, json={
+    r = as_admin.post('/download', params={'bulk': 'true'}, json={
         'files': [{'container_name': 'subject', 'container_id': missing_object_id, 'filename': 'nosuch.csv'}]
     })
     assert r.status_code == 400
 
     # Try to retrieve ticket for bulk download referencing nonexistent file
-    r = as_user.post('/download', params={'bulk': 'true'}, json={
-        'files': [{'container_name': 'project', 'container_id': data.project_id, 'filename': 'nosuch.csv'}]
+    r = as_admin.post('/download', params={'bulk': 'true'}, json={
+        'files': [{'container_name': 'project', 'container_id': project, 'filename': 'nosuch.csv'}]
     })
     assert r.status_code == 404
 
     # Retrieve ticket for bulk download
-    r = as_user.post('/download', params={'bulk': 'true'}, json={
-        'files': [{'container_name': 'project', 'container_id': data.project_id, 'filename': data.file_name}]
+    r = as_admin.post('/download', params={'bulk': 'true'}, json={
+        'files': [{'container_name': 'project', 'container_id': project, 'filename': file_name}]
     })
     assert r.ok
     ticket = r.json()['ticket']
 
     # Perform the download using symlinks
-    r = as_user.get('/download', params={'ticket': ticket, 'symlinks': 'true'})
+    r = as_admin.get('/download', params={'ticket': ticket, 'symlinks': 'true'})
     assert r.ok

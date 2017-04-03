@@ -1,6 +1,5 @@
-import json
+import copy
 import logging
-from copy import deepcopy
 
 
 log = logging.getLogger(__name__)
@@ -28,35 +27,35 @@ def test_jobs_access(as_user):
     assert r.status_code == 403
 
 
-def test_jobs(with_hierarchy, with_gear, with_invalid_gear, as_user, as_admin):
-    data = with_hierarchy
-    gear = with_gear
-    invalid_gear = with_invalid_gear
+def test_jobs(data_builder, as_admin, as_root):
+    gear = data_builder.create_gear()
+    invalid_gear = data_builder.create_gear(gear={'custom': {'flywheel': {'invalid': True}}})
+    acquisition = data_builder.create_acquisition()
 
     job1 = {
         'gear_id': gear,
         'inputs': {
             'dicom': {
                 'type': 'acquisition',
-                'id': data.acquisition,
+                'id': acquisition,
                 'name': 'test.zip'
             }
         },
         'config': { 'two-digit multiple of ten': 20 },
         'destination': {
             'type': 'acquisition',
-            'id': data.acquisition
+            'id': acquisition
         },
         'tags': [ 'test-tag' ]
     }
 
     # add job with explicit destination
-    r = as_user.post('/jobs/add', json=job1)
+    r = as_admin.post('/jobs/add', json=job1)
     assert r.ok
     job1_id = r.json()['_id']
 
     # get job
-    r = as_admin.get('/jobs/' + job1_id)
+    r = as_root.get('/jobs/' + job1_id)
     assert r.ok
 
     # add job log
@@ -72,37 +71,37 @@ def test_jobs(with_hierarchy, with_gear, with_invalid_gear, as_user, as_admin):
     assert len(r.json()['logs']) == 2
 
     # get job config
-    r = as_admin.get('/jobs/' + job1_id + '/config.json')
+    r = as_root.get('/jobs/' + job1_id + '/config.json')
     assert r.ok
 
     # try to update job (user may only cancel)
-    r = as_user.put('/jobs/' + job1_id, json={'test': 'invalid'})
+    r = as_admin.put('/jobs/' + job1_id, json={'test': 'invalid'})
     assert r.status_code == 403
 
     # add job with implicit destination
-    job2 = deepcopy(job1)
+    job2 = copy.deepcopy(job1)
     del job2['destination']
-    r = as_user.post('/jobs/add', json=job2)
+    r = as_admin.post('/jobs/add', json=job2)
     assert r.ok
 
     # add job with invalid gear
-    job3 = deepcopy(job2)
+    job3 = copy.deepcopy(job2)
     job3['gear_id'] = invalid_gear
 
-    r = as_user.post('/jobs/add', json=job3)
+    r = as_admin.post('/jobs/add', json=job3)
     assert r.status_code == 400
 
     # get next job - with nonexistent tag
-    r = as_admin.get('/jobs/next?tags=fake-tag')
+    r = as_root.get('/jobs/next', params={'tags': 'fake-tag'})
     assert r.status_code == 400
 
     # get next job - without tags
-    r = as_admin.get('/jobs/next')
+    r = as_root.get('/jobs/next')
     assert r.status_code == 200
 
     # retry job
-    r = as_admin.put('/jobs/' + job1_id, json={'state': 'failed'})
+    r = as_root.put('/jobs/' + job1_id, json={'state': 'failed'})
     assert r.ok
 
-    r = as_user.post('/jobs/' + job1_id + '/retry')
+    r = as_root.post('/jobs/' + job1_id + '/retry')
     assert r.ok

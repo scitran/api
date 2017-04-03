@@ -1,5 +1,3 @@
-import json
-import time
 import logging
 
 log = logging.getLogger(__name__)
@@ -8,20 +6,16 @@ log.addHandler(sh)
 
 
 def test_extra_param(as_admin):
-    label = 'SciTran/testing_' + str(int(time.time() * 1000))
+    label = 'extra_param'
 
-    bad_payload = json.dumps({
+    r = as_admin.post('/projects', json={
         'group': 'unknown',
         'label': label,
         'public': False,
         'extra_param': 'some_value'
     })
-
-    r = as_admin.post('/projects', data=bad_payload)
     assert r.status_code == 400
 
     r = as_admin.get('/projects')
     assert r.ok
-    projects = json.loads(r.content)
-    filtered_projects = filter(lambda e: e['label'] == label, projects)
-    assert len(filtered_projects) == 0
+    assert not any(project['label'] == label for project in r.json())

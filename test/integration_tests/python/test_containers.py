@@ -1,15 +1,3 @@
-import json
-import time
-import logging
-
-import attrdict
-import pytest
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_switching_project_between_groups(data_builder, as_admin):
     group_1 = data_builder.create_group()
     group_2 = data_builder.create_group()
@@ -50,14 +38,17 @@ def test_switching_acquisition_between_sessions(data_builder, as_admin):
 
 
 def test_project_template(data_builder, as_admin):
+    subject_code = 'test'
+    acquisition_label = 'test'
+
     project = data_builder.create_project()
     session = data_builder.create_session()
-    acquisition = data_builder.create_acquisition(label='test')
+    acquisition = data_builder.create_acquisition(label=acquisition_label)
 
     # create template for the project
     r = as_admin.post('/projects/' + project + '/template', json={
-        'session': { 'subject': { 'code' : '^test$' } },
-        'acquisitions': [{ 'label': '^test$', 'minimum': 1 }]
+        'session': { 'subject': { 'code' : '^{}$'.format(subject_code) } },
+        'acquisitions': [{ 'label': '^{}$'.format(acquisition_label), 'minimum': 1 }]
     })
     assert r.ok
     assert r.json()['modified'] == 1
@@ -69,7 +60,7 @@ def test_project_template(data_builder, as_admin):
     assert r.json()['satisfies_template'] == False
 
     # make session compliant by setting subject.code
-    r = as_admin.put('/sessions/' + session, json={'subject': {'code': 'test'}})
+    r = as_admin.put('/sessions/' + session, json={'subject': {'code': subject_code}})
     assert r.ok
 
     # test compliant session (subject.code and #acquisitions)
@@ -128,7 +119,7 @@ def test_get_all_for_user(as_admin, as_public):
     assert r.ok
 
 
-def test_get_container(data_builder, as_admin, as_public):
+def test_get_container(data_builder, file_form, as_admin, as_public):
     project = data_builder.create_project()
 
     # NOTE cannot reach APIStorageException - wanted to cover 400 error w/ invalid oid
@@ -147,10 +138,8 @@ def test_get_container(data_builder, as_admin, as_public):
     assert r.ok
 
     # get container w/ ?paths=true
-    r = as_admin.post('/projects/' + project + '/files', files={
-        'file': ('test.csv', 'header\nrow1\n'),
-        'metadata': ('', json.dumps({'name': 'test.csv', 'type': 'csv'}))
-    })
+    r = as_admin.post('/projects/' + project + '/files', files=file_form(
+        'one.csv', meta={'name': 'one.csv', 'type': 'csv'}))
     assert r.ok
 
     r = as_public.get('/projects/' + project, params={'paths': 'true'})
