@@ -39,9 +39,11 @@ SCITRAN_SITE_API_URL="$SCITRAN_SITE_API_URL" \
 SCITRAN_PERSISTENT_DB_URI="$SCITRAN_PERSISTENT_DB_URI" \
 SCITRAN_PERSISTENT_DB_LOG_URI="$SCITRAN_PERSISTENT_DB_LOG_URI" \
 SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
-    py.test test/integration_tests/python -svvv; exit
+    py.test test/integration_tests/python
 
-# Load fixtures that Abao relies on:
+# Create resources that Abao relies on:
+# - user w/ api key
+# - scitran group
 # - test-group
 # - test-project-1 (+analysis upload)
 # - test-session-1 (+analysis upload)
@@ -49,6 +51,8 @@ SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
 # - test-case-gear
 # - test-collection-1 (+analysis upload)
 SCITRAN_SITE_API_URL="$SCITRAN_SITE_API_URL" \
+SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
+SCITRAN_PERSISTENT_DB_URI="$SCITRAN_PERSISTENT_DB_URI" \
     python test/integration_tests/abao/load_fixture.py
 
 set +u

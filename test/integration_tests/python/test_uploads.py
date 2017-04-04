@@ -42,7 +42,7 @@ def test_uid_upload(data_builder, file_form, as_admin):
     assert r.ok
 
     # delete group and children recursively (created by upload)
-    data_builder.delete('group', group, recursive=True)
+    data_builder.delete_group(group, recursive=True)
 
 
 def test_label_upload(data_builder, file_form, as_admin):
@@ -74,7 +74,7 @@ def test_label_upload(data_builder, file_form, as_admin):
     assert r.ok
 
     # delete group and children recursively (created by upload)
-    data_builder.delete('group', group, recursive=True)
+    data_builder.delete_group(group, recursive=True)
 
 
 def find_file_in_array(filename, files):

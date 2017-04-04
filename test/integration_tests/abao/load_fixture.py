@@ -1,31 +1,67 @@
+import datetime
 import json
 import os
 
+import pymongo
 import requests
 
 
-class FixtureSession(requests.Session):
-    def __init__(self, *args, **kwargs):
-        super(FixtureSession, self).__init__(*args, **kwargs)
-        self.base_url = os.environ.get('BASE_URL', 'http://localhost:8080/api')
-        self.headers.update({'Authorization': 'scitran-user XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK'})
-        self.params.update({'root': 'true'})
+# load required envvars w/ the same name
+SCITRAN_CORE_DRONE_SECRET = os.environ['SCITRAN_CORE_DRONE_SECRET']
+SCITRAN_PERSISTENT_DB_URI = os.environ['SCITRAN_PERSISTENT_DB_URI']
+SCITRAN_SITE_API_URL = os.environ['SCITRAN_SITE_API_URL']
 
+
+class BaseUrlSession(requests.Session):
+    """Requests session subclass using core api's base url"""
     def request(self, method, url, **kwargs):
-        return super(FixtureSession, self).request(method, self.base_url + url, **kwargs)
+        return super(BaseUrlSession, self).request(method, SCITRAN_SITE_API_URL + url, **kwargs)
 
 
 def main():
-    session = FixtureSession()
+    abao_user = 'abao@user.com'
+    abao_api_key = 'XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK'
+
+    as_drone = BaseUrlSession()
+    as_drone.headers.update({
+        'X-SciTran-Method': 'bootstrapper',
+        'X-SciTran-Name': 'Bootstrapper',
+        'X-SciTran-Auth': SCITRAN_CORE_DRONE_SECRET,
+    })
+
+    as_drone.post('/users', json={
+        '_id': abao_user,
+        'firstname': 'Abao',
+        'lastname': 'User',
+        'root': True,
+    })
+    api_db = pymongo.MongoClient(SCITRAN_PERSISTENT_DB_URI).get_default_database()
+    api_db.users.update_one(
+        {'_id': abao_user},
+        {'$set': {
+            'api_key': {
+                'key': abao_api_key,
+                'created': datetime.datetime.utcnow()
+            }
+        }}
+    )
+
+    as_root = BaseUrlSession()
+    as_root.headers.update({'Authorization': 'scitran-user {}'.format(abao_api_key)})
+    as_root.params.update({'root': 'true'})
+
+    # create scitran group
+    r = as_root.post('/groups', json={'_id': 'scitran'})
+    assert r.ok
 
     # create test-group
-    r = session.post('/groups', json={'_id': 'test-group'})
+    r = as_root.post('/groups', json={'_id': 'test-group'})
     assert r.ok
 
     # upload file to test-project-1/test-session-1/test-acquisition-1
     # depends on 'create test-group'
-    r = session.post('/upload/label', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/upload/label', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'group': { '_id': 'test-group' },
             'project': {
@@ -49,27 +85,27 @@ def main():
 
     # list projects
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.get('/projects')
+    r = as_root.get('/projects')
     assert r.ok
     assert r.json()[0]['label'] == 'test-project-1'
     test_project = r.json()[0]
 
     # list sessions
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.get('/sessions')
+    r = as_root.get('/sessions')
     assert r.ok
     assert r.json()[0]['label'] == 'test-session-1'
     test_session = r.json()[0]
 
     # list acquisitions for test-session-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.get('/sessions/' + test_session['_id'] + '/acquisitions')
+    r = as_root.get('/sessions/' + test_session['_id'] + '/acquisitions')
     assert r.ok
     assert r.json()[0]['label'] == 'test-acquisition-1'
     test_acquisition = r.json()[0]
 
     # add test-case-gear
-    r = session.post('/gears/test-case-gear', json={
+    r = as_root.post('/gears/test-case-gear', json={
         'category': 'converter',
         'gear': {
             'inputs': {
@@ -100,7 +136,7 @@ def main():
     test_gear = r.json()
 
     # create test-collection-1
-    r = session.post('/collections', json={
+    r = as_root.post('/collections', json={
         'label': 'test-collection-1'
     })
     assert r.ok
@@ -109,7 +145,7 @@ def main():
     # add test-session-1 to test-collection-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
     # depends on 'create test-collection-1'
-    r = session.put('/collections/' + test_collection['_id'], json={
+    r = as_root.put('/collections/' + test_collection['_id'], json={
         'contents':{
             'operation': 'add',
             'nodes': [{
@@ -122,55 +158,55 @@ def main():
 
     # upload file to test-collection-1
     # depends on 'create test-collection-1'
-    r = session.post('/collections/' + test_collection['_id'] + '/files', files={
-        'file': ('notes.txt', open('test/integration_tests/python/test_files/notes.txt', 'rb'))
+    r = as_root.post('/collections/' + test_collection['_id'] + '/files', files={
+        'file': ('notes.txt', open('test/integration_tests/abao/test_files/notes.txt', 'rb'))
     })
     assert r.ok
 
     # create test-collection-2
-    r = session.post('/collections', json={
+    r = as_root.post('/collections', json={
         'label': 'test-collection-2'
     })
     assert r.ok
 
     # upload file to test-project-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/projects/' + test_project['_id'] + '/files', files={
-        'file': ('notes.txt', open('test/integration_tests/python/test_files/notes.txt', 'rb'))
+    r = as_root.post('/projects/' + test_project['_id'] + '/files', files={
+        'file': ('notes.txt', open('test/integration_tests/abao/test_files/notes.txt', 'rb'))
     })
     assert r.ok
 
     # upload file to test-session-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/sessions/' + test_session['_id'] + '/files', files={
-        'file': ('notes.txt', open('test/integration_tests/python/test_files/notes.txt', 'rb'))
+    r = as_root.post('/sessions/' + test_session['_id'] + '/files', files={
+        'file': ('notes.txt', open('test/integration_tests/abao/test_files/notes.txt', 'rb'))
     })
     assert r.ok
 
     # add a note to test-project-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/projects/' + test_project['_id'] + '/notes', json={
+    r = as_root.post('/projects/' + test_project['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-session-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/sessions/' + test_session['_id'] + '/notes', json={
+    r = as_root.post('/sessions/' + test_session['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-acquisition-1
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/acquisitions/' + test_acquisition['_id'] + '/notes', json={
+    r = as_root.post('/acquisitions/' + test_acquisition['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-collection-1
     # depends on 'create test-collection-1'
-    r = session.post('/collections/' + test_collection['_id'] + '/notes', json={
+    r = as_root.post('/collections/' + test_collection['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
@@ -178,7 +214,7 @@ def main():
     # create session 1 test-analysis-1 (job)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
     # depends on 'add test-case-gear'
-    r = session.post('/sessions/' + test_session['_id'] + '/analyses?job=true', json={
+    r = as_root.post('/sessions/' + test_session['_id'] + '/analyses?job=true', json={
         'analysis': { 'label': 'Test Analysis 1' },
         'job': {
             'gear_id': test_gear['_id'],
@@ -197,8 +233,8 @@ def main():
 
     # create session 1 test-analysis (file upload)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/sessions/' + test_session['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/sessions/' + test_session['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -209,13 +245,13 @@ def main():
 
     # delete session 1 test analysis (file upload)
     # depends on 'create session 1 test-analysis (file upload)'
-    r = session.delete('/sessions/' + test_session['_id'] + '/analyses/' + test_session_analysis_upload['_id'])
+    r = as_root.delete('/sessions/' + test_session['_id'] + '/analyses/' + test_session_analysis_upload['_id'])
     assert r.ok
 
     # create acquisition 1 test-analysis (file upload)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/acquisitions/' + test_acquisition['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/acquisitions/' + test_acquisition['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -226,8 +262,8 @@ def main():
 
     # create acquisition 1 test-analysis 2 (file upload)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/acquisitions/' + test_acquisition['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/acquisitions/' + test_acquisition['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -237,8 +273,8 @@ def main():
 
     # create collection 1 test-analysis (file upload)
     # depends on 'create test-collection-1'
-    r = session.post('/collections/' + test_collection['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/collections/' + test_collection['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -249,8 +285,8 @@ def main():
 
     # create collection 1 test-analysis 2 (file upload)
     # depends on 'create test-collection-1'
-    r = session.post('/collections/' + test_collection['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/collections/' + test_collection['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis 2',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -260,8 +296,8 @@ def main():
 
     # create project 1 test-analysis (file upload)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/projects/' + test_project['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/projects/' + test_project['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -272,8 +308,8 @@ def main():
 
     # create project 1 test-analysis 2 (file upload)
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
-    r = session.post('/projects/' + test_project['_id'] + '/analyses', files={
-        'file': ('test-1.dcm', open('test/integration_tests/python/test_files/test-1.dcm', 'rb')),
+    r = as_root.post('/projects/' + test_project['_id'] + '/analyses', files={
+        'file': ('test-1.dcm', open('test/integration_tests/abao/test_files/test-1.dcm', 'rb')),
         'metadata': ('', json.dumps({
             'label': 'test analysis',
             'inputs': [ { 'name': 'test-1.dcm' } ]
@@ -283,34 +319,34 @@ def main():
 
     # add a note to test-acquisition-1 test-analysis-1
     # depends on 'create acquisition 1 test-analysis (file upload)'
-    r = session.post('/acquisitions/' + test_acquisition['_id'] + '/analyses/' + test_acquisition_analysis_upload['_id'] + '/notes', json={
+    r = as_root.post('/acquisitions/' + test_acquisition['_id'] + '/analyses/' + test_acquisition_analysis_upload['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-collection-1 test-analysis-1
     # depends on 'create test-collection-1'
-    r = session.post('/collections/' + test_collection['_id'] + '/analyses/' + test_collection_analysis_upload['_id'] + '/notes', json={
+    r = as_root.post('/collections/' + test_collection['_id'] + '/analyses/' + test_collection_analysis_upload['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-session-1 test-analysis-1
     # depends on 'create session 1 test-analysis (file upload)'
-    r = session.post('/sessions/' + test_session['_id'] + '/analyses/' + test_session_analysis['_id'] + '/notes', json={
+    r = as_root.post('/sessions/' + test_session['_id'] + '/analyses/' + test_session_analysis['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # add a note to test-project-1 test-analysis-1
     # depends on 'create project 1 test-analysis (file upload)'
-    r = session.post('/projects/' + test_project['_id'] + '/analyses/' + test_project_analysis_upload['_id'] + '/notes', json={
+    r = as_root.post('/projects/' + test_project['_id'] + '/analyses/' + test_project_analysis_upload['_id'] + '/notes', json={
         'text': 'test note'
     })
     assert r.ok
 
     # create project
-    r = session.post('/projects', json={
+    r = as_root.post('/projects', json={
         'group': 'test-group',
         'label': 'Project with template',
         'public': False
@@ -320,7 +356,7 @@ def main():
 
     # create compliant session
     # depends on 'create project'
-    r = session.post('/sessions', json={
+    r = as_root.post('/sessions', json={
         'subject': { 'code': 'ex8945' },
         'label': 'Compliant Session',
         'project': st_project['_id'],
@@ -331,7 +367,7 @@ def main():
 
     # create non-compliant session
     # depends on 'create project'
-    r = session.post('/sessions', json={
+    r = as_root.post('/sessions', json={
         'subject': { 'code': 'ex9849' },
         'label': 'Non-compliant Session',
         'project': st_project['_id'],
@@ -342,7 +378,7 @@ def main():
 
     # create acquisition-1 for compliant session
     # depends on 'create compliant session'
-    r = session.post('/acquisitions', json={
+    r = as_root.post('/acquisitions', json={
         'label': 'c-acquisition-1-t1',
         'session': st_compliant_session['_id'],
         'public': False
@@ -351,7 +387,7 @@ def main():
 
     # create acquisition-2 for compliant session
     # depends on 'create compliant session'
-    r = session.post('/acquisitions', json={
+    r = as_root.post('/acquisitions', json={
         'label': 'c-acquisition-2-t1',
         'session': st_compliant_session['_id'],
         'public': False
@@ -360,7 +396,7 @@ def main():
 
     # create acquisition-1 for noncompliant session
     # depends on 'create non-compliant session'
-    r = session.post('/acquisitions', json={
+    r = as_root.post('/acquisitions', json={
         'label': 'nc-acquisition-1-t1',
         'session': st_noncompliant_session['_id'],
         'public': False
@@ -368,7 +404,7 @@ def main():
     assert r.ok
 
     # add project template
-    r = session.post('/projects/' + st_project['_id'] + '/template', json={
+    r = as_root.post('/projects/' + st_project['_id'] + '/template', json={
         'session': { 'subject': { 'code' : '^ex' } },
         'acquisitions': [{
             'label': 't1',
@@ -380,7 +416,7 @@ def main():
 
     # create acquisition-2 for noncompliant session
     # depends on 'create non-compliant session'
-    r = session.post('/acquisitions', json={
+    r = as_root.post('/acquisitions', json={
         'label': 'nc-acquisition-2-t1',
         'session': st_noncompliant_session['_id'],
         'public': False
@@ -389,7 +425,7 @@ def main():
 
     # update session 2 to be non-compliant
     # depends on 'create non-compliant session'
-    r = session.put('/sessions/' + st_noncompliant_session['_id'], json={
+    r = as_root.put('/sessions/' + st_noncompliant_session['_id'], json={
         'subject': { 'code': 'bad-subject-code' }
     })
     assert r.ok

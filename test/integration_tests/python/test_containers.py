@@ -179,7 +179,6 @@ def test_get_session_jobs(data_builder, as_admin):
 
 def test_post_container(data_builder, as_admin):
     group = data_builder.create_group()
-    project = data_builder.create_project()
 
     # create project w/ param inherit=true
     r = as_admin.post('/projects', params={'inherit': 'true'}, json={
@@ -187,6 +186,7 @@ def test_post_container(data_builder, as_admin):
         'label': 'test-inheritance-project'
     })
     assert r.ok
+    project = r.json()['_id']
 
     # create session w/ timestamp
     r = as_admin.post('/sessions', json={
@@ -195,6 +195,8 @@ def test_post_container(data_builder, as_admin):
         'timestamp': '1979-01-01T00:00:00+00:00'
     })
     assert r.ok
+
+    data_builder.delete_group(group, recursive=True)
 
 
 def test_put_container(data_builder, as_admin):

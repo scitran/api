@@ -95,13 +95,14 @@ def test_jobs(data_builder, as_admin, as_root):
     r = as_root.get('/jobs/next', params={'tags': 'fake-tag'})
     assert r.status_code == 400
 
-    # get next job - without tags
-    r = as_root.get('/jobs/next')
-    assert r.status_code == 200
+    # get next job
+    r = as_root.get('/jobs/next', params={'tags': 'test-tag'})
+    assert r.ok
+    next_job_id = r.json()['id']
 
     # retry job
-    r = as_root.put('/jobs/' + job1_id, json={'state': 'failed'})
+    r = as_root.put('/jobs/' + next_job_id, json={'state': 'failed'})
     assert r.ok
 
-    r = as_root.post('/jobs/' + job1_id + '/retry')
+    r = as_root.post('/jobs/' + next_job_id + '/retry')
     assert r.ok
