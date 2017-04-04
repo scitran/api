@@ -1,11 +1,6 @@
 import time
-import logging
 
 from api.web.request import AccessType
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
 
 
 # NOTE these tests assume they are not running in parallel w/ other tests

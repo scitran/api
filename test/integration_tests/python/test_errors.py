@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_extra_param(as_admin):
     label = 'extra_param'
 

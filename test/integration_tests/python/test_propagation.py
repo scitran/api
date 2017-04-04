@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 # Test changing propagated properties
 def test_archived_propagation_from_project(data_builder, as_admin):
     """

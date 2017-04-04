@@ -1,11 +1,6 @@
 import cStringIO
-import logging
 import os
 import tarfile
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
 
 
 def test_download(data_builder, file_form, as_admin, api_db):

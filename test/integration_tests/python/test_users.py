@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_users(as_root):
     new_user_id = 'new@user.com'
 

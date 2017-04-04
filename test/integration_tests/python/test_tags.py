@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_tags(data_builder, as_admin):
     project = data_builder.create_project()
 

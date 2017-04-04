@@ -1,12 +1,6 @@
 import json
-import logging
 
 import dateutil.parser
-
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
 
 
 def test_uid_upload(data_builder, file_form, as_admin):

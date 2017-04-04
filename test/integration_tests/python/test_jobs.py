@@ -1,10 +1,4 @@
 import copy
-import logging
-
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
 
 
 def test_jobs_access(as_user):
@@ -59,7 +53,7 @@ def test_jobs(data_builder, as_admin, as_root):
     assert r.ok
 
     # add job log
-    r = as_admin.post('/jobs/' + job1_id + '/logs', json=[
+    r = as_root.post('/jobs/' + job1_id + '/logs', json=[
         { 'fd': 1, 'msg': 'Hello' },
         { 'fd': 2, 'msg': 'World' }
     ])

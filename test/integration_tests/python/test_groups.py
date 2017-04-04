@@ -1,13 +1,3 @@
-import requests
-import json
-import time
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_groups(as_admin, data_builder):
     # Cannot find a non-existant group
     r = as_admin.get('/groups/non-existent')

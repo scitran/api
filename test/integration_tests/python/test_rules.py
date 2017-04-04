@@ -1,17 +1,10 @@
-import logging
+def test_rule_access(data_builder, as_admin):
+    project = data_builder.create_project()
 
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
-def test_rule_access(with_a_group_and_a_project, as_user):
-    data = with_a_group_and_a_project
-
-    r = as_user.get('/projects/' + data.project_id + '/rules')
+    r = as_admin.get('/projects/' + project + '/rules')
     assert r.ok
 
-    r = as_user.post('/projects/' + data.project_id + '/rules', json={
+    r = as_admin.post('/projects/' + project + '/rules', json={
         'alg': 'my-gear-name',
 
         'name': 'whatever',
@@ -31,6 +24,6 @@ def test_rule_access(with_a_group_and_a_project, as_user):
     })
     assert r.ok
 
-    r = as_user.get('/projects/' + data.project_id + '/rules')
+    r = as_admin.get('/projects/' + project + '/rules')
     assert r.ok
     assert r.json()[0]['alg'] == 'my-gear-name'

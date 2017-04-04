@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_resolver(data_builder, as_admin, as_public):
     # try accessing resolver w/o logging in
     r = as_public.post('/resolve', json={'path': []})

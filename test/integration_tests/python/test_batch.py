@@ -1,11 +1,3 @@
-import logging
-
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_batch(data_builder, as_user, as_admin):
     session = data_builder.create_session()
     acquisition = data_builder.create_acquisition()

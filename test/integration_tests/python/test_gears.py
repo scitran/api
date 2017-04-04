@@ -1,10 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-log.addHandler(sh)
-
-
 def test_gear_add(default_payload, randstr, as_root):
     gear_name = 'test-gear-add-' + randstr()
     gear_payload = default_payload['gear']
