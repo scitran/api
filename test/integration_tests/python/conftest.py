@@ -2,6 +2,7 @@ import binascii
 import copy
 import datetime
 import json
+import logging
 import os
 
 import attrdict
@@ -87,11 +88,11 @@ def log_db():
 
 
 @pytest.yield_fixture(scope='function')
-def data_builder(as_root):
+def data_builder(as_root, randstr):
     """Yield DataBuilder instance (per test)"""
     # NOTE currently there's only a single data_builder for simplicity which
     # uses as_root - every resource is created/owned by the admin user
-    data_builder = DataBuilder(as_root)
+    data_builder = DataBuilder(as_root, randstr=randstr)
     yield data_builder
     data_builder.teardown()
 
@@ -102,9 +103,10 @@ def default_payload():
     return attrdict.AttrDict({
         'user': {'firstname': 'test', 'lastname': 'user'},
         'group': {},
-        'project': {'label': 'test-project', 'public': True},
-        'session': {'label': 'test-session', 'public': True},
-        'acquisition': {'label': 'test-acquisition', 'public': True},
+        'project': {'public': True},
+        'session': {'public': True},
+        'acquisition': {'public': True},
+        'collection': {},
         'gear': {
             'exchange': {
                 'git-commit': 'aex',
@@ -132,26 +134,31 @@ def default_payload():
     })
 
 
-@pytest.fixture(scope='session')
-def randstr():
-    """Return random hex creator function"""
+@pytest.fixture(scope='function')
+def randstr(request):
 
-    def randstr(n=10):
-        """Return hex string representation of `n` random bytes read from urandom"""
+    def randstr():
+        """Return random string prefixed with test module and function name"""
         # NOTE Useful for generating required unique document fields in data_builder
         # or in tests directly by using the fixture. Uses hex strings as each of
         # those fields (user._id, group._id, gear.gear.name) support [a-z0-9]
-        return binascii.hexlify(os.urandom(n))
+
+        def clean(test_name):
+            return test_name.lower().replace('test_', '').rstrip('_').replace('_', '-')
+
+        module = clean(request.module.__name__)
+        function = clean(request.function.__name__)
+        prefix = module + '-' + function
+        return prefix[:21] + '-' + binascii.hexlify(os.urandom(5))
 
     return randstr
 
 
 @pytest.fixture(scope='session')
 def file_form():
-    """Return multipart/form-data creator"""
 
     def file_form(*files, **kwargs):
-        """Create multipart/form-data dict for file upload requests"""
+        """Return multipart/form-data for file upload requests"""
         data = {}
         for i, file_ in enumerate(files):
             if isinstance(file_, str):
@@ -165,6 +172,14 @@ def file_form():
         return data
 
     return file_form
+
+
+@pytest.fixture(scope='module')
+def log(request):
+    """Return logger for the test module for easy logging from tests"""
+    log = logging.getLogger(request.module.__name__)
+    log.addHandler(logging.StreamHandler())
+    return log
 
 
 class BaseUrlSession(requests.Session):
@@ -181,8 +196,9 @@ class DataBuilder(object):
     }
     parent_to_child = {parent: child for child, parent in child_to_parent.items()}
 
-    def __init__(self, session):
+    def __init__(self, session, randstr=lambda: binascii.hexlify(os.urandom(10))):
         self.session = session
+        self.randstr = randstr
         self.resources = []
 
     def __getattr__(self, name):
@@ -203,17 +219,23 @@ class DataBuilder(object):
         payload = copy.deepcopy(_default_payload[resource])
         merge_dict(payload, kwargs)
 
-        # add missing required unique fields using random strings
+        # add missing required unique fields using randstr
         # such fields are: [user._id, group._id, gear.gear.name]
         if resource == 'user':
             if '_id' not in payload:
-                payload['_id'] = 'test-user-{}@user.com'.format(_randstr())
+                payload['_id'] = self.randstr() + '@user.com'
         if resource == 'group':
             if '_id' not in payload:
-                payload['_id'] = 'test-group-{}'.format(_randstr())
+                payload['_id'] = self.randstr()
         if resource == 'gear':
             if 'name' not in payload['gear']:
-                payload['gear']['name'] = 'test-gear-{}'.format(_randstr())
+                payload['gear']['name'] = self.randstr()
+
+        # add missing label fields using randstr
+        # such fields are: [project.label, session.label, acquisition.label]
+        if resource in self.child_to_parent:
+            if 'label' not in payload:
+                payload['label'] = self.randstr()
 
         # add missing parent container when creating child container
         if resource in self.child_to_parent:
@@ -280,8 +302,8 @@ class DataBuilder(object):
 # Store return values of pytest fixtures that are also used by DataBuilder
 # as "private singletons" in the module. This seemed the least confusing.
 _default_payload = default_payload()
-_randstr = randstr()
 _api_db = api_db()
+
 
 def merge_dict(a, b):
     """Merge two dicts into the first recursively"""
