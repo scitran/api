@@ -3,37 +3,71 @@ import json
 import dateutil.parser
 
 
-def test_uid_upload(data_builder, file_form, as_admin):
+def test_upload_without_login(as_public):
+    r = as_public.post('/upload/uid')
+    assert r.status_code == 403
+
+
+def test_uid_upload(data_builder, file_form, as_admin, as_user):
     group = data_builder.create_group()
 
     # try to uid-upload w/o metadata
     r = as_admin.post('/upload/uid', files=file_form('test.csv'))
     assert r.status_code == 500
 
+    # NOTE unused.csv is testing code that discards files not referenced from meta
+    uid_files = ('project.csv', 'subject.csv', 'session.csv', 'acquisition.csv', 'unused.csv')
+    uid_meta = {
+        'group': {'_id': group},
+        'project': {
+            'label': 'uid_upload',
+            'files': [{'name': 'project.csv'}]
+        },
+        'session': {
+            'uid': 'uid_upload',
+            'subject': {
+                'code': 'uid_upload',
+                'files': [{'name': 'subject.csv'}]
+            },
+            'files': [{'name': 'session.csv'}]
+        },
+        'acquisition': {
+            'uid': 'uid_upload',
+            'files': [{'name': 'acquisition.csv'}]
+        }
+    }
+
     # uid-upload files
-    r = as_admin.post('/upload/uid', files=file_form(
-        'project.csv', 'subject.csv', 'session.csv', 'acquisition.csv', 'unused.csv',
-        meta={
-            'group': {'_id': group},
-            'project': {
-                'label': 'test_project',
-                'files': [{'name': 'project.csv'}]
-            },
-            'session': {
-                'uid': 'test_session_uid',
-                'subject': {
-                    'code': 'test_subject_code',
-                    'files': [{'name': 'subject.csv'}]
-                },
-                'files': [{'name': 'session.csv'}]
-            },
-            'acquisition': {
-                'uid': 'test_acquisition_uid',
-                'files': [{'name': 'acquisition.csv'}]
-            }
-        })
-    )
+    r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
     assert r.ok
+
+    # uid-upload files to existing session uid
+    r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
+    assert r.ok
+
+    # try uid-upload files to existing session uid w/ other user (having no rw perms on session)
+    r = as_user.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
+    assert r.status_code == 403
+
+    # uid-match-upload files (to the same session and acquisition uid's as above)
+    uid_match_meta = uid_meta.copy()
+    del uid_match_meta['group']
+    r = as_admin.post('/upload/uid-match', files=file_form(*uid_files, meta=uid_match_meta))
+    assert r.ok
+
+    # try uid-match upload w/ other user (having no rw permissions on session)
+    r = as_user.post('/upload/uid-match', files=file_form(*uid_files, meta=uid_match_meta))
+    assert r.status_code == 403
+
+    # try uid-match upload w/ non-existent acquisition uid
+    uid_match_meta['acquisition']['uid'] = 'nonexistent_uid'
+    r = as_admin.post('/upload/uid-match', files=file_form(*uid_files, meta=uid_match_meta))
+    assert r.status_code == 404
+
+    # try uid-match upload w/ non-existent session uid
+    uid_match_meta['session']['uid'] = 'nonexistent_uid'
+    r = as_admin.post('/upload/uid-match', files=file_form(*uid_files, meta=uid_match_meta))
+    assert r.status_code == 404
 
     # delete group and children recursively (created by upload)
     data_builder.delete_group(group, recursive=True)
