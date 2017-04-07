@@ -37,44 +37,78 @@ def test_switching_acquisition_between_sessions(data_builder, as_admin):
     assert r.json()['session'] == session_2
 
 
-def test_project_template(data_builder, as_admin):
-    subject_code = 'test'
-    acquisition_label = 'test'
-
+def test_project_template(data_builder, file_form, as_admin):
     project = data_builder.create_project()
-    session = data_builder.create_session()
-    acquisition = data_builder.create_acquisition(label=acquisition_label)
+    session = data_builder.create_session(subject={'code': 'compliant'})
+    # NOTE adding acquisition_1 to cover code that's skipping non-matching containers
+    acquisition_1 = data_builder.create_acquisition(label='non-compliant')
+    acquisition_2 = data_builder.create_acquisition(label='compliant')
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/tags', json={'value': 'compliant'}).ok
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/files', files=file_form('non-compliant.txt')).ok
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/files', files=file_form('compliant1.csv')).ok
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/files', files=file_form('compliant2.csv')).ok
+
+    # test the session before setting the template
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert 'project_has_template' not in r.json()
 
     # create template for the project
     r = as_admin.post('/projects/' + project + '/template', json={
-        'session': { 'subject': { 'code' : '^{}$'.format(subject_code) } },
-        'acquisitions': [{ 'label': '^{}$'.format(acquisition_label), 'minimum': 1 }]
+        'session': {'subject': {'code': '^compliant$'}},
+        'acquisitions': [{
+            'minimum': 1,
+            'label': '^compliant$',
+            'tags': '^compliant$',
+            'files': [{
+                'minimum': 2,
+                'mimetype': 'text/csv',
+            }]
+        }]
     })
     assert r.ok
     assert r.json()['modified'] == 1
 
-    # test non-compliant session (wrong subject.code)
+    # test session compliance
     r = as_admin.get('/sessions/' + session)
     assert r.ok
-    assert r.json()['project_has_template'] == True
-    assert r.json()['satisfies_template'] == False
+    assert r.json()['project_has_template']
 
-    # make session compliant by setting subject.code
-    r = as_admin.put('/sessions/' + session, json={'subject': {'code': subject_code}})
-    assert r.ok
+    def satisfies_template():
+        r = as_admin.get('/sessions/' + session)
+        assert r.ok
+        return r.json()['satisfies_template']
 
-    # test compliant session (subject.code and #acquisitions)
-    r = as_admin.get('/sessions/' + session)
-    assert r.ok
-    assert r.json()['satisfies_template'] == True
+    # test that missing any single requirement breaks compliance
+    # session.subject.code
+    assert satisfies_template()
+    assert as_admin.put('/sessions/' + session, json={'subject': {'code': 'non-compliant'}}).ok
+    assert not satisfies_template()
+    assert as_admin.put('/sessions/' + session, json={'subject': {'code': 'compliant'}}).ok
 
-    # make session non-compliant by deleting acquisition
-    r = as_admin.delete('/acquisitions/' + acquisition)
-    assert r.ok
+    # acquisitions.label
+    assert satisfies_template()
+    assert as_admin.put('/acquisitions/' + acquisition_2, json={'label': 'non-compliant'}).ok
+    assert not satisfies_template()
+    assert as_admin.put('/acquisitions/' + acquisition_2, json={'label': 'compliant'}).ok
 
-    r = as_admin.get('/sessions/' + session)
-    assert r.ok
-    assert r.json()['satisfies_template'] == False
+    # acquisitions.tags
+    assert satisfies_template()
+    assert as_admin.delete('/acquisitions/' + acquisition_2 + '/tags/compliant').ok
+    # TODO figure out why removing the tag does not break compliance
+    # assert not satisfies_template()
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/tags', json={'value': 'compliant'}).ok
+
+    # acquisitions.files.minimum
+    assert satisfies_template()
+    assert as_admin.delete('/acquisitions/' + acquisition_2 + '/files/compliant2.csv').ok
+    assert not satisfies_template()
+    assert as_admin.post('/acquisitions/' + acquisition_2 + '/files', files=file_form('compliant2.csv')).ok
+
+    # acquisitions.minimum
+    assert satisfies_template()
+    assert as_admin.delete('/acquisitions/' + acquisition_2)
+    assert not satisfies_template()
 
     # delete project template
     r = as_admin.delete('/projects/' + project + '/template')
