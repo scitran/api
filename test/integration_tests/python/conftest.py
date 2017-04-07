@@ -131,6 +131,7 @@ def default_payload():
                 'version': '0.0.1',
             },
         },
+        'job': {'inputs': {}},
     })
 
 
@@ -221,21 +222,17 @@ class DataBuilder(object):
 
         # add missing required unique fields using randstr
         # such fields are: [user._id, group._id, gear.gear.name]
-        if resource == 'user':
-            if '_id' not in payload:
-                payload['_id'] = self.randstr() + '@user.com'
-        if resource == 'group':
-            if '_id' not in payload:
-                payload['_id'] = self.randstr()
-        if resource == 'gear':
-            if 'name' not in payload['gear']:
-                payload['gear']['name'] = self.randstr()
+        if resource == 'user' and '_id' not in payload:
+            payload['_id'] = self.randstr() + '@user.com'
+        if resource == 'group' and '_id' not in payload:
+            payload['_id'] = self.randstr()
+        if resource == 'gear' and 'name' not in payload['gear']:
+            payload['gear']['name'] = self.randstr()
 
         # add missing label fields using randstr
         # such fields are: [project.label, session.label, acquisition.label]
-        if resource in self.child_to_parent:
-            if 'label' not in payload:
-                payload['label'] = self.randstr()
+        if resource in self.child_to_parent and 'label' not in payload:
+            payload['label'] = self.randstr()
 
         # add missing parent container when creating child container
         if resource in self.child_to_parent:
@@ -243,10 +240,16 @@ class DataBuilder(object):
             if parent not in payload:
                 payload[parent] = self.get_or_create(parent)
 
+        # add missing gear when creating job
+        if resource == 'job' and 'gear_id' not in payload:
+            payload['gear_id'] = self.get_or_create('gear')
+
         # put together the create url to post to
         create_url = '/' + resource + 's'
         if resource == 'gear':
             create_url += '/' + payload['gear']['name']
+        if resource == 'job':
+            create_url += '/add'
 
         # handle user api keys (they are set via mongo directly)
         if resource == 'user':

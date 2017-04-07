@@ -114,6 +114,9 @@ def test_acquisition_engine_upload(data_builder, file_form, as_root):
     project = data_builder.create_project()
     session = data_builder.create_session()
     acquisition = data_builder.create_acquisition()
+    job = data_builder.create_job(inputs={
+        'test': {'type': 'acquisition', 'id': acquisition, 'name': 'test'}
+    })
 
     metadata = {
         'project':{
@@ -143,8 +146,16 @@ def test_acquisition_engine_upload(data_builder, file_form, as_root):
             ]
         }
     }
+    # try engine upload w/ non-existent job_id
     r = as_root.post('/engine',
-        params={'level': 'acquisition', 'id': acquisition},
+        params={'level': 'acquisition', 'id': acquisition, 'job': '000000000000000000000000'},
+        files=file_form('one.csv', 'two.csv', meta=metadata)
+    )
+    assert r.status_code == 500
+
+    # engine upload
+    r = as_root.post('/engine',
+        params={'level': 'acquisition', 'id': acquisition, 'job': job},
         files=file_form('one.csv', 'two.csv', meta=metadata)
     )
     assert r.ok
