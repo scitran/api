@@ -10,6 +10,11 @@ def test_collections(data_builder, as_admin):
     assert r.ok
     collection = r.json()['_id']
 
+    # get all collections w/ stats=true
+    r = as_admin.get('/collections', params={'stats': 'true'})
+    assert r.ok
+    assert all('session_count' in coll for coll in r.json())
+
     # get collection
     r = as_admin.get('/collections/' + collection)
     assert r.ok

@@ -120,8 +120,9 @@ def test_project_template(data_builder, file_form, as_admin):
 
 
 def test_get_all_containers(data_builder, as_public):
-    project = data_builder.create_project()
-    session = data_builder.create_session()
+    project_1 = data_builder.create_project()
+    project_2 = data_builder.create_project()
+    session = data_builder.create_session(project=project_1)
 
     # get all projects w/ info=true
     r = as_public.get('/projects', params={'info': 'true'})
@@ -132,8 +133,12 @@ def test_get_all_containers(data_builder, as_public):
     assert r.ok
     assert all('session_count' in proj for proj in r.json())
 
+    # get all projects w/ stats=true
+    r = as_public.get('/projects', params={'stats': 'true'})
+    assert r.ok
+
     # get all sessions for project w/ measurements=true and stats=true
-    r = as_public.get('/projects/' + project + '/sessions', params={
+    r = as_public.get('/projects/' + project_1 + '/sessions', params={
         'measurements': 'true',
         'stats': 'true'
     })
