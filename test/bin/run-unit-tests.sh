@@ -10,4 +10,4 @@ rm -rf test/unit_tests/python/__pycache__
 
 rm -f .coverage
 
-PYTHONPATH="$( pwd )"  py.test --cov=api test/unit_tests/python
+PYTHONPATH="$( pwd )"  py.test --cov=api --cov-report= test/unit_tests/python

@@ -30,12 +30,13 @@ fi
 clean_up () {
   kill $API_PID || true
   wait 2> /dev/null
-  # Report on unit tests and integration tests separately
-  # Only submit integration test coverage to coveralls
-  coverage report -m
-  rm .coverage
+
+  echo -e "\nUNIT TEST COVERAGE:"
+  coverage report --skip-covered
+
   coverage combine
-  coverage report -m
+  echo -e "\nOVERALL COVERAGE:"
+  coverage report --show-missing
   coverage html
 }
 

@@ -9,6 +9,6 @@ persistent
 runtime
 bootstrap.json
 .cache
-.coverage
+.coverage*
 coverage.xml
 htmlcov
