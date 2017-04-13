@@ -298,7 +298,7 @@ class DataBuilder(object):
             for child in _api_db[child_cont + 's'].find({resource: _id}, {'_id': 1}):
                 self.delete(child_cont, child['_id'], recursive=recursive)
         if resource == 'gear':
-            _api_db.jobs.remove({'gear_id': _id})
+            _api_db.jobs.remove({'gear_id': str(_id)})
         _api_db[resource + 's'].remove({'_id': _id})
 
 
