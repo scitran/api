@@ -202,7 +202,7 @@ def get_rules_for_container(db, container):
         # Assume container is a project, or a collection (which currently cannot have a rules property)
         result = list(db.project_rules.find({'project_id': str(container['_id'])}))
 
-        if result is None:
+        if not result:
             print 'Container ' + str(container['_id']) + ' found NO rules'
             return []
         else:
