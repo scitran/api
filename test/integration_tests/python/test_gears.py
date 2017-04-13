@@ -1,29 +1,5 @@
-def test_gear_add(default_payload, randstr, as_root):
-    gear_name = 'test-gear-add-' + randstr()
-    gear_payload = default_payload['gear']
-    gear_payload['gear']['name'] = gear_name
-
-    # create new gear
-    r = as_root.post('/gears/' + gear_name, json=gear_payload)
-    assert r.ok
-    _id = r.json()['_id']
-
-    # get gear by id, test name
-    r = as_root.get('/gears/' + _id)
-    assert r.ok
-    assert r.json()['gear']['name'] == gear_name
-
-    # try to get gear by name
-    r = as_root.get('/gears/' + gear_name)
-    assert not r.ok
-
-    # delete gear
-    r = as_root.delete('/gears/' + _id)
-    assert r.ok
-
-
-def test_gear_add_versioning(default_payload, randstr, as_root):
-    gear_name = 'test-gear-add-versioning-' + randstr()
+def test_gear_add_versioning(default_payload, randstr, data_builder, as_root):
+    gear_name = randstr()
     gear_version_1 = '0.0.1'
     gear_version_2 = '0.0.2'
 
@@ -67,6 +43,13 @@ def test_gear_add_versioning(default_payload, randstr, as_root):
     # try to create gear w/ same name and version (gear_version_2)
     r = as_root.post('/gears/' + gear_name, json=gear_payload)
     assert not r.ok
+
+    # delete gears
+    r = as_root.delete('/gears/' + gear_id_1)
+    assert r.ok
+
+    r = as_root.delete('/gears/' + gear_id_2)
+    assert r.ok
 
 
 def test_gear_add_invalid(default_payload, randstr, as_root):
