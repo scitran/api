@@ -46,6 +46,11 @@ def group_roles_sublist(handler, container):
             if method in ['GET', 'DELETE']  and query_params.get('_id') == handler.uid:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             elif access >= INTEGER_ROLES['admin']:
+                # FIXME this isn't the proper place to perform this check
+                # These consinstency checks should go in a separate validation step
+                if method == 'POST' and payload['site'] == config.get_item('site', 'id'):
+                    if not config.db.users.find_one({'_id': payload['_id']}):
+                        handler.abort(400, 'user doesn\'t exist')
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
@@ -79,6 +84,11 @@ def permissions_sublist(handler, container):
             if method in ['GET', 'DELETE']  and query_params.get('_id') == handler.uid and query_params.get('site') == handler.user_site:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             elif access >= INTEGER_ROLES['admin']:
+                # FIXME this isn't the proper place to perform this check
+                # These consinstency checks should go in a separate validation step
+                if method == 'POST' and payload['site'] == config.get_item('site', 'id'):
+                    if not config.db.users.find_one({'_id': payload['_id']}):
+                        handler.abort(400, 'user doesn\'t exist')
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
