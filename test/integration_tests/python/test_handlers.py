@@ -1,4 +1,8 @@
+import copy
 import datetime
+
+import attrdict
+import pytest
 
 
 # create timestamps for report filtering
@@ -6,6 +10,15 @@ today = datetime.datetime.today()
 ts_format = '{:%Y-%m-%dT%H:%M:%S+00:00}'
 yesterday_ts = ts_format.format(today - datetime.timedelta(days=1))
 tomorrow_ts = ts_format.format(today + datetime.timedelta(days=1))
+
+
+@pytest.fixture(scope='function')
+def with_user(data_builder, randstr, as_public):
+    api_key = randstr()
+    user = data_builder.create_user(api_key=api_key, root=True)
+    session = copy.deepcopy(as_public)
+    session.headers.update({'Authorization': 'scitran-user ' + api_key})
+    return attrdict.AttrDict(user=user, api_key=api_key, session=session)
 
 
 def test_roothandler(as_public):
@@ -107,7 +120,7 @@ def test_project_report(data_builder, as_admin, as_user):
     assert len(project_report['projects']) == 2
 
 
-def test_access_log_report(data_builder, as_user, as_admin):
+def test_access_log_report(with_user, as_user, as_admin):
     # try to get access log report as user
     r = as_user.get('/report/accesslog')
     assert r.status_code == 403
@@ -131,17 +144,26 @@ def test_access_log_report(data_builder, as_user, as_admin):
     assert r.status_code == 400
 
     # get access log report for user
-    user = data_builder.create_user()
     r = as_admin.get('/report/accesslog', params={
-        'start_date': yesterday_ts, 'end_date': tomorrow_ts, 'user': user
+        'start_date': yesterday_ts, 'end_date': tomorrow_ts, 'user': with_user.user
     })
     assert r.ok
     assert r.json() == []
 
-    # TODO properly test access log entries
+    # get access log report for user
+    with_user.session.post('/login', json={'auth_type': 'api-key', 'code': with_user.api_key})
+    r = as_admin.get('/report/accesslog', params={
+        'user': with_user.user,
+        'start_date': yesterday_ts,
+        'end_date': tomorrow_ts,
+    })
+    assert r.ok
+    accesslog = r.json()
+    assert len(accesslog) == 1
+    assert accesslog[0]['access_type'] == 'user_login'
 
 
-def test_usage_report(data_builder, as_user, as_admin):
+def test_usage_report(data_builder, file_form, as_user, as_admin):
     # try to get usage report as user
     r = as_user.get('/report/usage', params={'type': 'month'})
     assert r.status_code == 403
@@ -157,13 +179,54 @@ def test_usage_report(data_builder, as_user, as_admin):
     assert r.status_code == 400
 
     # get month-aggregated usage report
+    r = as_admin.get('/report/usage', params={'type': 'month'})
+    assert r.ok
+    usage = r.json()
+    assert len(usage) == 1
+    assert (usage[0]['year'], usage[0]['month']) == (str(today.year), str(today.month))
+    assert usage[0]['session_count'] == 0
+    assert usage[0]['file_mbs'] == 0
+    assert usage[0]['gear_execution_count'] == 0
+
+    # get project-aggregated usage report
+    r = as_admin.get('/report/usage', params={'type': 'project'})
+    assert r.ok
+    assert len(r.json()) == 0
+
+    project = data_builder.create_project(label='usage')
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
+    analysis = as_admin.post('/sessions/' + session + '/analyses', files=file_form(meta={'label': 'test'})).json()['_id']
+    as_admin.post('/acquisitions/' + acquisition + '/files', files=file_form('input.csv'))
+    job = data_builder.create_job(inputs={'usage': {'type': 'acquisition', 'id': acquisition, 'name': 'input.csv'}})
+    as_admin.get('/jobs/next', params={'root': 'true'})
+    as_admin.post('/engine',
+        params={'root': 'true', 'level': 'analysis', 'id': analysis, 'job': job},
+        files=file_form('output.csv', meta={'type': 'text', 'value': {'label': 'test'}})
+    )
+    as_admin.put('/jobs/' + job, params={'root': 'true'}, json={'state': 'complete'})
+
+    # get month-aggregated usage report
     r = as_admin.get('/report/usage', params={
         'type': 'month', 'start_date': yesterday_ts, 'end_date': tomorrow_ts
     })
     assert r.ok
+    usage = r.json()
+    assert len(usage) == 1
+    assert (usage[0]['year'], usage[0]['month']) == (str(today.year), str(today.month))
+    assert usage[0]['session_count'] == 1
+    assert usage[0]['file_mbs'] > 0
+    # TODO test gear exec counter
+    assert usage[0]['gear_execution_count'] == 1
 
     # get project-aggregated usage report
     r = as_admin.get('/report/usage', params={
         'type': 'project', 'start_date': yesterday_ts, 'end_date': tomorrow_ts
     })
     assert r.ok
+    usage = r.json()
+    assert len(usage) == 1
+    assert usage[0]['project']['label'] == 'usage'
+    assert usage[0]['session_count'] == 1
+    assert usage[0]['file_mbs'] > 0
+    assert usage[0]['gear_execution_count'] == 1
