@@ -1,6 +1,7 @@
 import cStringIO
 import os
 import tarfile
+import zipfile
 
 
 def test_download(data_builder, file_form, as_admin, api_db):
@@ -97,4 +98,129 @@ def test_download(data_builder, file_form, as_admin, api_db):
 
     # Perform the download using symlinks
     r = as_admin.get('/download', params={'ticket': ticket, 'symlinks': 'true'})
+    assert r.ok
+
+
+def test_filelist_download(data_builder, file_form, as_admin):
+    session = data_builder.create_session()
+    zip_cont = cStringIO.StringIO()
+    with zipfile.ZipFile(zip_cont, 'w') as zip_file:
+        zip_file.writestr('two.csv', 'sample\ndata\n')
+    zip_cont.seek(0)
+    session_files = '/sessions/' + session + '/files'
+    as_admin.post(session_files, files=file_form('one.csv'))
+    as_admin.post(session_files, files=file_form(('two.zip', zip_cont)))
+
+    # try to get non-existent file
+    r = as_admin.get(session_files + '/non-existent.csv')
+    assert r.status_code == 404
+
+    # try to get file w/ non-matching hash
+    r = as_admin.get(session_files + '/one.csv', params={'hash': 'match me if you can'})
+    assert r.status_code == 409
+
+    # get download ticket for single file
+    r = as_admin.get(session_files + '/one.csv', params={'ticket': ''})
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # download single file w/ ticket
+    r = as_admin.get(session_files + '/one.csv', params={'ticket': ticket})
+    assert r.ok
+
+    # try to get zip info for non-zip file
+    r = as_admin.get(session_files + '/one.csv', params={'ticket': ticket, 'info': 'true'})
+    assert r.status_code == 400
+
+    # try to get zip member of non-zip file
+    r = as_admin.get(session_files + '/one.csv', params={'ticket': ticket, 'member': 'hardly'})
+    assert r.status_code == 400
+
+    # try to download a different file w/ ticket
+    r = as_admin.get(session_files + '/two.zip', params={'ticket': ticket})
+    assert r.status_code == 400
+
+    # get download ticket for zip file
+    r = as_admin.get(session_files + '/two.zip', params={'ticket': ''})
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # get zip info
+    r = as_admin.get(session_files + '/two.zip', params={'ticket': ticket, 'info': 'true'})
+    assert r.ok
+
+    # try to get non-existent zip member
+    r = as_admin.get(session_files + '/two.zip', params={'ticket': ticket, 'member': 'hardly'})
+    assert r.status_code == 400
+
+    # get zip member
+    r = as_admin.get(session_files + '/two.zip', params={'ticket': ticket, 'member': 'two.csv'})
+    assert r.ok
+
+
+def test_analysis_download(data_builder, file_form, as_admin):
+    session = data_builder.create_session()
+    zip_cont = cStringIO.StringIO()
+    with zipfile.ZipFile(zip_cont, 'w') as zip_file:
+        zip_file.writestr('two.csv', 'sample\ndata\n')
+    zip_cont.seek(0)
+    analysis = as_admin.post('/sessions/' + session + '/analyses', files=file_form(
+        'one.csv', ('two.zip', zip_cont),
+        meta={'label': 'test', 'inputs': [{'name': 'one.csv'}, {'name': 'two.csv'}]}
+    )).json()['_id']
+    analysis_files = '/sessions/' + session + '/analyses/' + analysis + '/files'
+
+    # try to download analysis files w/ non-existent ticket
+    r = as_admin.get(analysis_files, params={'ticket': '000000000000000000000000'})
+    assert r.status_code == 404
+
+    # get analysis batch download ticket for all files
+    r = as_admin.get(analysis_files, params={'ticket': ''})
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # batch download analysis files w/ ticket
+    r = as_admin.get(analysis_files, params={'ticket': ticket})
+    assert r.ok
+
+    # try to get download ticket for non-existent analysis file
+    r = as_admin.get(analysis_files + '/non-existent.csv')
+    assert r.status_code == 404
+
+    # get analysis download ticket for single file
+    r = as_admin.get(analysis_files + '/one.csv', params={'ticket': ''})
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # download single analysis file w/ ticket
+    r = as_admin.get(analysis_files + '/one.csv', params={'ticket': ticket})
+    assert r.ok
+
+    # try to get zip info for non-zip file
+    r = as_admin.get(analysis_files + '/one.csv', params={'ticket': ticket, 'info': 'true'})
+    assert r.status_code == 400
+
+    # try to get zip member of non-zip file
+    r = as_admin.get(analysis_files + '/one.csv', params={'ticket': ticket, 'member': 'nosuch'})
+    assert r.status_code == 400
+
+    # try to download a different file w/ ticket
+    r = as_admin.get(analysis_files + '/two.zip', params={'ticket': ticket})
+    assert r.status_code == 400
+
+    # get analysis download ticket for zip file
+    r = as_admin.get(analysis_files + '/two.zip', params={'ticket': ''})
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # get zip info
+    r = as_admin.get(analysis_files + '/two.zip', params={'ticket': ticket, 'info': 'true'})
+    assert r.ok
+
+    # try to get non-existent zip member
+    r = as_admin.get(analysis_files + '/two.zip', params={'ticket': ticket, 'member': 'nosuch'})
+    assert r.status_code == 400
+
+    # get zip member
+    r = as_admin.get(analysis_files + '/two.zip', params={'ticket': ticket, 'member': 'two.csv'})
     assert r.ok
