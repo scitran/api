@@ -1,8 +1,13 @@
 def test_batch(data_builder, as_user, as_admin):
-    session = data_builder.create_session()
-    acquisition = data_builder.create_acquisition()
     gear = data_builder.create_gear()
     invalid_gear = data_builder.create_gear(gear={'custom': {'flywheel': {'invalid': True}}})
+
+    empty_project = data_builder.create_project()
+    project = data_builder.create_project()
+    session = data_builder.create_session(project=project)
+    acquisition = data_builder.create_acquisition(session=session)
+    as_admin.post('/acquisitions/' + acquisition + '/files', files={
+        'file': ('test.txt', 'test\ncontent\n')})
 
     # get all
     r = as_user.get('/batch')
@@ -33,17 +38,32 @@ def test_batch(data_builder, as_user, as_admin):
     })
     assert r.status_code == 400
 
-    # create a batch
-    r = as_admin.post('/acquisitions/' + acquisition + '/files', files={
-        'file': ('test.txt', 'test\ncontent\n')
-    })
-    assert r.ok
-
+    # try to create batch for project w/o acquisitions
     r = as_admin.post('/batch', json={
         'gear_id': gear,
-        'targets': [
-            {'type': 'acquisition', 'id': acquisition},
-        ],
+        'targets': [{'type': 'project', 'id': empty_project}]
+    })
+    assert r.status_code == 404
+
+    # try to create batch w/o write permission
+    r = as_user.post('/batch', json={
+        'gear_id': gear,
+        'targets': [{'type': 'project', 'id': project}]
+    })
+    assert r.status_code == 403
+
+    # create a batch w/ session target
+    r = as_admin.post('/batch', json={
+        'gear_id': gear,
+        'targets': [{'type': 'session', 'id': session}]
+    })
+    assert r.ok
+    batch_id = r.json()['_id']
+
+    # create a batch w/ acquisition target and target_context
+    r = as_admin.post('/batch', json={
+        'gear_id': gear,
+        'targets': [{'type': 'acquisition', 'id': acquisition}],
         'target_context': {'type': 'session', 'id': session}
     })
     assert r.ok
