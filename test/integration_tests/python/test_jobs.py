@@ -26,7 +26,7 @@ def test_jobs(data_builder, as_admin, as_root):
     invalid_gear = data_builder.create_gear(gear={'custom': {'flywheel': {'invalid': True}}})
     acquisition = data_builder.create_acquisition()
 
-    job1 = {
+    job_data = {
         'gear_id': gear,
         'inputs': {
             'dicom': {
@@ -43,8 +43,14 @@ def test_jobs(data_builder, as_admin, as_root):
         'tags': [ 'test-tag' ]
     }
 
+    # try to add job w/ non-existent gear
+    job0 = copy.deepcopy(job_data)
+    job0['gear_id'] = '000000000000000000000000'
+    r = as_admin.post('/jobs/add', json=job0)
+    assert r.status_code == 400
+
     # add job with explicit destination
-    r = as_admin.post('/jobs/add', json=job1)
+    r = as_admin.post('/jobs/add', json=job_data)
     assert r.ok
     job1_id = r.json()['_id']
 
@@ -52,14 +58,29 @@ def test_jobs(data_builder, as_admin, as_root):
     r = as_root.get('/jobs/' + job1_id)
     assert r.ok
 
+    # get job log (empty)
+    r = as_admin.get('/jobs/' + job1_id + '/logs')
+    assert r.ok
+    assert r.json()['logs'] == []
+
+    # try to add job log w/o root
+    job_logs = [{'fd': 1, 'msg': 'Hello'}, {'fd': 2, 'msg': 'World'}]
+    r = as_admin.post('/jobs/' + job1_id + '/logs', json=job_logs)
+    assert r.status_code == 403
+
+    # try to add job log to non-existent job
+    r = as_root.post('/jobs/000000000000000000000000/logs', json=job_logs)
+    assert r.status_code == 404
+
     # add job log
-    r = as_root.post('/jobs/' + job1_id + '/logs', json=[
-        { 'fd': 1, 'msg': 'Hello' },
-        { 'fd': 2, 'msg': 'World' }
-    ])
+    r = as_root.post('/jobs/' + job1_id + '/logs', json=job_logs)
     assert r.ok
 
-    # get job log
+    # try to get job log of non-existent job
+    r = as_admin.get('/jobs/000000000000000000000000/logs')
+    assert r.status_code == 404
+
+    # get job log (non-empty)
     r = as_admin.get('/jobs/' + job1_id + '/logs')
     assert r.ok
     assert len(r.json()['logs']) == 2
@@ -73,13 +94,13 @@ def test_jobs(data_builder, as_admin, as_root):
     assert r.status_code == 403
 
     # add job with implicit destination
-    job2 = copy.deepcopy(job1)
+    job2 = copy.deepcopy(job_data)
     del job2['destination']
     r = as_admin.post('/jobs/add', json=job2)
     assert r.ok
 
     # add job with invalid gear
-    job3 = copy.deepcopy(job2)
+    job3 = copy.deepcopy(job_data)
     job3['gear_id'] = invalid_gear
 
     r = as_admin.post('/jobs/add', json=job3)
@@ -94,9 +115,23 @@ def test_jobs(data_builder, as_admin, as_root):
     assert r.ok
     next_job_id = r.json()['id']
 
-    # retry job
+    # set next job to failed
     r = as_root.put('/jobs/' + next_job_id, json={'state': 'failed'})
     assert r.ok
 
+    # retry failed job
     r = as_root.post('/jobs/' + next_job_id + '/retry')
+    assert r.ok
+
+    # get next job
+    r = as_root.get('/jobs/next', params={'tags': 'test-tag'})
+    assert r.ok
+    next_job_id = r.json()['id']
+
+    # set next job to failed
+    r = as_root.put('/jobs/' + next_job_id, json={'state': 'failed'})
+    assert r.ok
+
+    # retry failed job w/o root
+    r = as_admin.post('/jobs/' + next_job_id + '/retry')
     assert r.ok

@@ -334,8 +334,9 @@ class JobHandler(base.RequestHandler):
     def get_logs(self, _id):
         """Get a job's logs"""
 
-        job = Job.get(_id)
-        if job is None:
+        try:
+            job = Job.get(_id)
+        except Exception: # pylint: disable=broad-except
             self.abort(404, 'Job not found')
 
         # Permission check
@@ -359,8 +360,9 @@ class JobHandler(base.RequestHandler):
 
         doc = self.request.json
 
-        job = Job.get(_id)
-        if job is None:
+        try:
+            Job.get(_id)
+        except Exception: # pylint: disable=broad-except
             self.abort(404, 'Job not found')
 
         log = config.db.job_logs.find_one({'_id': _id})
