@@ -94,9 +94,14 @@ def test_gear_access(data_builder, as_public, as_admin):
     assert r.status_code == 403
 
 
-def test_gear_invocation_and_suggest(data_builder, as_user, as_admin):
+def test_gear_invocation_and_suggest(data_builder, file_form, as_admin):
     gear = data_builder.create_gear()
     session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
+    as_admin.post('/acquisitions/' + acquisition + '/files', files=file_form(
+        'one.csv', meta={'name': 'one.csv'}))
+    as_admin.post('/sessions/' + session + '/analyses', files=file_form(
+        'one.csv', meta={'label': 'test', 'outputs': [{'name': 'one.csv'}]}))
 
     # test invocation
     r = as_admin.get('/gears/' + gear + '/invocation')
