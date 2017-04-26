@@ -1,3 +1,6 @@
+import bson
+
+
 def test_switching_project_between_groups(data_builder, as_admin):
     group_1 = data_builder.create_group()
     group_2 = data_builder.create_group()
@@ -137,6 +140,16 @@ def test_get_all_containers(data_builder, as_public):
     r = as_public.get('/projects', params={'stats': 'true'})
     assert r.ok
 
+    # get all projects w/ permissions=true
+    r = as_public.get('/projects', params={'permissions': 'true'})
+    assert r.ok
+    assert all('permissions' in proj for proj in r.json())
+
+    # get all projects w/ join_avatars=true
+    r = as_public.get('/projects', params={'join_avatars': 'true'})
+    assert r.ok
+    assert all('avatar' in perm for proj in r.json() for perm in proj['permissions'])
+
     # get all sessions for project w/ measurements=true and stats=true
     r = as_public.get('/projects/' + project_1 + '/sessions', params={
         'measurements': 'true',
@@ -158,17 +171,36 @@ def test_get_all_for_user(as_admin, as_public):
     assert r.ok
 
 
-def test_get_container(data_builder, file_form, as_admin, as_public):
+def test_get_container(data_builder, file_form, as_drone, as_admin, as_public, api_db):
     project = data_builder.create_project()
 
-    # NOTE cannot reach APIStorageException - wanted to cover 400 error w/ invalid oid
-    # but then realized that api.py's cid regex makes this an invalid route resulting in 404
+    # upload files for testing join=origin
+    # Origin.user upload (the jobs below also reference it)
+    as_admin.post('/projects/' + project + '/files', files=file_form(
+        'user.csv', meta={'name': 'user.csv'}))
+    job_1 = data_builder.create_job(inputs={
+        'user': {'type': 'project', 'id': project, 'name': 'user.csv'}})
 
-    # try to get container w/ invalid object id
-    # r = as_admin.get('/projects/test')
-    # assert r.status_code == 400
+    # Origin.job upload (requires as_drone)
+    as_drone.post('/engine',
+        params={'level': 'project', 'id': project, 'job': job_1},
+        files=file_form('job_1.csv', meta={'project': {'files': [{'name': 'job_1.csv'}]}}))
+    job_2 = data_builder.create_job(inputs={
+        'user': {'type': 'project', 'id': project, 'name': 'user.csv'}})
 
-    # try to get container w/ nonexistent object id
+    # additional Origin.job upload for testing join=origin_job_gear_name gear name caching
+    as_drone.post('/engine',
+        params={'level': 'project', 'id': project, 'job': job_2},
+        files=file_form('job_2.csv', meta={'project': {'files': [{'name': 'job_2.csv'}]}}))
+
+    # upload file and unset origin to mimic missing origin scenario
+    as_admin.post('/projects/' + project + '/files', files=file_form(
+        'none.csv', meta={'name': 'none.csv'}))
+    api_db.projects.update(
+        {'_id': bson.ObjectId(project), 'files.name': 'none.csv'},
+        {'$unset': {'files.$.origin': ''}})
+
+    # try to get container w/ non-existent object id
     r = as_public.get('/projects/000000000000000000000000')
     assert r.status_code == 404
 
@@ -177,18 +209,19 @@ def test_get_container(data_builder, file_form, as_admin, as_public):
     assert r.ok
 
     # get container w/ ?paths=true
-    r = as_admin.post('/projects/' + project + '/files', files=file_form(
-        'one.csv', meta={'name': 'one.csv', 'type': 'csv'}))
-    assert r.ok
-
     r = as_public.get('/projects/' + project, params={'paths': 'true'})
     assert r.ok
     assert all('path' in f for f in r.json()['files'])
 
-    # get container w/ ?join=origin
-    r = as_public.get('/projects/' + project, params={'join': 'origin'})
+    # get container w/ ?join=origin&join=origin_job_gear_name
+    r = as_public.get('/projects/' + project, params={'join': ['origin', 'origin_job_gear_name']})
     assert r.ok
-    assert 'join-origin' in r.json()
+    assert 'gear_name' in r.json()['join-origin']['job'][job_1]
+
+    # get container w/ ?join_avatars=true
+    r = as_public.get('/projects/' + project, params={'join_avatars': 'true'})
+    assert r.ok
+    assert all('avatar' in perm for perm in r.json()['permissions'])
 
 
 def test_get_session_jobs(data_builder, as_admin):
