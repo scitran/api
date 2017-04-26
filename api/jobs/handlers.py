@@ -158,12 +158,11 @@ class RuleHandler(base.RequestHandler):
 
         if project:
             if self.superuser_request or has_access(self.uid, project, 'admin', self.user_site):
-                doc = self.request.json
-
                 result = config.db.project_rules.find_one({'project_id' : cid, '_id': bson.ObjectId(rid)})
                 if result is None:
                     self.abort(404, 'Rule not found')
 
+                doc = self.request.json
                 validate_data(doc, 'rule-update.json', 'input', 'POST', optional=True)
 
                 doc['_id']        = result['_id']

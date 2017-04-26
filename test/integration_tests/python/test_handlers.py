@@ -1,24 +1,12 @@
 import copy
 import datetime
 
-import attrdict
-import pytest
-
 
 # create timestamps for report filtering
 today = datetime.datetime.today()
 ts_format = '{:%Y-%m-%dT%H:%M:%S+00:00}'
 yesterday_ts = ts_format.format(today - datetime.timedelta(days=1))
 tomorrow_ts = ts_format.format(today + datetime.timedelta(days=1))
-
-
-@pytest.fixture(scope='function')
-def with_user(data_builder, randstr, as_public):
-    api_key = randstr()
-    user = data_builder.create_user(api_key=api_key, root=True)
-    session = copy.deepcopy(as_public)
-    session.headers.update({'Authorization': 'scitran-user ' + api_key})
-    return attrdict.AttrDict(user=user, api_key=api_key, session=session)
 
 
 def test_roothandler(as_public):
