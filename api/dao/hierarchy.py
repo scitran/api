@@ -44,8 +44,8 @@ class TargetContainer(object):
             self.update_file(fileinfo)
         else:
             self.add_file(fileinfo)
-    def update_file(self, fileinfo):
 
+    def update_file(self, fileinfo):
         update_set = {self.file_prefix + '.$.modified': datetime.datetime.utcnow()}
         # in this method, we are overriding an existing file.
         # update_set allows to update all the fileinfo like size, hash, etc.
@@ -313,7 +313,7 @@ def _find_or_create_destination_project(group_id, project_label, timestamp, user
     group_id, project_label = _group_id_fuzzy_match(group_id, project_label)
     group = config.db.groups.find_one({'_id': group_id})
 
-    project = config.db.projects.find_one({'group': group['_id'],'label': {'$regex': re.escape(project_label), '$options': 'i'}})
+    project = config.db.projects.find_one({'group': group['_id'], 'label': {'$regex': re.escape(project_label), '$options': 'i'}})
 
     if project:
         # If the project already exists, check the user's access
@@ -572,7 +572,8 @@ def _update_container_nulls(base_query, update, container_type):
     return config.db[coll_name].find_one(base_query)
 
 
-def merge_fileinfos(parsed_files, infos):
+# NOTE skip coverage since this function is currently not used
+def merge_fileinfos(parsed_files, infos): # pragma: no cover
     """it takes a dictionary of "hard_infos" (file size, hash)
     merging them with infos derived from a list of infos on the same or on other files
     """

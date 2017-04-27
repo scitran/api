@@ -1,3 +1,4 @@
+import copy
 import json
 
 import dateutil.parser
@@ -122,8 +123,22 @@ def test_uid_upload(data_builder, file_form, as_admin, as_user, as_public):
         }
     }
 
+    # try to uid-upload to new project w/o group rw perms
+    r = as_user.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
+    assert r.status_code == 403
+
     # uid-upload files
     r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
+    assert r.ok
+
+    # try to uid-upload to existing project w/o project rw perms
+    uid_meta_2 = copy.deepcopy(uid_meta)
+    uid_meta_2['session']['uid'] = uid_meta_2['acquisition']['uid'] = 'uid_upload_2'
+    r = as_user.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta_2))
+    assert r.status_code == 403
+
+    # uid-upload to existing project but new session uid
+    r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta_2))
     assert r.ok
 
     # uid-upload files to existing session uid
@@ -134,8 +149,22 @@ def test_uid_upload(data_builder, file_form, as_admin, as_user, as_public):
     r = as_user.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta))
     assert r.status_code == 403
 
+    # TODO figure out why api.dao.hierarchy._group_id_fuzzy_match is NOT called below
+
+    # # uid-upload to fat-fingered group id (should end up in group)
+    # uid_meta_fuzzy = copy.deepcopy(uid_meta)
+    # uid_meta_fuzzy['group']['_id'] = 'c' + group
+    # r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta_fuzzy))
+    # assert r.ok
+
+    # # uid-upload to utterly non-existent group id (should end up in unknown group)
+    # uid_meta_unknown = copy.deepcopy(uid_meta)
+    # uid_meta_unknown['group']['_id'] = '0000000000000000000000000'
+    # r = as_admin.post('/upload/uid', files=file_form(*uid_files, meta=uid_meta_unknown))
+    # assert r.ok
+
     # uid-match-upload files (to the same session and acquisition uid's as above)
-    uid_match_meta = uid_meta.copy()
+    uid_match_meta = copy.deepcopy(uid_meta)
     del uid_match_meta['group']
     r = as_admin.post('/upload/uid-match', files=file_form(*uid_files, meta=uid_match_meta))
     assert r.ok
