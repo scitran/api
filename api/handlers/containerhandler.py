@@ -206,14 +206,8 @@ class ContainerHandler(base.RequestHandler):
         """
         Given an object with an `analyses` array key, inflate job info for job-based analyses
         """
-        analyses = result.get('analyses')
-        if analyses is None:
-            return result
-        for a in analyses:
-            if a.get('job') is not None:
-                a = AnalysesStorage.inflate_job_info(a)
-
-        result['analyses'] = analyses
+        for analysis in result.get('analyses', []):
+            AnalysesStorage.inflate_job_info(analysis)
         return result
 
     def _filter_permissions(self, result, uid, site):

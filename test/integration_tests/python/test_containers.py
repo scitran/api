@@ -172,7 +172,9 @@ def test_get_all_for_user(as_admin, as_public):
 
 
 def test_get_container(data_builder, file_form, as_drone, as_admin, as_public, api_db):
+    gear = data_builder.create_gear()
     project = data_builder.create_project()
+    session = data_builder.create_session()
 
     # upload files for testing join=origin
     # Origin.user upload (the jobs below also reference it)
@@ -223,28 +225,54 @@ def test_get_container(data_builder, file_form, as_drone, as_admin, as_public, a
     assert r.ok
     assert all('avatar' in perm for perm in r.json()['permissions'])
 
+    # create analyses for testing job inflation
+    as_admin.post('/sessions/' + session + '/analyses', files=file_form(
+        'analysis.csv', meta={'label': 'no-job', 'inputs': [{'name': 'analysis.csv'}]}))
+    as_admin.post('/sessions/' + session + '/analyses', params={'job': 'true'}, json={
+        'analysis': {'label': 'with-job'},
+        'job': {
+            'gear_id': gear,
+            'inputs': {
+                'csv': {'type': 'project', 'id': project, 'name': 'job_1.csv'}
+            }
+        }
+    })
+
+    # get session and check analyis job inflation
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert isinstance(r.json()['analyses'][1]['job'], dict)
+
+    # fail and retry analysis job to test auto-updating on analysis
+    analysis_job = r.json()['analyses'][1]['job']['id']
+    as_drone.put('/jobs/' + analysis_job, json={'state': 'running'})
+    as_drone.put('/jobs/' + analysis_job, json={'state': 'failed'})
+    as_drone.post('/jobs/' + analysis_job + '/retry')
+
+    # get session and check analyis job was updated
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json()['analyses'][1]['job']['id'] != analysis_job
+
 
 def test_get_session_jobs(data_builder, as_admin):
     gear = data_builder.create_gear()
     session = data_builder.create_session()
     acquisition = data_builder.create_acquisition()
 
-    # get session jobs w/ analysis and job
+    # create an analysis together w/ a job
     r = as_admin.post('/sessions/' + session + '/analyses', params={'job': 'true'}, json={
         'analysis': {'label': 'test analysis'},
         'job': {
             'gear_id': gear,
             'inputs': {
-                'dicom': {
-                    'type': 'acquisition',
-                    'id': acquisition,
-                    'name': 'test.dcm'
-                }
+                'dicom': {'type': 'acquisition', 'id': acquisition, 'name': 'test.dcm'}
             }
         }
     })
     assert r.ok
 
+    # get session jobs w/ analysis and job
     r = as_admin.get('/sessions/' + session + '/jobs', params={'join': 'containers'})
     assert r.ok
 
