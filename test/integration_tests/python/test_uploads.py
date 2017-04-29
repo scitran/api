@@ -1,4 +1,5 @@
 import copy
+import datetime
 import json
 
 import dateutil.parser
@@ -323,6 +324,25 @@ def find_file_in_array(filename, files):
         if f.get('name') == filename:
             return f
 
+
+def test_engine_upload_errors(as_drone, as_user):
+    # try engine upload w/ non-root
+    r = as_user.post('/engine')
+    assert r.status_code == 402
+
+    # try engine upload w/o level
+    r = as_drone.post('/engine', params={})
+    assert r.status_code == 400
+
+    # try engine upload w/ invalid level
+    r = as_drone.post('/engine', params={'level': 'what'})
+    assert r.status_code == 400
+
+    # try engine upload w/o id
+    r = as_drone.post('/engine', params={'level': 'project'})
+    assert r.status_code == 400
+
+
 def test_acquisition_engine_upload(data_builder, file_form, as_root):
     project = data_builder.create_project()
     session = data_builder.create_session()
@@ -464,6 +484,7 @@ def test_session_engine_upload(data_builder, file_form, as_root):
         assert mf is not None
         assert f['type'] == mf['type']
         assert f['info'] == mf['info']
+
 
 def test_project_engine_upload(data_builder, file_form, as_root):
     project = data_builder.create_project()
@@ -699,7 +720,7 @@ def test_analysis_engine_upload(data_builder, file_form, as_root):
     assert r.ok
 
 
-def test_packfile(data_builder, file_form, as_admin):
+def test_packfile_upload(data_builder, file_form, as_admin, as_root, api_db):
     project = data_builder.create_project()
     session = data_builder.create_session()
 
@@ -752,11 +773,27 @@ def test_packfile(data_builder, file_form, as_admin):
         params={'token': token, 'metadata': metadata_json})
     assert r.ok
 
+    # get another token (start packfile-upload)
+    r = as_admin.post('/projects/' + project + '/packfile-start')
+    assert r.ok
+    token = r.json()['token']
+
+    # upload to packfile
+    r = as_admin.post('/projects/' + project + '/packfile',
+        params={'token': token}, files=file_form('two.csv'))
+    assert r.ok
+
+    # expire upload token
+    expired_time = datetime.datetime.utcnow() - datetime.timedelta(hours=2)
+    api_db.tokens.update({'_id': token}, {'$set': {'modified': expired_time}})
+
+    # try to clean packfile tokens w/o root
+    r = as_admin.post('/clean-packfiles')
+    assert r.status_code == 402
+
+    r = as_root.post('/clean-packfiles')
+    assert r.ok
+    assert r.json()['removed']['tokens'] > 0
+
     # clean up added session/acquisition
-    event_data_start_str = 'event: result\ndata: '
-    event_data_start_pos = r.text.find(event_data_start_str)
-    event_data = json.loads(r.text[event_data_start_pos + len(event_data_start_str):])
-    r = as_admin.delete('/acquisitions/' + event_data['acquisition_id'])
-    assert r.ok
-    r = as_admin.delete('/sessions/' + event_data['session_id'])
-    assert r.ok
+    data_builder.delete_project(project, recursive=True)
