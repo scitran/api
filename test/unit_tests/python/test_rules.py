@@ -66,8 +66,8 @@ def test_eval_match_file_name_match_relative():
     result = rules.eval_match(*args)
     assert result == False
 
-def test_eval_match_file_measurements():
-    part = rulePart(match_type='file.measurements', file_={'measurements': ['a', 'diffusion', 'b'] })
+def test_eval_match_file_classification():
+    part = rulePart(match_type='file.classification', file_={'classification': {'custom': ['a', 'diffusion', 'b'] }})
 
     args = part.gen(match_param='diffusion')
     result = rules.eval_match(*args)

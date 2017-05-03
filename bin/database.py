@@ -967,6 +967,58 @@ def upgrade_to_26():
     process_cursor(cursor, upgrade_to_26_closure)
 
 
+def upgrade_to_22():
+    """
+    Change file `measurement` field to `classification` map
+    Place all measurements in `custom` key on map
+    """
+
+    def update_project_template(template):
+        for a in template.get('acquisitions', []):
+            new_file_templates = []
+            for f in a.get('files', []):
+                if f.get('measurement'):
+                    measurements = f.pop('measurement')
+                    f['classification'] = {'custom': measurement}
+
+        return template
+
+
+    def change_to_classification(cont_list, cont_name):
+        for container in cont_list:
+
+            if cont_name == 'projects' and container.get('template'):
+                new_template = update_project_template(json.loads(container.get('template')))
+                update['$set'] = {'template': new_template}
+
+            query = {'_id': container['_id']}
+            update = {}
+
+            files = container.get('files')
+            if files is not None:
+                updated_files = []
+                for file_ in files:
+                    if 'measurements' in file_:
+                        measurements = file_.pop('measurements', [])
+                        custom = {'custom': measurements}
+                        file_['classification'] = custom
+
+                    updated_files.append(file_)
+                if update.get('$set'):
+                    update['$set']['files'] =  updated_files
+                else:
+                    update['$set'] = {'files': updated_files}
+
+            result = config.db[cont_name].update_one(query, update)
+
+    query = {'files.measurements': { '$exists': True}}
+
+    change_to_classification(config.db.collections.find(query), 'collections')
+    change_to_classification(config.db.projects.find(query), 'projects')
+    change_to_classification(config.db.sessions.find(query), 'sessions')
+    change_to_classification(config.db.acquisitions.find(query), 'acquisitions')
+
+
 def upgrade_schema():
     """
     Upgrades db to the current schema version

@@ -1,0 +1,10 @@
+[
+	{
+	    "_id": "MR",
+	    "classifications": {
+	        "Contrast": ["B0", "B1", "T1", "T2", "T2*", "PD", "MT", "ASL", "Perfusion", "Diffusion", "Spectroscopy", "Susceptibility", "Velocity", "Fingerprinting"],
+	        "Intent": ["Structural", "Functional", "Localizer", "Shim", "Calibration"],
+	        "Features": ["Quantitative", "Multi-Shell", "Multi-Echo", "Multi-Flip", "Multi-Band", "Steady-State", "3D", "Compressed-Sensing", "Eddy-Current-Corrected", "Fieldmap-Corrected", "Gradient-Unwarped", "Motion-Corrected", "Physio-Corrected"]
+	    }
+	}
+]

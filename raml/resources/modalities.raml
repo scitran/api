@@ -1,0 +1,77 @@
+description: Utility functions for modalities and their acceptable classifications.
+get:
+  description: |
+    List all modalities and their classifications.
+    Requires login.
+  responses:
+    200:
+      body:
+        application/json:
+          example: !include ../examples/output/modality-list.json
+          schema: !include ../schemas/output/modality-list.json
+post:
+  description: |
+    Insert a modality type and its classifications map.
+    Requires admin.
+  body:
+    application/json:
+      example: !include ../examples/input/modality-new.json
+      schema: !include ../schemas/input/modality.json
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {
+              "inserted": "1"
+            }
+
+/{ModalityName}:
+  description: Perform actions with a specific modality
+  uriParameters:
+    ModalityName:
+      type: string
+  get:
+    description: |
+      Get modality details.
+      Requires login.
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include ../examples/output/modality.json
+            schema: !include ../schemas/output/modality.json
+      404:
+        description: Modality not found
+  put:
+    description: |
+      Replace a modality's classifications map.
+      Requires admin.
+    body:
+      application/json:
+        example: !include ../examples/input/modality-update.json
+        schema: !include ../schemas/input/modality.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "modified": "1"
+              }
+      404:
+        description: Modality not found
+  delete:
+    description: |
+      Remove a modality.
+      Requires admin.
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "modified": "1"
+              }
+      404:
+        description: Modality not found

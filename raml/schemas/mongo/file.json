@@ -10,10 +10,8 @@
     "size":           { "type": "integer" },
     "hash":           { "type": "string" },
     "modality":       { "type": "string" },
-    "measurements": {
-      "items": { "type": "string"},
-      "type": "array",
-      "uniqueItems": true
+    "classification": {
+      "type": "object"
     },
     "tags": {
       "items": { "type": "string"},

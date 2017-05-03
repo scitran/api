@@ -24,6 +24,7 @@ var test_project_tag = 'test-project-tag';
 var delete_project_id = '';
 var device_id = 'bootstrapper_Bootstrapper'
 var injected_api_key = 'XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK'
+var modality_name = 'MR'
 
 // Tests we're skipping, fix these
 
@@ -1476,5 +1477,55 @@ hooks.before("GET /devices/{DeviceId} -> 200", function(test, done) {
 
 hooks.before("GET /devices/{DeviceId} -> 404", function(test, done) {
     test.request.params.DeviceId = 'bad_device_id';
+    done();
+});
+
+hooks.before("GET /modalities/{ModalityName} -> 200", function(test, done) {
+    test.request.params.ModalityName = modality_name;
+    done();
+});
+
+hooks.before("GET /modalities/{ModalityName} -> 404", function(test, done) {
+    test.request.params.ModalityName = 'bad_modality_name';
+    done();
+});
+
+hooks.before("POST /modalities/ -> 200", function(test, done) {
+    test.request.body = {
+        "_id":"MR",
+        "classifications": {
+            "intent": ["functional"]
+        }
+    }
+    done();
+});
+
+hooks.before("PUT /modalities/{ModalityName} -> 200", function(test, done) {
+    test.request.params.ModalityName = modality_name;
+    test.request.body = {
+        "classifications": {
+            "intent": ["localizer"]
+        }
+    }
+    done();
+});
+
+hooks.before("PUT /modalities/{ModalityName} -> 404", function(test, done) {
+    test.request.params.ModalityName = 'bad_modality_name';
+    test.request.body = {
+        "classifications": {
+            "intent": ["localizer"]
+        }
+    }
+    done();
+});
+
+hooks.before("DELETE /modalities/{ModalityName} -> 200", function(test, done) {
+    test.request.params.ModalityName = modality_name;
+    done();
+});
+
+hooks.before("DELETE /modalities/{ModalityName} -> 404", function(test, done) {
+    test.request.params.ModalityName = 'bad_modality_name';
     done();
 });

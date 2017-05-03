@@ -73,16 +73,16 @@ def eval_match(match_type, match_param, file_, container):
     elif match_type == 'file.name':
         return fnmatch.fnmatch(file_['name'].lower(), match_param.lower())
 
-    # Match any of the file's measurements
-    elif match_type == 'file.measurements':
-        try:
-            if match_param:
-                return match_param.lower() in map(lower, file_.get('measurements', []))
-            else:
-                return False
-        except KeyError:
-            _log_file_key_error(file_, container, 'has no measurements key')
+    # Match any of the file's classifications
+    elif match_type == 'file.classification':
+        for v in file_.get('classification', {}).itervalues():
+            try:
+                if match_param and match_param.lower() in map(lower, v):
+                    return True
+            except KeyError:
+                _log_file_key_error(file_, container, 'has no measurements key')
             return False
+        return False
 
     # Match the container having any file (including this one) with this type
     elif match_type == 'container.has-type':
