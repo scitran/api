@@ -21,6 +21,7 @@ MIMETYPES = [
 for mt in MIMETYPES:
     mimetypes.types_map.update({mt[0]: mt[1] + '/' + mt[2]})
 
+# NOTE unused function
 def hrsize(size):
     if size < 1000:
         return '%d%s' % (size, 'B')
@@ -59,7 +60,7 @@ def mongo_sanitize_fields(d):
         return [mongo_sanitize_fields(element) for element in d]
     elif isinstance(d, str):
         # not allowing dots nor dollar signs in fieldnames
-        d = d.replace('.','_')
+        d = d.replace('.', '_')
         d = d.replace('$', '-')
         return d
     else:
@@ -92,6 +93,8 @@ def is_user_id(uid):
     pattern = re.compile('^[0-9a-zA-Z.@_-]*$')
     return bool(pattern.match(uid))
 
+
+# NOTE unused function
 def is_group_id(gid):
     """
     Checks to make sure uid matches uid regex
@@ -112,7 +115,8 @@ def resolve_gravatar(email):
         return None
 
 
-def container_fileinfo(container, filename):
+# NOTE unused function
+def container_fileinfo(container, filename): # pragma: no cover
     for fileinfo in container.get('files', []):
         if fileinfo['filename'] == filename:
             return fileinfo
