@@ -50,8 +50,9 @@ class DeviceHandler(base.RequestHandler):
         else:
             raise APINotFoundException('Device with id {} not found, state not updated'.format(device_id))
 
+    # NOTE method not routed in api.py
     @require_superuser
-    def delete(self, device_id):
+    def delete(self, device_id): # pragma: no cover
         raise NotImplementedError()
 
     def get_status(self):
@@ -60,7 +61,7 @@ class DeviceHandler(base.RequestHandler):
         now = dt.datetime.now()
         for d in devices:
             d_obj = {}
-            d_obj['last_seen'] =  d.get('last_seen')
+            d_obj['last_seen'] = d.get('last_seen')
 
             if d.get('errors'):
                 d_obj['status'] = str(Status.error)
@@ -80,8 +81,3 @@ class DeviceHandler(base.RequestHandler):
                 response[d.get('_id')] = d_obj.copy()
 
         return response
-
-
-
-
-
