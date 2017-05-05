@@ -149,7 +149,7 @@ def run(batch_job):
         if not analysis.get('label'):
             time_now = datetime.datetime.utcnow()
             analysis['label'] = {'label': '{} {}'.format(gear_name, time_now)}
-        an_storage = AnalysesStorage('sessions', 'analyses', use_object_id = True)
+        an_storage = AnalysesStorage('sessions', 'analyses', use_object_id=True)
         acq_storage = AcquisitionStorage()
 
     jobs = []

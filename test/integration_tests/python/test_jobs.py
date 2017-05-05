@@ -21,7 +21,7 @@ def test_jobs_access(as_user):
     assert r.status_code == 403
 
 
-def test_jobs(data_builder, as_admin, as_root):
+def test_jobs(data_builder, as_user, as_admin, as_root):
     gear = data_builder.create_gear()
     invalid_gear = data_builder.create_gear(gear={'custom': {'flywheel': {'invalid': True}}})
     acquisition = data_builder.create_acquisition()
@@ -91,6 +91,10 @@ def test_jobs(data_builder, as_admin, as_root):
 
     # try to update job (user may only cancel)
     r = as_admin.put('/jobs/' + job1_id, json={'test': 'invalid'})
+    assert r.status_code == 403
+
+    # try to cancel job w/o permission (different user)
+    r = as_user.put('/jobs/' + job1_id, json={'state': 'cancelled'})
     assert r.status_code == 403
 
     # add job with implicit destination
