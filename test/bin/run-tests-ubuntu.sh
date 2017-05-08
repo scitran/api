@@ -25,8 +25,6 @@ if [ "$SCITRAN_RUN_LINT" == "true" ]; then
     ./test/bin/lint.sh api
 fi
 
-./test/bin/run-unit-tests.sh
-
 clean_up () {
   kill $API_PID || true
   wait 2> /dev/null
@@ -49,6 +47,9 @@ SCITRAN_PERSISTENT_DB_LOG_URI=${SCITRAN_PERSISTENT_DB_LOG_URI:-"mongodb://localh
 SCITRAN_PERSISTENT_PATH=`mktemp -d`
 SCITRAN_PERSISTENT_DATA_PATH="$SCITRAN_PERSISTENT_PATH/data"
 SCITRAN_CORE_DRONE_SECRET=${SCITRAN_CORE_DRONE_SECRET:-$( openssl rand -base64 32 )}
+
+SCITRAN_CORE_DRONE_SECRET=$SCITRAN_CORE_DRONE_SECRET \
+  ./test/bin/run-unit-tests.sh
 
 uwsgi --http "localhost:8081" --master --http-keepalive \
   --so-keepalive --add-header "Connection: Keep-Alive" \

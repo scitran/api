@@ -21,7 +21,7 @@ class AuthProvider(object):
         self.auth_type = auth_type
         if set_config:
             try:
-                self.config =  config.get_auth(auth_type)
+                self.config = config.get_auth(auth_type)
             except KeyError:
                 raise NotImplementedError('Auth type {} is not supported by this instance'.format(auth_type))
 
@@ -112,7 +112,7 @@ class JWTAuthProvider(AuthProvider):
 class GoogleOAuthProvider(AuthProvider):
 
     def __init__(self):
-        super(GoogleOAuthProvider,self).__init__('google')
+        super(GoogleOAuthProvider, self).__init__('google')
 
     def validate_code(self, code, **kwargs):
         payload = {
@@ -293,7 +293,7 @@ class APIKeyAuthProvider(AuthProvider):
         """
         Does not need to be supported in config.
         """
-        super(APIKeyAuthProvider,self).__init__('api-key', set_config=False)
+        super(APIKeyAuthProvider, self).__init__('api-key', set_config=False)
 
     @staticmethod
     def _preprocess_key(key):
