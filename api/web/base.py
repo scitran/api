@@ -96,7 +96,8 @@ class RequestHandler(webapp2.RequestHandler):
             drone_request = True
 
         # Cross-site authentication
-        elif user_agent.startswith('SciTran Instance '):
+        # NOTE cross-site feature unused and planned for removal
+        elif user_agent.startswith('SciTran Instance '): # pragma: no cover
             if self.request.environ['SSL_CLIENT_VERIFY'] == 'SUCCESS':
                 self.uid = self.request.headers.get('X-User')
                 self.source_site = self.request.headers.get('X-Site')
@@ -425,7 +426,8 @@ class RequestHandler(webapp2.RequestHandler):
         if target_site == site_id:
             self.request.logger.debug('from %s %s %s %s %s', self.source_site, self.uid, self.request.method, self.request.path, str(self.request.GET.mixed()))
             return super(RequestHandler, self).dispatch()
-        else:
+        # NOTE cross-site feature unused and planned for removal
+        else: # pragma: no cover
             if not site_id:
                 self.abort(500, 'api site.id is not configured')
             if not config.get_item('site', 'ssl_cert'):

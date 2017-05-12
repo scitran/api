@@ -29,13 +29,15 @@ clean_up () {
   kill $API_PID || true
   wait 2> /dev/null
 
+  # NOTE on omit: cross-site feature unused and planned for removal
+  local OMIT="--omit api/centralclient.py"
   echo -e "\nUNIT TEST COVERAGE:"
-  coverage report --skip-covered
+  coverage report $OMIT --skip-covered
 
   coverage combine
   echo -e "\nOVERALL COVERAGE:"
-  coverage report --show-missing
-  coverage html
+  coverage report $OMIT --show-missing
+  coverage html $OMIT
 }
 
 trap clean_up EXIT

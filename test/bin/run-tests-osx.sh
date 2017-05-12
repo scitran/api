@@ -18,13 +18,18 @@ clean_up () {
   kill $API_PID || true
   wait 2> /dev/null
   rm -rf "$SCITRAN_PERSISTENT_PATH"
-  # Report on unit tests and integration tests separately
-  coverage report -m
-  rm .coverage
+
+  # NOTE on omit: cross-site feature unused and planned for removal
+  local OMIT="--omit api/centralclient.py"
+  echo -e "\nUNIT TEST COVERAGE:"
+  coverage report $OMIT --skip-covered
+
   coverage combine
-  coverage report -m
-  coverage html
+  echo -e "\nOVERALL COVERAGE:"
+  coverage report $OMIT --show-missing
+  coverage html $OMIT
 }
+
 trap clean_up EXIT
 
 ./bin/install-dev-osx.sh
@@ -44,7 +49,8 @@ pip install --no-cache-dir -r "test/integration_tests/requirements-integration-t
 
 ./test/bin/lint.sh api
 
-./test/bin/run-unit-tests.sh
+SCITRAN_CORE_DRONE_SECRET=$SCITRAN_CORE_DRONE_SECRET \
+  ./test/bin/run-unit-tests.sh
 
 SCITRAN_RUNTIME_PORT=8081 \
     SCITRAN_CORE_DRONE_SECRET="$SCITRAN_CORE_DRONE_SECRET" \
