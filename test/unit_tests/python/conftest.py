@@ -1,5 +1,7 @@
+import logging
 import os
 
+import attrdict
 import mock
 import mongomock
 import pytest
@@ -52,6 +54,23 @@ def app():
     mongo_patch.stop()
 
 
+@pytest.fixture(scope='session')
+def config(app):
+    """Return app config accessor"""
+    # NOTE depends on the app fixture as it's reloading the config module
+    # NOTE the config fixture is session scoped (consider parallel tests)
+    # NOTE use dict notation for assignment (eg `config['key'] = 'v'` - AttrDict limitation)
+    return attrdict.AttrDict(api.config.__config)
+
+
+@pytest.fixture(scope='module')
+def log(request):
+    """Return logger for the test module for easy logging from tests"""
+    log = logging.getLogger(request.module.__name__)
+    log.addHandler(logging.StreamHandler())
+    return log
+
+
 class ApiAccessor(object):
     def __init__(self, app, **defaults):
         self.app = app
@@ -68,6 +87,8 @@ class ApiAccessor(object):
                 for key, value in self.defaults.items():
                     kwargs.setdefault(key, value)
                 kwargs['method'] = name.upper()
-                return self.app.get_response('/api' + path, **kwargs)
+                response = self.app.get_response('/api' + path, **kwargs)
+                response.ok = response.status_code == 200
+                return response
             return http_method
         raise AttributeError
