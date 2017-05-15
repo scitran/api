@@ -260,7 +260,7 @@ class WechatOAuthProvider(AuthProvider):
                     'wechat.openid': openid
                 },
                 '$unset': {
-                    'wechat.registration_code':''
+                    'wechat.registration_code': ''
                 }
             }
             config.db.users.update_one({'_id': user['_id']}, update)
@@ -273,8 +273,10 @@ class WechatOAuthProvider(AuthProvider):
 
         return user['_id']
 
-    def set_user_avatar(self, uid, identity):
+    # NOTE unused method
+    def set_user_avatar(self, uid, identity): # pragma: no cover
         pass
+
 
 class APIKeyAuthProvider(AuthProvider):
     """
