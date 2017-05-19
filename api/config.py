@@ -15,6 +15,7 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 log = logging.getLogger('scitran.api')
+log.propagate = False
 
 logging.getLogger('MARKDOWN').setLevel(logging.WARNING) # silence Markdown library
 logging.getLogger('requests').setLevel(logging.WARNING) # silence Requests library
