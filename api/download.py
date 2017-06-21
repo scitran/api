@@ -180,7 +180,7 @@ class Download(base.RequestHandler):
                             total_size, file_cnt = _append_targets(targets, acq, acq_prefix, total_size,
                                                                    file_cnt, req_spec['optional'], data_path, req_spec.get('filters'))
         log.debug(json.dumps(targets, sort_keys=True, indent=4, separators=(',', ': ')))
-        filename = prefix + '_' + datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S') + '.tar'
+        filename = prefix.replace(',', '') + '_' + datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S') + '.tar'
         ticket = util.download_ticket(self.request.client_addr, 'batch', targets, filename, total_size, projects)
         config.db.downloads.insert_one(ticket)
         return {'ticket': ticket['_id'], 'file_cnt': file_cnt, 'size': total_size}
