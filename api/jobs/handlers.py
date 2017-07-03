@@ -498,26 +498,26 @@ class BatchHandler(base.RequestHandler):
         # Get acquisitions associated with targets
         objectIds = [bson.ObjectId(x) for x in container_ids]
         containers = AcquisitionStorage().get_all_for_targets(container_type, objectIds,
-            collection_id=collection_id, include_archived=False)
+            collection_id=collection_id, include_archived=False, include_analyses=True)
 
         if not containers:
-            self.abort(404, 'Could not find acquisitions from targets.')
+            self.abort(404, 'Could not find acquisitions nor analyses from targets.')
 
         improper_permissions = []
-        acquisitions = []
+        allowable_containers = []
 
         # Make sure user has read-write access, add those to acquisition list
         for c in containers:
             if self.superuser_request or has_access(self.uid, c, 'rw'):
                 c.pop('permissions')
-                acquisitions.append(c)
+                allowable_containers.append(c)
             else:
                 improper_permissions.append(c['_id'])
 
-        if not acquisitions:
+        if not allowable_containers:
             self.abort(403, 'User does not have write access to targets.')
 
-        results = batch.find_matching_conts(gear, acquisitions, 'acquisition')
+        results = batch.find_matching_conts(gear, allowable_containers, 'acquisition')
 
         matched = results['matched']
         batch_proposal = {}

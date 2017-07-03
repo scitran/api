@@ -7,7 +7,7 @@ import datetime
 from .. import config
 from ..dao import APINotFoundException, APIStorageException
 from ..dao.containerstorage import AcquisitionStorage
-from ..dao.containerutil import create_filereference_from_dictionary, create_containerreference_from_filereference
+from ..dao.containerutil import create_filereference_from_dictionary, create_containerreference_from_filereference, create_containerreference_from_dictionary
 from ..dao.liststorage import AnalysesStorage
 from .jobs import Job
 from .queue import Queue
@@ -66,6 +66,8 @@ def find_matching_conts(gear, containers, container_type):
 
     for c in containers:
         files = c.get('files')
+        if c.get('cont_type') in ['analysis', 'analyses']:
+            files = [f for f in files if not f.get('input')]
         if files:
             suggestions = gears.suggest_for_files(gear, files)
 
@@ -88,7 +90,12 @@ def find_matching_conts(gear, containers, container_type):
                 # Create input map of file refs
                 inputs = {}
                 for input_name, files in suggestions.iteritems():
-                    inputs[input_name] = {'type': container_type, 'id': str(c['_id']), 'name': files[0]}
+
+                    # some results might include analyses
+                    if c.get('cont_type') in ['analysis', 'analyses']:
+                        inputs[input_name] = {'type': 'analysis', 'id': str(c['_id']), 'name': files[0]}
+                    else:
+                        inputs[input_name] = {'type': container_type, 'id': str(c['_id']), 'name': files[0]}
                 c['inputs'] = inputs
                 matched_conts.append(c)
         else:
@@ -165,9 +172,18 @@ def run(batch_job):
                 'tags':     tags
             }
 
-            # Create analysis
-            acquisition_id = inputs.values()[0].get('id')
-            session_id = acq_storage.get_container(acquisition_id, projection={'session':1}).get('session')
+            # Create analysis #
+
+            # First inflate one of the input ContainerRefs
+            cf = create_containerreference_from_dictionary(inputs.values()[0])
+
+            # Get input type, find session approriately
+            session_id = None
+            if cf.type == 'analysis':
+                session_id = cf.session_id
+            else:
+                session_id = acq_storage.get_container(cf.id, projection={'session':1}).get('session')
+
             result = an_storage.create_job_and_analysis('sessions', session_id, analysis, job_map, origin)
             job = result.get('job')
             job_id = result.get('job_id')

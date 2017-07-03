@@ -387,7 +387,7 @@ class AcquisitionStorage(ContainerStorage):
         return result
 
     def get_all_for_targets(self, target_type, target_ids,
-            user=None, projection=None, collection_id=None, include_archived=True):
+            user=None, projection=None, collection_id=None, include_archived=True, include_analyses=False):
         """
         Given a container type and list of ids, get all acquisitions that are in those hierarchies.
 
@@ -401,6 +401,8 @@ class AcquisitionStorage(ContainerStorage):
         If colllection is supplied, the collection context will be used to query acquisitions.
         If inlude_archived is false, it will ignore archived acquisitions.
           - if target_type is 'project', it will ignore sessions in the project that are archived
+        If include_analyses is True, it will also return analyses mixed in with acquisitions.
+          - if target_type is 'acquisition', it will not include analyses (none would be found)
         """
 
         query = {}
@@ -428,4 +430,20 @@ class AcquisitionStorage(ContainerStorage):
         query['session'] = {'$in':session_ids}
         if collection_id:
             query['collections'] = collection_id
-        return self.get_all_el(query, user, projection)
+        containers = self.get_all_el(query, user, projection)
+
+        # Add analyses to results
+        if include_analyses:
+            query['_id'] = {'$in':session_ids}
+            sessions = self.get_all_el(query, None, projection)
+            analyses = []
+            for s in sessions:
+                for a in s.get('analyses', []):
+                    a['session'] = s['_id']
+                    a['cont_type'] = 'analysis'
+                    a['permissions'] =  s['permissions']
+                    analyses.append(a)
+            containers.extend(analyses)
+
+        return containers
+
