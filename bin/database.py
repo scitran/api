@@ -1133,14 +1133,14 @@ def upgrade_to_32():
 
 def upgrade_to_33_closure(cont, cont_name):
     cont_type = cont_name[:-1]
-    for analysis in cont['analyses']:
-        analysis['_id'] = bson.ObjectId(analysis['_id'])
-        analysis['parent'] = {'type': cont_type, 'id': cont['_id']}
-        analysis['permissions'] = cont['permissions']
-        for key in ('public', 'archived'):
-            if key in cont:
-                analysis[key] = cont[key]
     if cont.get('analyses'):
+        for analysis in cont['analyses']:
+            analysis['_id'] = bson.ObjectId(analysis['_id'])
+            analysis['parent'] = {'type': cont_type, 'id': cont['_id']}
+            analysis['permissions'] = cont['permissions']
+            for key in ('public', 'archived'):
+                if key in cont:
+                    analysis[key] = cont[key]
         config.db['analyses'].insert_many(cont['analyses'])
     config.db[cont_name].update_one(
         {'_id': cont['_id']},
