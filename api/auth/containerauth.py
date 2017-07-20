@@ -4,6 +4,10 @@ Purpose of this module is to define all the permissions checker decorators for t
 
 from . import _get_access, INTEGER_PERMISSIONS
 
+PHI_FIELDS = {'info': 0, 'analyses': 0, 'subject.firstname': 0,
+              'subject.lastname': 0, 'subject.sex': 0, 'subject.age': 0,
+              'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0,
+              'files.info': 0, 'tags': 0}
 
 def default_container(handler, container=None, target_parent_container=None):
     """
@@ -45,6 +49,12 @@ def default_container(handler, container=None, target_parent_container=None):
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS[required_perm]
             else:
                 has_access = False
+
+            if _get_access(handler.uid, container) < INTEGER_PERMISSIONS['phi-ro']:
+                if not projection:
+                    projection = PHI_FIELDS
+                else:
+                    projection.update(PHI_FIELDS)
 
             if has_access:
                 return exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)

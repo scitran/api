@@ -7,6 +7,10 @@ PERMISSIONS = [
         'name': 'Read-Only',
     },
     {
+        'rid': 'phi-ro',
+        'name': 'PHI-Read-Only',
+    },
+    {
         'rid': 'rw',
         'name': 'Read-Write',
     },
@@ -17,6 +21,11 @@ PERMISSIONS = [
 ]
 
 INTEGER_PERMISSIONS = {r['rid']: i for i, r in enumerate(PERMISSIONS)}
+
+PHI_FIELDS = {'info': 0, 'analyses': 0, 'subject.firstname': 0,
+              'subject.lastname': 0, 'subject.sex': 0, 'subject.age': 0,
+              'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0,
+              'files.info': 0, 'tags': 0}
 
 def _get_access(uid, container):
     permissions_list = container.get('permissions', [])
