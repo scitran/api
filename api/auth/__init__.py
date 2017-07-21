@@ -3,12 +3,12 @@ from ..types import Origin
 
 PERMISSIONS = [
     {
-        'rid': 'ro',
-        'name': 'Read-Only',
+        'rid': 'no-phi-ro',
+        'name': 'PHI-Read-Only',
     },
     {
-        'rid': 'phi-ro',
-        'name': 'PHI-Read-Only',
+        'rid': 'ro',
+        'name': 'Read-Only',
     },
     {
         'rid': 'rw',

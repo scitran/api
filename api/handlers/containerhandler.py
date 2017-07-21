@@ -402,6 +402,7 @@ class ContainerHandler(base.RequestHandler):
         # Load the parent container in which the new container will be created
         # to check permissions.
         parent_container, parent_id_property = self._get_parent_container(payload)
+        
         # Always add the id of the parent to the container
         payload[parent_id_property] = parent_container['_id']
         # If the new container is a session add the group of the parent project in the payload

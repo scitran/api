@@ -22,7 +22,7 @@ def default_container(handler, container=None, target_parent_container=None):
             if method == 'GET' and container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro']
+                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method == 'POST':
                 required_perm = 'rw'
                 if target_parent_container.get('cont_name') == 'group':
@@ -50,7 +50,7 @@ def default_container(handler, container=None, target_parent_container=None):
             else:
                 has_access = False
 
-            if _get_access(handler.uid, container) < INTEGER_PERMISSIONS['phi-ro']:
+            if method == 'GET' and _get_access(handler.uid, container) < INTEGER_PERMISSIONS['ro']:
                 if not projection:
                     projection = PHI_FIELDS
                 else:
@@ -77,7 +77,7 @@ def collection_permissions(handler, container=None, _=None):
             if method == 'GET' and container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro']
+                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method == 'DELETE':
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['admin']
             elif method == 'POST':
@@ -102,7 +102,7 @@ def default_referer(handler, parent_container=None):
             if method == 'GET' and parent_container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = access >= INTEGER_PERMISSIONS['ro']
+                has_access = access >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method in ['POST', 'PUT', 'DELETE']:
                 has_access = access >= INTEGER_PERMISSIONS['rw']
             else:

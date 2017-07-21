@@ -23,7 +23,7 @@ def default_sublist(handler, container):
             if method == 'GET' and container.get('public', False):
                 min_access = -1
             elif method == 'GET':
-                min_access = INTEGER_PERMISSIONS['ro']
+                min_access = INTEGER_PERMISSIONS['no-phi-ro']
             elif method in ['POST', 'PUT', 'DELETE']:
                 min_access = INTEGER_PERMISSIONS['rw']
             else:
@@ -59,7 +59,7 @@ def group_tags_sublist(handler, container):
     access = _get_access(handler.uid, container)
     def g(exec_op):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
-            if method == 'GET'  and access >= INTEGER_PERMISSIONS['ro']:
+            if method == 'GET'  and access >= INTEGER_PERMISSIONS['no-phi-ro']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             elif access >= INTEGER_PERMISSIONS['rw']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
@@ -96,7 +96,7 @@ def notes_sublist(handler, container):
                 pass
             elif method == 'POST' and access >= INTEGER_PERMISSIONS['rw'] and payload['user'] == handler.uid:
                 pass
-            elif method == 'GET' and (access >= INTEGER_PERMISSIONS['ro'] or container.get('public')):
+            elif method == 'GET' and (access >= INTEGER_PERMISSIONS['no-phi-ro'] or container.get('public')):
                 pass
             elif method in ['GET', 'DELETE', 'PUT'] and container['notes'][0]['user'] == handler.uid:
                 pass
