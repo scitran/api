@@ -6,6 +6,8 @@ from . import _get_access, INTEGER_PERMISSIONS
 
 PHI_FIELDS = {'info': '***', 'analyses': "***", 'subject': {'firstname': "***", 'lastname': "***", 'sex': "***",
                     'age': "***", 'race': "***", 'ethnicity': "***", 'info': "***"}, 'tags': "***"}
+SCRUB = "***"
+
 def default_container(handler, container=None, target_parent_container=None):
     """
     This is the default permissions checker generator.
@@ -47,27 +49,15 @@ def default_container(handler, container=None, target_parent_container=None):
             else:
                 has_access = False
 
-            phi = True
-            if method == 'GET' and _get_access(handler.uid, container) < INTEGER_PERMISSIONS['ro']:
-                phi = False 
-                if handler.is_true('phi'):
-                    handler.abort(403, "User not autherized to view PHI fields.")
-
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
                 
-                if not phi:
-                    for field in PHI_FIELDS:
-                        if result.get(field) and isinstance(PHI_FIELDS[field], dict):
-                            for deeper_field in PHI_FIELDS[field]:
-                                if result.get(field):
-                                    result[field][deeper_field] = '***'
-                        else:
-                            result[field] = '***'
-
-                    for file_index, file_ in enumerate(result['files']):
-                        if file_.get('info'):
-                            result['files'][file_index]['info'] = '***'
+                if method == 'GET' and _get_access(handler.uid, container) < INTEGER_PERMISSIONS['ro']:
+                    if handler.is_true('phi'):
+                        handler.abort(403, "User not authorized to view PHI fields.")
+                    result = phi_scrub(result)
+                elif not handler.is_true('phi'):
+                    result = file_info_scrub(result)
                 return result
             else:
                 error_msg = 'user not authorized to perform a {} operation on the container.'.format(method)
@@ -99,7 +89,12 @@ def collection_permissions(handler, container=None, _=None):
                 has_access = False
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload)
+                result = exec_op(method, _id=_id, payload=payload)
+                if handler.is_true('phi'):
+                    if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                        handler.abort(403, "User not authorized to view PHI fields.")
+                    result = file_info_scrub(result)
+                return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the container'.format(method))
         return f
@@ -120,7 +115,12 @@ def default_referer(handler, parent_container=None):
                 has_access = False
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload)
+                result = exec_op(method, _id=_id, payload=payload)
+                if handler.is_true('phi'):
+                    if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                        handler.abort(403, "User not authorized to view PHI fields.")
+                    result = file_info_scrub(result)
+                return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on parent container'.format(method))
         return f
@@ -159,3 +159,20 @@ def list_public_request(exec_op):
             query['public'] = True
         return exec_op(method, query=query, user=user, public=public, projection=projection)
     return f
+
+def phi_scrub(result):
+    for field in PHI_FIELDS:
+        if result.get(field) and isinstance(PHI_FIELDS[field], dict):
+            for deeper_field in PHI_FIELDS[field]:
+                if result.get(field):
+                    result[field][deeper_field] = SCRUB
+        elif result.get(field):
+            result[field] = scrub
+    result = file_info_scrub(result)
+    return result
+
+def file_info_scrub(result):
+    for file_index, file_ in enumerate(result['files']):
+        if file_.get('info'):
+            result['files'][file_index]['info'] = SCRUB
+    return result

@@ -349,6 +349,7 @@ class ContainerHandler(base.RequestHandler):
             modified_results.append(result)
             if self.is_true('phi'):
                 self.log_user_access(AccessType.view_container, cont_name=cont_name, cont_id=result.get('_id'))
+                self.log_user_access(AccessType.view_file, cont_name=cont_name, cont_id=result.get('_id'))
 
         if self.is_true('join_avatars'):
             modified_results = self.join_user_info(modified_results)

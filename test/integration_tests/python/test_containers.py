@@ -299,6 +299,14 @@ def test_get_container(data_builder, file_form, as_drone, as_admin, as_public, a
     assert r.ok
     assert r.json()['analyses'][1]['job']['id'] != analysis_job
 
+    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName"}}, params={'replace_metadata':True})
+    assert r.ok
+    r = as_admin.put('/projects/' + project + '/permissions/admin@user.com', json={'access': 'no-phi-ro'})
+    assert r.ok
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == '***'
+
 
 def test_get_session_jobs(data_builder, as_admin):
     gear = data_builder.create_gear()

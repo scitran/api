@@ -63,6 +63,8 @@ def log_access(access_type, cont_kwarg='cont_name', cont_id_kwarg='cid'):
                 if access_type is AccessType.view_container and cont_name not in ['sessions', 'session']:
                     return result
 
+            if self.is_true('phi') and access_type is AccessType.view_container:
+                self.log_user_access(AccessType.view_file, cont_name, cont_id)
             self.log_user_access(access_type, cont_name, cont_id)
 
             return result
