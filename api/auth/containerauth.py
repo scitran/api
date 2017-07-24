@@ -4,11 +4,8 @@ Purpose of this module is to define all the permissions checker decorators for t
 
 from . import _get_access, INTEGER_PERMISSIONS
 
-PHI_FIELDS = {'info': 0, 'analyses': 0, 'subject.firstname': 0,
-              'subject.lastname': 0, 'subject.sex': 0, 'subject.age': 0,
-              'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0,
-              'files.info': 0, 'tags': 0}
-
+PHI_FIELDS = {'info': '***', 'analyses': "***", 'subject': {'firstname': "***", 'lastname': "***", 'sex': "***",
+                    'age': "***", 'race': "***", 'ethnicity': "***", 'info': "***"}, 'tags': "***"}
 def default_container(handler, container=None, target_parent_container=None):
     """
     This is the default permissions checker generator.
@@ -50,14 +47,28 @@ def default_container(handler, container=None, target_parent_container=None):
             else:
                 has_access = False
 
+            phi = True
             if method == 'GET' and _get_access(handler.uid, container) < INTEGER_PERMISSIONS['ro']:
-                if not projection:
-                    projection = PHI_FIELDS
-                else:
-                    projection.update(PHI_FIELDS)
+                phi = False 
+                if handler.is_true('phi'):
+                    handler.abort(403, "User not autherized to view PHI fields.")
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
+                result = exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
+                
+                if not phi:
+                    for field in PHI_FIELDS:
+                        if result.get(field) and isinstance(PHI_FIELDS[field], dict):
+                            for deeper_field in PHI_FIELDS[field]:
+                                if result.get(field):
+                                    result[field][deeper_field] = '***'
+                        else:
+                            result[field] = '***'
+
+                    for file_index, file_ in enumerate(result['files']):
+                        if file_.get('info'):
+                            result['files'][file_index]['info'] = '***'
+                return result
             else:
                 error_msg = 'user not authorized to perform a {} operation on the container.'.format(method)
                 if additional_error_msg:

@@ -115,6 +115,8 @@ class ContainerHandler(base.RequestHandler):
 
         inflate_job_info = cont_name == 'sessions'
         result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)
+
+
         return self.handle_origin(result)
 
     def handle_origin(self, result):
@@ -299,6 +301,8 @@ class ContainerHandler(base.RequestHandler):
         if self.is_true('permissions'):
             if not projection:
                 projection = None
+        if self.is_true('phi'):
+            projection = None
 
         # select which permission filter will be applied to the list of results.
         if self.superuser_request:
@@ -321,6 +325,7 @@ class ContainerHandler(base.RequestHandler):
             query = {}
         if not self.is_true('archived'):
             query['archived'] = {'$ne': True}
+
         # this request executes the actual reqeust filtering containers based on the user permissions
         results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection)
         if results is None:
@@ -342,6 +347,8 @@ class ContainerHandler(base.RequestHandler):
                 result = containerutil.get_stats(result, cont_name)
             result = self.handle_origin(result)
             modified_results.append(result)
+            if self.is_true('phi'):
+                self.log_user_access(AccessType.view_container, cont_name=cont_name, cont_id=result.get('_id'))
 
         if self.is_true('join_avatars'):
             modified_results = self.join_user_info(modified_results)
