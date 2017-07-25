@@ -5,6 +5,7 @@ from .. import config
 from ..auth import containerauth, always_ok
 from ..dao import containerstorage, containerutil
 from ..dao import APIStorageException
+from ..web.request import AccessType
 from .containerhandler import ContainerHandler
 
 log = config.log

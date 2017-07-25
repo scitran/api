@@ -3,6 +3,7 @@ Purpose of this module is to define all the permissions checker decorators for t
 """
 
 from . import _get_access, INTEGER_PERMISSIONS
+from ..dao import noop
 
 PHI_FIELDS = {'info': '***', 'analyses': "***", 'subject': {'firstname': "***", 'lastname': "***", 'sex': "***",
                     'age': "***", 'race': "***", 'ethnicity': "***", 'info': "***"}, 'tags': "***"}
@@ -56,7 +57,7 @@ def default_container(handler, container=None, target_parent_container=None):
                     if handler.is_true('phi'):
                         handler.abort(403, "User not authorized to view PHI fields.")
                     result = phi_scrub(result)
-                elif not handler.is_true('phi'):
+                elif method == 'GET' and not handler.is_true('phi') and exec_op is not noop:
                     result = file_info_scrub(result)
                 return result
             else:
@@ -90,7 +91,7 @@ def collection_permissions(handler, container=None, _=None):
 
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
-                if not handler.is_true('phi'):
+                if method == 'GET' and not handler.is_true('phi'):
                     if _get_access(handler.uid, container) <= INTEGER_PERMISSIONS['no-phi-ro']:
                         handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)
@@ -116,7 +117,7 @@ def default_referer(handler, parent_container=None):
 
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
-                if not handler.is_true('phi'):
+                if method == 'GET' and not handler.is_true('phi') and exec_op is not noop:
                     if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
                         handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)

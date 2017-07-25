@@ -492,6 +492,7 @@ class ContainerHandler(base.RequestHandler):
             # and checking permissions using respectively the two decorators, mongo_validator and permchecker
             result = mongo_validator(permchecker(self.storage.exec_op))('PUT',
                         _id=_id, payload=payload, recursive=rec, r_payload=r_payload, replace_metadata=replace_metadata)
+
         except APIStorageException as e:
             self.abort(400, e.message)
 
