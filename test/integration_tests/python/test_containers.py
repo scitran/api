@@ -299,14 +299,6 @@ def test_get_container(data_builder, file_form, as_drone, as_admin, as_public, a
     assert r.ok
     assert r.json()['analyses'][1]['job']['id'] != analysis_job
 
-    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName"}}, params={'replace_metadata':True})
-    assert r.ok
-    r = as_admin.put('/projects/' + project + '/permissions/admin@user.com', json={'access': 'no-phi-ro'})
-    assert r.ok
-    r = as_admin.get('/sessions/' + session)
-    assert r.ok
-    assert r.json().get('subject').get('firstname') == '***'
-
 
 def test_get_session_jobs(data_builder, as_admin):
     gear = data_builder.create_gear()
@@ -379,6 +371,46 @@ def test_post_container(data_builder, as_admin, as_user):
     assert r.ok
 
     data_builder.delete_group(group, recursive=True)
+
+def test_phi_access(data_builder, as_admin, file_form, log_db):
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    as_admin.post('/projects/' + project + '/files', files=file_form(
+        'user.csv', meta={'name': 'user.csv', 'info': {'PHI': 'VERY PHI'}}))
+    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName"}}, params={'replace_metadata':True})
+    assert r.ok
+
+
+    # Test PHI access and logging of containers with and without phi flag
+    pre_log = log_db.access_log.count({})
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == 'FirstName'
+    post_log = log_db.access_log.count({})
+    assert pre_log == post_log - 1
+
+    r = as_admin.get('/projects/' + project)
+    assert r.ok
+    assert r.json().get('files')[0].get('info') == '***'
+    r = as_admin.get('/projects/' + project, params={'phi':True})
+    assert r.ok
+    assert r.json().get('files')[0].get('info').get('PHI') == 'VERY PHI'
+    post_log = log_db.access_log.count({})
+    assert pre_log == post_log - 2
+
+    # Test no PHI access of containers with and without phi flag
+    r = as_admin.put('/projects/' + project + '/permissions/admin@user.com', json={'access': 'no-phi-ro'})
+    assert r.ok
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == '***'
+
+    r = as_admin.get('/sessions/' + session, params={'phi':True})
+    assert r.status_code == 403
+
+    
+
+
 
 
 def test_put_container(data_builder, as_admin):

@@ -92,9 +92,9 @@ def collection_permissions(handler, container=None, _=None):
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
                 if method == 'GET' and not handler.is_true('phi'):
-                    if _get_access(handler.uid, container) <= INTEGER_PERMISSIONS['no-phi-ro']:
-                        handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)
+                elif _get_access(handler.uid, container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                    handler.abort(403, "User not authorized to view PHI fields.")
                 return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the container'.format(method))
@@ -118,9 +118,9 @@ def default_referer(handler, parent_container=None):
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
                 if method == 'GET' and not handler.is_true('phi') and exec_op is not noop:
-                    if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
-                        handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)
+                elif _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                    handler.abort(403, "User not authorized to view PHI fields.")
                 return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on parent container'.format(method))
