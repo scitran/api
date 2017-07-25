@@ -90,8 +90,8 @@ def collection_permissions(handler, container=None, _=None):
 
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
-                if handler.is_true('phi'):
-                    if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                if not handler.is_true('phi'):
+                    if _get_access(handler.uid, container) <= INTEGER_PERMISSIONS['no-phi-ro']:
                         handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)
                 return result
@@ -116,7 +116,7 @@ def default_referer(handler, parent_container=None):
 
             if has_access:
                 result = exec_op(method, _id=_id, payload=payload)
-                if handler.is_true('phi'):
+                if not handler.is_true('phi'):
                     if _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
                         handler.abort(403, "User not authorized to view PHI fields.")
                     result = file_info_scrub(result)
@@ -167,7 +167,7 @@ def phi_scrub(result):
                 if result.get(field):
                     result[field][deeper_field] = SCRUB
         elif result.get(field):
-            result[field] = scrub
+            result[field] = SCRUB
     result = file_info_scrub(result)
     return result
 

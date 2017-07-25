@@ -5,7 +5,6 @@ from .. import config
 from ..auth import containerauth, always_ok
 from ..dao import containerstorage, containerutil
 from ..dao import APIStorageException
-
 from .containerhandler import ContainerHandler
 
 log = config.log
@@ -21,7 +20,7 @@ class CollectionsHandler(ContainerHandler):
         'storage': containerstorage.ContainerStorage('collections', use_object_id=True),
         'storage_schema_file': 'collection.json',
         'payload_schema_file': 'collection.json',
-        'list_projection': {'info': 0}
+        'list_projection': {'info': 0, 'files.info':0}
     }
 
     def __init__(self, request=None, response=None):
@@ -30,7 +29,7 @@ class CollectionsHandler(ContainerHandler):
         self.storage = self.container_handler_configurations['collections']['storage']
 
     def get(self, **kwargs):
-        return super(CollectionsHandler, self).get('collections', **kwargs)
+        return super(CollectionsHandler, self).get(cont_name='collections', **kwargs)
 
     def post(self):
         mongo_validator, payload_validator = self._get_validators()
@@ -101,7 +100,10 @@ class CollectionsHandler(ContainerHandler):
         config.db.acquisitions.update_many({'collections': bson.ObjectId(_id)}, {'$pull': {'collections': bson.ObjectId(_id)}})
 
     def get_all(self):
-        projection = self.container_handler_configurations['collections']['list_projection']
+        projection = None
+        phi = self.is_true('phi')
+        if not phi:
+            projection = self.container_handler_configurations['collections']['list_projection']
         if self.superuser_request:
             permchecker = always_ok
         elif self.public_request:
@@ -117,6 +119,8 @@ class CollectionsHandler(ContainerHandler):
         for result in results:
             if self.is_true('stats'):
                 result = containerutil.get_stats(result, 'collections')
+            if phi:
+                self.log_user_access(AccessType.view_file, cont_name='collections', cont_id=result.get('_id'))
         return results
 
     def curators(self):

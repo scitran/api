@@ -7,6 +7,7 @@ from .. import config
 from .. import util
 
 AccessType = util.Enum('AccessType', {
+    'view_analysis':    'view_analysis',
     'view_container':   'view_container',
     'view_subject':     'view_subject',
     'view_file':        'view_file',
@@ -59,12 +60,18 @@ def log_access(access_type, cont_kwarg='cont_name', cont_id_kwarg='cid'):
                 cont_name = kwargs.get(cont_kwarg)
                 cont_id = kwargs.get(cont_id_kwarg)
 
+                if self.is_true('phi'):
+                    if access_type is AccessType.view_container:
+                        self.log_user_access(AccessType.view_file, cont_name, cont_id)
+                    elif access_type is AccessType.view_analysis:
+                        self.log_user_access(AccessType.view_file, "analyses", kwargs.get('_id'))
+                        return result
+
+
                 # Only log view_container events when the container is a session
                 if access_type is AccessType.view_container and cont_name not in ['sessions', 'session']:
                     return result
 
-            if self.is_true('phi') and access_type is AccessType.view_container:
-                self.log_user_access(AccessType.view_file, cont_name, cont_id)
             self.log_user_access(access_type, cont_name, cont_id)
 
             return result
