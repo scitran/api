@@ -362,7 +362,7 @@ class RequestHandler(webapp2.RequestHandler):
         if access_type not in [AccessType.user_login, AccessType.user_logout]:
 
             if cont_name is None or cont_id is None:
-                raise Exception('Container information not available.')
+                raise Exception('Container information, {}, {}, not available.'.format(cont_name, cont_id))
 
             # Create a context tree for the container
             context = {}

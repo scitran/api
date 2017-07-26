@@ -17,7 +17,7 @@ def default(handler, group=None):
                 handler.abort(403, 'not allowed to perform operation')
             elif _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['admin']:
                 pass
-            elif method == 'GET' and _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['ro']:
+            elif method == 'GET' and _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['no-phi-ro']:
                 pass
             else:
                 handler.abort(403, 'not allowed to perform operation')

@@ -88,12 +88,11 @@ class AnalysesHandler(RefererHandler):
         else:
             self.abort(500, 'Analysis not added for container {} {}'.format(cont_name, cid))
 
-
+    @log_access(AccessType.view_analysis)
     def get(self, cont_name, cid, _id):
         parent = self.storage.get_parent(cont_name, cid)
         permchecker = self.get_permchecker(parent)
-        permchecker(noop)('GET')
-        return self.storage.get_container(_id)
+        return permchecker(self.storage.exec_op)('GET', _id=_id)
 
 
     @log_access(AccessType.delete_analysis)

@@ -3,7 +3,11 @@ Purpose of this module is to define all the permissions checker decorators for t
 """
 
 from . import _get_access, INTEGER_PERMISSIONS
+from ..dao import noop
 
+PHI_FIELDS = {'info': '***', 'analyses': "***", 'subject': {'firstname': "***", 'lastname': "***", 'sex': "***",
+                    'age': "***", 'race': "***", 'ethnicity': "***", 'info': "***"}, 'tags': "***"}
+SCRUB = "***"
 
 def default_container(handler, container=None, target_parent_container=None):
     """
@@ -18,7 +22,7 @@ def default_container(handler, container=None, target_parent_container=None):
             if method == 'GET' and container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro']
+                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method == 'POST':
                 required_perm = 'rw'
                 if target_parent_container.get('cont_name') == 'group':
@@ -47,7 +51,15 @@ def default_container(handler, container=None, target_parent_container=None):
                 has_access = False
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
+                result = exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
+                
+                if method == 'GET' and _get_access(handler.uid, container) < INTEGER_PERMISSIONS['ro']:
+                    if handler.is_true('phi'):
+                        handler.abort(403, "User not authorized to view PHI fields.")
+                    result = phi_scrub(result)
+                elif method == 'GET' and not handler.is_true('phi') and exec_op is not noop:
+                    result = file_info_scrub(result)
+                return result
             else:
                 error_msg = 'user not authorized to perform a {} operation on the container.'.format(method)
                 if additional_error_msg:
@@ -67,7 +79,7 @@ def collection_permissions(handler, container=None, _=None):
             if method == 'GET' and container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro']
+                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method == 'DELETE':
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['admin']
             elif method == 'POST':
@@ -78,7 +90,12 @@ def collection_permissions(handler, container=None, _=None):
                 has_access = False
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload)
+                result = exec_op(method, _id=_id, payload=payload)
+                if method == 'GET' and not handler.is_true('phi'):
+                    result = file_info_scrub(result)
+                elif _get_access(handler.uid, container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                    handler.abort(403, "User not authorized to view PHI fields.")
+                return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the container'.format(method))
         return f
@@ -92,14 +109,19 @@ def default_referer(handler, parent_container=None):
             if method == 'GET' and parent_container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = access >= INTEGER_PERMISSIONS['ro']
+                has_access = access >= INTEGER_PERMISSIONS['no-phi-ro']
             elif method in ['POST', 'PUT', 'DELETE']:
                 has_access = access >= INTEGER_PERMISSIONS['rw']
             else:
                 has_access = False
 
             if has_access:
-                return exec_op(method, _id=_id, payload=payload)
+                result = exec_op(method, _id=_id, payload=payload)
+                if method == 'GET' and not handler.is_true('phi') and exec_op is not noop:
+                    result = file_info_scrub(result)
+                elif _get_access(handler.uid, parent_container) <= INTEGER_PERMISSIONS['no-phi-ro']:
+                    handler.abort(403, "User not authorized to view PHI fields.")
+                return result
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on parent container'.format(method))
         return f
@@ -138,3 +160,20 @@ def list_public_request(exec_op):
             query['public'] = True
         return exec_op(method, query=query, user=user, public=public, projection=projection)
     return f
+
+def phi_scrub(result):
+    for field in PHI_FIELDS:
+        if result.get(field) and isinstance(PHI_FIELDS[field], dict):
+            for deeper_field in PHI_FIELDS[field]:
+                if result.get(field):
+                    result[field][deeper_field] = SCRUB
+        elif result.get(field):
+            result[field] = SCRUB
+    result = file_info_scrub(result)
+    return result
+
+def file_info_scrub(result):
+    for file_index, file_ in enumerate(result['files']):
+        if file_.get('info'):
+            result['files'][file_index]['info'] = SCRUB
+    return result
