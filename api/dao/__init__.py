@@ -14,7 +14,7 @@ class APIPermissionException(Exception):
     pass
 
 class APIValidationException(Exception):
-    def __init__(self, errors):
+    def __init__(self, errors): # cover 100
 
         super(APIValidationException, self).__init__('Validation Error.')
         self.errors = errors

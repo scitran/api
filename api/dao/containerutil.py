@@ -27,7 +27,7 @@ def add_id_to_subject(subject, pid):
     result = None
     if subject is None:
         subject = {}
-    if subject.get('_id') is not None:
+    if subject.get('_id') is not None: # cover 100
         # Ensure _id is bson ObjectId
         subject['_id'] = bson.ObjectId(str(subject['_id']))
         return subject
@@ -95,7 +95,7 @@ def get_stats(cont, cont_type):
 
     if len(result) > 0:
         cont['subject_count'] = result[0].get('count', 0)
-    else:
+    else: # cover 100
         cont['subject_count'] = 0
 
     return cont
@@ -106,12 +106,12 @@ class ContainerReference(object):
     # TODO: refactor to resolve pylint warning
 
     def __init__(self, type, id):
-        if type not in CONT_TYPES:
+        if type not in CONT_TYPES: # cover 100
             raise Exception('Container type must be one of {}'.format(CONT_TYPES))
 
-        if not isinstance(type, basestring):
+        if not isinstance(type, basestring): # cover 100
             raise Exception('Container type must be of type str')
-        if not isinstance(id, basestring):
+        if not isinstance(id, basestring): # cover 100
             raise Exception('Container id must be of type str')
 
         self.type = type
@@ -120,7 +120,7 @@ class ContainerReference(object):
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
-    def __ne__(self, other):
+    def __ne__(self, other): # cover 100
         return not self.__dict__ == other.__dict__
 
     @classmethod
@@ -140,9 +140,9 @@ class ContainerReference(object):
     def get(self):
         collection = pluralize(self.type)
         result = config.db[collection].find_one({'_id': bson.ObjectId(self.id)})
-        if result is None:
+        if result is None: # cover 100
             raise Exception('No such {} {} in database'.format(self.type, self.id))
-        if 'parent' in result:
+        if 'parent' in result: # cover 100
             parent_collection = pluralize(result['parent']['type'])
             parent = config.db[parent_collection].find_one({'_id': bson.ObjectId(result['parent']['id'])})
             if parent is None:
@@ -161,7 +161,7 @@ class ContainerReference(object):
     def file_uri(self, filename):
         collection = pluralize(self.type)
         cont = self.get()
-        if 'parent' in cont:
+        if 'parent' in cont: # cover 100
             par_coll, par_id = pluralize(cont['parent']['type']), cont['parent']['id']
             return '/{}/{}/{}/{}/files/{}'.format(par_coll, par_id, collection, self.id, filename)
         return '/{}/{}/files/{}'.format(collection, self.id, filename)
@@ -185,7 +185,7 @@ class FileReference(ContainerReference):
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
-    def __ne__(self, other):
+    def __ne__(self, other): # cover 100
         return not self.__dict__ == other.__dict__
 
     @classmethod
@@ -210,13 +210,13 @@ def create_containerreference_from_filereference(fr):
 def pluralize(cont_name):
     if cont_name in SINGULAR_TO_PLURAL:
         return SINGULAR_TO_PLURAL[cont_name]
-    elif cont_name in PLURAL_TO_SINGULAR:
+    elif cont_name in PLURAL_TO_SINGULAR: # cover 100
         return cont_name
-    raise ValueError('Could not pluralize unknown container name {}'.format(cont_name))
+    raise ValueError('Could not pluralize unknown container name {}'.format(cont_name)) # cover 100
 
 def singularize(cont_name):
     if cont_name in PLURAL_TO_SINGULAR:
         return PLURAL_TO_SINGULAR[cont_name]
     elif cont_name in SINGULAR_TO_PLURAL:
         return cont_name
-    raise ValueError('Could not singularize unknown container name {}'.format(cont_name))
+    raise ValueError('Could not singularize unknown container name {}'.format(cont_name)) # cover 100

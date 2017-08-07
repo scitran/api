@@ -27,12 +27,12 @@ def default_sublist(handler, container):
             elif method in ['POST', 'PUT', 'DELETE']:
                 min_access = INTEGER_PERMISSIONS['rw']
             else:
-                min_access = sys.maxint
+                min_access = sys.maxint # cover 100
 
             if access >= min_access:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
-                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
+                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method)) # cover 100
         return f
     return g
 
@@ -44,7 +44,7 @@ def group_permissions_sublist(handler, container):
     def g(exec_op):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
             if method in ['GET', 'DELETE']  and query_params.get('_id') == handler.uid:
-                return exec_op(method, _id, query_params, payload, exclude_params)
+                return exec_op(method, _id, query_params, payload, exclude_params) # cover 100
             elif access >= INTEGER_PERMISSIONS['admin']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
@@ -60,11 +60,11 @@ def group_tags_sublist(handler, container):
     def g(exec_op):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
             if method == 'GET'  and access >= INTEGER_PERMISSIONS['ro']:
-                return exec_op(method, _id, query_params, payload, exclude_params)
+                return exec_op(method, _id, query_params, payload, exclude_params) # cover 100
             elif access >= INTEGER_PERMISSIONS['rw']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
-                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
+                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method)) # cover 100
         return f
     return g
 
@@ -77,11 +77,11 @@ def permissions_sublist(handler, container):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
             log.debug(query_params)
             if method in ['GET', 'DELETE']  and query_params.get('_id') == handler.uid:
-                return exec_op(method, _id, query_params, payload, exclude_params)
+                return exec_op(method, _id, query_params, payload, exclude_params) # cover 100
             elif access >= INTEGER_PERMISSIONS['admin']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
-                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
+                handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method)) # cover 100
         return f
     return g
 
@@ -94,19 +94,19 @@ def notes_sublist(handler, container):
         def f(method, _id, query_params = None, payload = None, exclude_params=None):
             if access >= INTEGER_PERMISSIONS['admin']:
                 pass
-            elif method == 'POST' and access >= INTEGER_PERMISSIONS['rw'] and payload['user'] == handler.uid:
+            elif method == 'POST' and access >= INTEGER_PERMISSIONS['rw'] and payload['user'] == handler.uid: # cover 100
                 pass
-            elif method == 'GET' and (access >= INTEGER_PERMISSIONS['ro'] or container.get('public')):
+            elif method == 'GET' and (access >= INTEGER_PERMISSIONS['ro'] or container.get('public')): # cover 100
                 pass
-            elif method in ['GET', 'DELETE', 'PUT'] and container['notes'][0]['user'] == handler.uid:
+            elif method in ['GET', 'DELETE', 'PUT'] and container['notes'][0]['user'] == handler.uid: # cover 100
                 pass
-            else:
+            else: # cover 100
                 handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
             return exec_op(method, _id, query_params, payload, exclude_params)
         return f
     return g
 
-def public_request(handler, container):
+def public_request(handler, container): # cover 100
     """
     For public requests we allow only GET operations on containers marked as public.
     """

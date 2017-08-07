@@ -32,7 +32,7 @@ class TargetContainer(object):
             self.id_ = container['_id']
             self.file_prefix = 'files'
 
-    def find(self, filename):
+    def find(self, filename): # cover 100
         for f in self.container.get('files', []):
             if f['name'] == filename:
                 return f
@@ -88,7 +88,7 @@ def get_parent_tree(cont_name, _id):
     cont_name = containerutil.singularize(cont_name)
 
 
-    if cont_name not in ['acquisition', 'session', 'project', 'group', 'analysis']:
+    if cont_name not in ['acquisition', 'session', 'project', 'group', 'analysis']: # cover 100
         raise ValueError('Can only construct tree from group, project, session, analysis or acquisition level')
 
     analysis_id     = None
@@ -117,7 +117,7 @@ def get_parent_tree(cont_name, _id):
         subject = session.get('subject')
         if subject:
             tree['subject'] = subject
-        project_id = session['project']
+        project_id = session['project'] # cover 100
     if cont_name == 'project' or project_id:
         if not project_id:
             project_id = bson.ObjectId(_id)
@@ -125,7 +125,7 @@ def get_parent_tree(cont_name, _id):
         tree['project'] = project
         group_id = project['group']
     if cont_name == 'group' or group_id:
-        if not group_id:
+        if not group_id: # cover 100
             group_id = _id
         tree['group'] = get_container('group', group_id)
 
@@ -168,7 +168,7 @@ def propagate_changes(cont_name, _id, query, update):
     elif cont_name == 'sessions':
         query['session'] = _id
         config.db.acquisitions.update_many(query, update)
-    else:
+    else: # cover 100
         raise ValueError('changes can only be propagated from group, project or session level')
 
 def is_session_compliant(session, template):
@@ -193,13 +193,13 @@ def is_session_compliant(session, template):
                     if re.search(req_v, v, re.IGNORECASE):
                         found_in_list = True
                         break
-                if not found_in_list:
+                if not found_in_list: # cover 100
                     return False
             else:
                 # Assume regex for now
                 if not re.search(req_v, cont_v, re.IGNORECASE):
                     return False
-        else:
+        else: # cover 100
             return False
         return True
 
@@ -240,7 +240,7 @@ def is_session_compliant(session, template):
             return False
 
     if a_requirements:
-        if not session.get('_id'):
+        if not session.get('_id'): # cover 100
             # New session, won't have any acquisitions. Compliance check fails
             return False
         acquisitions = list(config.db.acquisitions.find({'session': session['_id'], 'archived':{'$ne':True}}))
@@ -285,7 +285,7 @@ def upsert_fileinfo(cont_name, _id, fileinfo):
 
 def update_fileinfo(cont_name, _id, fileinfo):
     if fileinfo.get('size') is not None:
-        if type(fileinfo['size']) != int:
+        if type(fileinfo['size']) != int: # cover 100
             log.warn('Fileinfo passed with non-integer size')
             fileinfo['size'] = int(fileinfo['size'])
 
@@ -302,7 +302,7 @@ def update_fileinfo(cont_name, _id, fileinfo):
 
 def add_fileinfo(cont_name, _id, fileinfo):
     if fileinfo.get('size') is not None:
-        if type(fileinfo['size']) != int:
+        if type(fileinfo['size']) != int: # cover 100
             log.warn('Fileinfo passed with non-integer size')
             fileinfo['size'] = int(fileinfo['size'])
 
@@ -317,7 +317,7 @@ def _group_id_fuzzy_match(group_id, project_label):
     if group_id.lower() in existing_group_ids:
         return group_id.lower(), project_label
     group_id_matches = difflib.get_close_matches(group_id, existing_group_ids, cutoff=0.8)
-    if len(group_id_matches) == 1:
+    if len(group_id_matches) == 1: # cover 100
         group_id = group_id_matches[0]
     else:
         if group_id != '' or project_label != '':
@@ -369,13 +369,13 @@ def _create_query(cont, cont_type, parent_type, parent_id, upload_type):
         return {
             'uid': cont['uid']
         }
-    else:
+    else: # cover 100
         raise NotImplementedError('upload type {} is not handled by _create_query'.format(upload_type))
 
 def _upsert_container(cont, cont_type, parent, parent_type, upload_type, timestamp):
     cont['modified'] = timestamp
 
-    if cont.get('timestamp'):
+    if cont.get('timestamp'): # cover 100
         cont['timestamp'] = dateutil.parser.parse(cont['timestamp'])
 
         if cont_type == 'acquisition':
@@ -409,7 +409,7 @@ def _upsert_container(cont, cont_type, parent, parent_type, upload_type, timesta
 
 def _get_targets(project_obj, session, acquisition, type_, timestamp):
     target_containers = []
-    if not session:
+    if not session: # cover 100
         return target_containers
     session_files = dict_fileinfos(session.pop('files', []))
 
@@ -427,7 +427,7 @@ def _get_targets(project_obj, session, acquisition, type_, timestamp):
             (TargetContainer(session_obj, 'subject'), subject_files)
         )
 
-    if not acquisition:
+    if not acquisition: # cover 100
         return target_containers
     acquisition_files = dict_fileinfos(acquisition.pop('files', []))
     acquisition_obj = _upsert_container(acquisition, 'acquisition', session_obj, 'session', type_, timestamp)
@@ -447,7 +447,7 @@ def find_existing_hierarchy(metadata, type_='uid', user=None):
     try:
         acquisition_uid = acquisition['uid']
         session_uid = session['uid']
-    except Exception as e:
+    except Exception as e: # cover 100
         log.error(metadata)
         raise APIStorageException(str(e))
 
@@ -485,14 +485,14 @@ def upsert_bottom_up_hierarchy(metadata, type_='uid', user=None):
         _ = project['label']
         _ = acquisition['uid']
         session_uid = session['uid']
-    except Exception as e:
+    except Exception as e: # cover 100
         log.error(metadata)
         raise APIStorageException(str(e))
 
     session_obj = config.db.sessions.find_one({'uid': session_uid})
     if session_obj: # skip project creation, if session exists
 
-        if user and not has_access(user, session_obj, 'rw'):
+        if user and not has_access(user, session_obj, 'rw'): # cover 100
             raise APIPermissionException('User {} does not have read-write access to session {}'.format(user, session_uid))
 
         now = datetime.datetime.utcnow()
@@ -537,7 +537,7 @@ def update_container_hierarchy(metadata, cid, container_type):
         c_metadata['timestamp'] = dateutil.parser.parse(c_metadata['timestamp'])
     c_metadata['modified'] = now
     c_obj = _update_container_nulls({'_id': cid}, c_metadata, container_type)
-    if c_obj is None:
+    if c_obj is None: # cover 100
         raise APIStorageException('container does not exist')
     if container_type in ['session', 'acquisition']:
         _update_hierarchy(c_obj, container_type, metadata)
@@ -552,14 +552,14 @@ def _update_hierarchy(container, container_type, metadata):
         session_obj = None
         if session.keys():
             session['modified'] = now
-            if session.get('timestamp'):
+            if session.get('timestamp'): # cover 100
                 session['timestamp'] = dateutil.parser.parse(session['timestamp'])
             session_obj = _update_container_nulls({'_id': container['session']},  session, 'sessions')
         if session_obj is None:
             session_obj = get_container('session', container['session'])
         project_id = session_obj['project']
 
-    if project_id is None:
+    if project_id is None: # cover 100
         raise APIStorageException('Failed to find project id in session obj')
     project = metadata.get('project', {})
     if project.keys():
@@ -569,12 +569,12 @@ def _update_hierarchy(container, container_type, metadata):
 def _update_container_nulls(base_query, update, container_type):
     coll_name = container_type if container_type.endswith('s') else container_type+'s'
     cont = config.db[coll_name].find_one(base_query)
-    if cont is None:
+    if cont is None: # cover 100
         raise APIStorageException('Failed to find {} object using the query: {}'.format(container_type, base_query))
 
     bulk = config.db[coll_name].initialize_unordered_bulk_op()
 
-    if update.get('metadata') and not cont.get('metadata'):
+    if update.get('metadata') and not cont.get('metadata'): # cover 100
         # If we are trying to update metadata fields and the container metadata does not exist or is empty,
         # metadata can all be updated at once for efficiency
         m_update = util.mongo_sanitize_fields(update.pop('metadata'))

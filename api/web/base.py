@@ -64,7 +64,7 @@ class RequestHandler(webapp2.RequestHandler):
                 # User (API key) authentication
                 key = session_token.split()[1]
                 self.uid = APIKeyAuthProvider.validate_user_api_key(key)
-            elif session_token.startswith('scitran-drone '):
+            elif session_token.startswith('scitran-drone '): # cover 100
                 # Drone (API key) authentication
                 # When supported, remove custom headers and shared secret
                 self.abort(401, 'Drone API keys are not yet supported')
@@ -76,11 +76,11 @@ class RequestHandler(webapp2.RequestHandler):
 
         # Drone shared secret authentication
         elif drone_secret is not None:
-            if drone_method is None or drone_name is None:
+            if drone_method is None or drone_name is None: # cover 100
                 self.abort(400, 'X-SciTran-Method or X-SciTran-Name header missing')
-            if config.get_item('core', 'drone_secret') is None:
+            if config.get_item('core', 'drone_secret') is None: # cover 100
                 self.abort(401, 'drone secret not configured')
-            if drone_secret != config.get_item('core', 'drone_secret'):
+            if drone_secret != config.get_item('core', 'drone_secret'): # cover 100
                 self.abort(401, 'invalid drone secret')
             drone_request = True
 
@@ -94,9 +94,9 @@ class RequestHandler(webapp2.RequestHandler):
             self.user_is_admin = True
         else:
             user = config.db.users.find_one({'_id': self.uid}, ['root', 'disabled'])
-            if not user:
+            if not user: # cover 100
                 self.abort(402, 'User {} will need to be added to the system before managing data.'.format(self.uid))
-            if user.get('disabled', False) is True:
+            if user.get('disabled', False) is True: # cover 100
                 self.abort(402, 'User {} is disabled.'.format(self.uid))
             if user.get('root'):
                 self.user_is_admin = True
@@ -105,7 +105,7 @@ class RequestHandler(webapp2.RequestHandler):
             if self.is_true('root'):
                 if user.get('root'):
                     self.superuser_request = True
-                else:
+                else: # cover 100
                     self.abort(403, 'user ' + self.uid + ' is not authorized to make superuser requests')
             else:
                 self.superuser_request = False
@@ -139,7 +139,7 @@ class RequestHandler(webapp2.RequestHandler):
 
                     try:
                         auth_provider = AuthProvider.factory(auth_type)
-                    except NotImplementedError as e:
+                    except NotImplementedError as e: # cover 100
                         self.abort(401, str(e))
 
                     try:
@@ -314,7 +314,7 @@ class RequestHandler(webapp2.RequestHandler):
             custom_errors = exception.errors
         elif isinstance(exception, APIUnknownUserException):
             code = 402
-        elif isinstance(exception, APIConsistencyException):
+        elif isinstance(exception, APIConsistencyException): # cover 100
             code = 400
         elif isinstance(exception, APIPermissionException):
             code = 403
@@ -322,12 +322,12 @@ class RequestHandler(webapp2.RequestHandler):
             code = 404
         elif isinstance(exception, APIConflictException):
             code = 409
-        elif isinstance(exception, APIValidationException):
+        elif isinstance(exception, APIValidationException): # cover 100
             code = 422
             custom_errors = exception.errors
-        elif isinstance(exception, files.FileStoreException):
+        elif isinstance(exception, files.FileStoreException): # cover 100
             code = 400
-        elif isinstance(exception, ElasticsearchException):
+        elif isinstance(exception, ElasticsearchException): # cover 100
             code = 503
             message = "Search is currently down. Try again later."
             self.request.logger.error(traceback.format_exc())
@@ -348,7 +348,7 @@ class RequestHandler(webapp2.RequestHandler):
         if not config.get_item('core', 'access_log_enabled'):
             return
 
-        if not isinstance(access_type, AccessType):
+        if not isinstance(access_type, AccessType): # cover 100
             raise Exception('Unknown access type.')
 
         log_map = {
@@ -361,7 +361,7 @@ class RequestHandler(webapp2.RequestHandler):
 
         if access_type not in [AccessType.user_login, AccessType.user_logout]:
 
-            if cont_name is None or cont_id is None:
+            if cont_name is None or cont_id is None: # cover 100
                 raise Exception('Container information not available.')
 
             # Create a context tree for the container
@@ -390,7 +390,7 @@ class RequestHandler(webapp2.RequestHandler):
                     {'$setOnInsert': log_map},
                     upsert=True
                 )
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e: # cover 100 # pylint: disable=broad-except
                 config.log.exception(e)
                 self.abort(500, 'Unable to log access.')
 
@@ -411,7 +411,7 @@ class RequestHandler(webapp2.RequestHandler):
 
 
     def abort(self, code, detail=None, **kwargs):
-        if isinstance(detail, jsonschema.ValidationError):
+        if isinstance(detail, jsonschema.ValidationError): # cover 100
             detail = {
                 'relative_path': list(detail.relative_path),
                 'instance': detail.instance,

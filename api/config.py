@@ -93,7 +93,7 @@ def apply_env_variables(config):
                     elif value.lower() == 'none':
                         value = None
                     config[outer_key][inner_key] = value
-        except Exception: # pylint: disable=broad-except
+        except Exception: # cover 100 # pylint: disable=broad-except
             # ignore uniterable keys like `created` and `modified`
             pass
     return config
@@ -257,7 +257,7 @@ def get_config():
         log.info('Persisting configuration')
 
         db_config = db.singletons.find_one({'_id': 'config'})
-        if db_config is not None:
+        if db_config is not None: # cover 100
             startup_config = copy.deepcopy(__config)
             startup_config = util.deep_update(startup_config, db_config)
             # Precedence order for config is env vars -> db values -> default
@@ -269,7 +269,7 @@ def get_config():
         db.singletons.replace_one({'_id': 'config'}, __config, upsert=True)
         __config_persisted = True
         __last_update = now
-    elif now - __last_update > datetime.timedelta(seconds=120):
+    elif now - __last_update > datetime.timedelta(seconds=120): # cover 100
         log.debug('Refreshing configuration from database')
         __config = db.singletons.find_one({'_id': 'config'})
         __last_update = now
@@ -303,7 +303,7 @@ def mongo_pipeline(table, pipeline):
     output = db.command('aggregate', table, pipeline=pipeline)
     result = output.get('result')
 
-    if output.get('ok') != 1.0 or result is None:
+    if output.get('ok') != 1.0 or result is None: # cover 100
         raise Exception()
 
     return result

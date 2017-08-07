@@ -69,7 +69,7 @@ class ReportHandler(base.RequestHandler):
                 report = report_class(self.request.params)
             except APIReportParamsException as e:
                 self.abort(400, e.message)
-        else:
+        else: # cover 100
             raise NotImplementedError('Report type {} is not supported'.format(report_type))
 
         if self.superuser_request or report.user_can_generate(self.uid):
@@ -84,7 +84,7 @@ class ReportHandler(base.RequestHandler):
                     for doc in report.build():
                         writer.writerow(doc)
                         
-                except APIReportException as e:
+                except APIReportException as e: # cover 100
                     self.abort(404, str(e))
                 # Need to close and reopen file to flush buffer into file
                 csv_file.close()
@@ -111,13 +111,13 @@ class Report(object):
         """
         Check if user has required permissions to generate report
         """
-        raise NotImplementedError()
+        raise NotImplementedError() # cover 100
 
     def build(self):
         """
         Build and return a json report
         """
-        raise NotImplementedError()
+        raise NotImplementedError() # cover 100
 
     @staticmethod
     def _get_result_list(output):
@@ -148,7 +148,7 @@ class Report(object):
         if len(results) == 1:
             return results[0]
 
-        raise APIReportException
+        raise APIReportException # cover 100
 
 
 
@@ -333,7 +333,7 @@ class ProjectReport(Report):
                 race = cell['race']
                 ethnicity = cell['ethnicity']
                 sex = cell['sex']
-            except Exception as e:
+            except Exception as e: # cover 100
                 raise APIReportException('Demographics aggregation was malformed: {}'.format(e))
 
             # Null or unrecognized values are listed as UNR default
@@ -345,7 +345,7 @@ class ProjectReport(Report):
                 sex = UNR
             else:
                 sex = sex.capitalize() # We store sex as lowercase in the db
-            if sex not in grid[race][ethnicity]:
+            if sex not in grid[race][ethnicity]: # cover 100
                 sex = UNR
 
             # Tally up
@@ -415,7 +415,7 @@ class ProjectReport(Report):
             ]
             try:
                 result = self._get_result(config.db.command('aggregate', 'sessions', pipeline=pipeline))
-            except APIReportException:
+            except APIReportException: # cover 100
                 # Edge case when none of the subjects have a sex field
                 result = {}
 
@@ -455,7 +455,7 @@ class ProjectReport(Report):
             ]
             try:
                 result = self._get_result(config.db.command('aggregate', 'sessions', pipeline=pipeline))
-            except APIReportException:
+            except APIReportException: # cover 100
                 # Edge case when none of the subjects have an age field
                 result = {}
 
@@ -502,7 +502,7 @@ class AccessLogReport(Report):
         uid = params.get('user')
         limit= params.get('limit', 100)
         subject = params.get('subject', None)
-        if params.get('bin') == 'true':
+        if params.get('bin') == 'true': # cover 100
             access_types = params.get('access_types', [])
         else:
             access_types = params.getall('access_types')
@@ -525,7 +525,7 @@ class AccessLogReport(Report):
         elif limit > 10000:
             raise APIReportParamsException('Limit exceeds 10,000 entries, please contact admin to run script.')
         for access_type in access_types:
-            if access_type not in AccessTypeList:
+            if access_type not in AccessTypeList: # cover 100
                 raise APIReportParamsException('Not a valid access type')
 
         self.start_date     = start_date
@@ -676,7 +676,7 @@ class UsageReport(Report):
             date = dateutil.parser.parse(year+'-'+month+'-01T00:00.000Z')
             if self.first_month is None or date < self.first_month:
                 self.first_month = date
-            if self.last_month is None or date > self.last_month:
+            if self.last_month is None or date > self.last_month: # cover 100
                 self.last_month = date
 
         return obj
@@ -748,7 +748,7 @@ class UsageReport(Report):
             key = year+month
 
             # Check to see if we already have a record for this month/year combo, create and update first/last if not
-            if key not in report:
+            if key not in report: # cover 100
                 report[key] = self._create_default(month=month, year=year)
 
             report[key]['session_count'] = r['session_count']
@@ -782,7 +782,7 @@ class UsageReport(Report):
                 key = year+month
 
                 # Check to see if we already have a record for this month/year combo, create and update first/last if not
-                if key not in report:
+                if key not in report: # cover 100
                     report[key] = self._create_default(month=month, year=year)
 
                 report[key]['file_mbs'] += r['mb_total']
@@ -801,7 +801,7 @@ class UsageReport(Report):
             except APIReportException:
                 results = []
 
-            for r in results:
+            for r in results: # cover 100
                 month = str(r['_id']['month'])
                 year = str(r['_id']['year'])
                 key = year+month
@@ -840,7 +840,7 @@ class UsageReport(Report):
                 # We don't have a record for this month/year combo, create a zero'd out version
                 final_report_list.append(self._create_default(month=str(curr_month), year=str(curr_year), ignore_minmax=True))
             curr_month += 1
-            if curr_month > 12:
+            if curr_month > 12: # cover 100
                 curr_year += 1
                 curr_month = 1
 
@@ -934,7 +934,7 @@ class UsageReport(Report):
                 except APIReportException:
                     result = None
 
-                if result:
+                if result: # cover 100
                     report_obj['file_mbs'] += result['mb_total']
 
             # Create a list of all possible ids in this project hierarchy

@@ -41,7 +41,7 @@ def dispatcher(router, request, response):
     try:
         if uwsgi is not None:
             uwsgi.set_logvar('request_id', request.id)
-    except: # pylint: disable=bare-except
+    except: # cover 100 # pylint: disable=bare-except
         request.logger.error("Error setting request_id log var", exc_info=True)
 
     try:
@@ -51,7 +51,7 @@ def dispatcher(router, request, response):
             response.headers['Content-Type'] = 'application/json; charset=utf-8'
     except webapp2.HTTPException as e:
         util.send_json_http_exception(response, str(e), e.code)
-    except Exception as e: # pylint: disable=broad-except
+    except Exception as e: # cover 100 # pylint: disable=broad-except
         request.logger.error("Error dispatching request", exc_info=True)
         if config.get_item('core', 'debug'):
             message = traceback.format_exc()

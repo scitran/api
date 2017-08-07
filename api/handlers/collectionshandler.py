@@ -49,7 +49,7 @@ class CollectionsHandler(ContainerHandler):
 
         if result.acknowledged:
             return {'_id': result.inserted_id}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not added in collection {}'.format(self.uid))
 
     @verify_payload_exists
@@ -59,7 +59,7 @@ class CollectionsHandler(ContainerHandler):
         mongo_validator, payload_validator = self._get_validators()
 
         payload = self.request.json_body or {}
-        if not payload:
+        if not payload: # cover 100
             self.abort(400, 'PUT request body cannot be empty')
         contents = payload.pop('contents', None)
         payload_validator(payload, 'PUT')
@@ -67,33 +67,33 @@ class CollectionsHandler(ContainerHandler):
         payload['modified'] = datetime.datetime.utcnow()
         try:
             result = mongo_validator(permchecker(self.storage.exec_op))('PUT', _id=_id, payload=payload)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
 
         if result.modified_count == 1:
             self._add_contents(contents, _id)
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not updated in collection {} {}'.format(self.storage.cont_name, _id))
 
     def _add_contents(self, contents, _id):
-        if not contents:
+        if not contents: # cover 100
             return
         acq_ids = []
         for item in contents['nodes']:
-            if not bson.ObjectId.is_valid(item.get('_id')):
+            if not bson.ObjectId.is_valid(item.get('_id')): # cover 100
                 self.abort(400, 'not a valid object id')
             item_id = bson.ObjectId(item['_id'])
-            if item['level'] == 'project':
+            if item['level'] == 'project': # cover 100
                 sess_ids = [s['_id'] for s in config.db.sessions.find({'project': item_id}, [])]
                 acq_ids += [a['_id'] for a in config.db.acquisitions.find({'session': {'$in': sess_ids}}, [])]
             elif item['level'] == 'session':
                 acq_ids += [a['_id'] for a in config.db.acquisitions.find({'session': item_id}, [])]
-            elif item['level'] == 'acquisition':
+            elif item['level'] == 'acquisition': # cover 100
                 acq_ids += [item_id]
         operator = '$addToSet' if contents['operation'] == 'add' else '$pull'
         log.info(' '.join(['collection', _id, operator, str(acq_ids)]))
-        if not bson.ObjectId.is_valid(_id):
+        if not bson.ObjectId.is_valid(_id): # cover 100
             self.abort(400, 'not a valid object id')
         config.db.acquisitions.update_many({'_id': {'$in': acq_ids}}, {operator: {'collections': bson.ObjectId(_id)}})
 
@@ -106,7 +106,7 @@ class CollectionsHandler(ContainerHandler):
         projection = self.container_handler_configurations['collections']['list_projection']
         if self.superuser_request:
             permchecker = always_ok
-        elif self.public_request:
+        elif self.public_request: # cover 100
             permchecker = containerauth.list_public_request
         else:
             permchecker = containerauth.list_permission_checker(self)
@@ -114,7 +114,7 @@ class CollectionsHandler(ContainerHandler):
         results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection)
         if not self.superuser_request and not self.is_true('join_avatars'):
             self._filter_all_permissions(results, self.uid)
-        if self.is_true('join_avatars'):
+        if self.is_true('join_avatars'): # cover 100
             results = ContainerHandler.join_user_info(results)
         for result in results:
             if self.is_true('stats'):
@@ -134,10 +134,10 @@ class CollectionsHandler(ContainerHandler):
 
     def get_sessions(self, cid):
         """Return the list of sessions in a collection."""
-        if not bson.ObjectId.is_valid(cid):
+        if not bson.ObjectId.is_valid(cid): # cover 100
             self.abort(400, 'not a valid object id')
         _id = bson.ObjectId(cid)
-        if not self.storage.dbc.find_one({'_id': _id}):
+        if not self.storage.dbc.find_one({'_id': _id}): # cover 100
             self.abort(404, 'no such Collection')
         agg_res = config.db.acquisitions.aggregate([
                 {'$match': {'collections': _id}},
@@ -151,7 +151,7 @@ class CollectionsHandler(ContainerHandler):
         log.debug(projection)
         sessions = list(config.db.sessions.find(query, projection))
         self._filter_all_permissions(sessions, self.uid)
-        if self.is_true('measurements'):
+        if self.is_true('measurements'): # cover 100
             self._add_session_measurements(sessions)
         for sess in sessions:
             sess = self.handle_origin(sess)
@@ -159,18 +159,18 @@ class CollectionsHandler(ContainerHandler):
 
     def get_acquisitions(self, cid):
         """Return the list of acquisitions in a collection."""
-        if not bson.ObjectId.is_valid(cid):
+        if not bson.ObjectId.is_valid(cid): # cover 100
             self.abort(400, 'not a valid object id')
         _id = bson.ObjectId(cid)
-        if not self.storage.dbc.find_one({'_id': _id}):
+        if not self.storage.dbc.find_one({'_id': _id}): # cover 100
             self.abort(404, 'no such Collection')
         query = {'collections': _id}
         if not self.is_true('archived'):
             query['archived'] = {'$ne': True}
         sid = self.get_param('session', '')
-        if bson.ObjectId.is_valid(sid):
+        if bson.ObjectId.is_valid(sid): # cover 100
             query['session'] = bson.ObjectId(sid)
-        elif sid != '':
+        elif sid != '': # cover 100
             self.abort(400, sid + ' is not a valid ObjectId')
         projection = self.container_handler_configurations['acquisitions']['list_projection']
         acquisitions = list(config.db.acquisitions.find(query, projection))

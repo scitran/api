@@ -73,7 +73,7 @@ def suggest_container(gear, cont_name, cid):
             for x in schemas:
                 f['suggested'][x] = schemas[x].is_valid(f)
 
-    for analysis in root.get('analyses',{}):
+    for analysis in root.get('analyses',{}): # cover 100
         files = analysis.get('files', [])
         files[:] = [x for x in files if x.get('output')]
         for f in files:
@@ -103,7 +103,7 @@ def suggest_for_files(gear, files):
     return suggested_files
 
 def validate_gear_config(gear, config_):
-    if len(gear.get('manifest', {}).get('config', {})) > 0:
+    if len(gear.get('manifest', {}).get('config', {})) > 0: # cover 100
         invocation = gear_tools.derive_invocation_schema(gear['manifest'])
         ci = gear_tools.isolate_config_invocation(invocation)
         validator = Draft4Validator(ci)
@@ -126,7 +126,7 @@ def insert_gear(doc):
     gear_tools.validate_manifest(doc['gear'])
 
     # This can be mongo-escaped and re-used later
-    if doc.get("invocation-schema"):
+    if doc.get("invocation-schema"): # cover 100
         del(doc["invocation-schema"])
 
     now = datetime.datetime.utcnow()
@@ -136,7 +136,7 @@ def insert_gear(doc):
 
     result = config.db.gears.insert(doc)
 
-    if config.get_item('queue', 'prefetch'):
+    if config.get_item('queue', 'prefetch'): # cover 100
         log.info('Queuing prefetch job for gear ' + doc['gear']['name'])
 
         job = Job(str(doc['_id']), {}, destination={}, tags=['prefetch'], request={
@@ -163,7 +163,7 @@ def insert_gear(doc):
 def remove_gear(_id):
     result = config.db.gears.delete_one({"_id": bson.ObjectId(_id)})
 
-    if result.deleted_count != 1:
+    if result.deleted_count != 1: # cover 100
         raise Exception("Deleted failed " + str(result.raw_result))
 
 def upsert_gear(doc):

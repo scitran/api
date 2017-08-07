@@ -52,7 +52,7 @@ class Job(object):
 
         time_now = datetime.datetime.utcnow()
 
-        if tags is None:
+        if tags is None: # cover 100
             tags = []
         if saved_files is None:
             saved_files = []
@@ -179,12 +179,12 @@ class Job(object):
         if d.get('inputs'):
             for x in d['inputs'].keys():
                 d['inputs'][x] = d['inputs'][x].__dict__
-        else:
+        else: # cover 100
             d.pop('inputs')
 
         if d.get('destination'):
             d['destination'] = d['destination'].__dict__
-        else:
+        else: # cover 100
             d.pop('destination')
 
         if d['id'] is None:
@@ -216,7 +216,7 @@ class Job(object):
         Warning: this will not stop you from inserting a job for a gear that has gear.custom.flywheel.invald set to true.
         """
 
-        if self.id_ is not None:
+        if self.id_ is not None: # cover 100
             raise Exception('Cannot insert job that has already been inserted')
 
         result = config.db.jobs.insert_one(self.mongo())
@@ -227,7 +227,7 @@ class Job(object):
         update = self.mongo()
         job_id = update.pop('id')
         result = config.db.jobs.replace_one({'_id': job_id}, update)
-        if result.modified_count != 1:
+        if result.modified_count != 1: # cover 100
             raise Exception('Job modification not saved')
         return {'modified_count': 1}
 
@@ -241,7 +241,7 @@ class Job(object):
             A gear_list map from the gears table.
         """
 
-        if gear.get('gear', {}).get('custom', {}).get('flywheel', {}).get('invalid', False):
+        if gear.get('gear', {}).get('custom', {}).get('flywheel', {}).get('invalid', False): # cover 100
             raise Exception('Gear marked as invalid, will not run!')
 
         r = {
@@ -275,7 +275,7 @@ class Job(object):
         # Add config, if any
         if self.config is not None:
 
-            if self.id_ is None:
+            if self.id_ is None: # cover 100
                 raise Exception('Running a job requires an ID')
 
             r['inputs'].append({

@@ -10,16 +10,16 @@ def default(handler, group=None):
             if handler.superuser_request:
                 pass
             elif handler.public_request:
-                handler.abort(400, 'public request is not valid')
+                handler.abort(400, 'public request is not valid') # cover 100
             elif handler.user_is_admin:
                 pass
-            elif method in ['DELETE', 'POST']:
+            elif method in ['DELETE', 'POST']: # cover 100
                 handler.abort(403, 'not allowed to perform operation')
-            elif _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['admin']:
+            elif _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['admin']: # cover 100
                 pass
-            elif method == 'GET' and _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['ro']:
+            elif method == 'GET' and _get_access(handler.uid, group) >= INTEGER_PERMISSIONS['ro']: # cover 100
                 pass
-            else:
+            else: # cover 100
                 handler.abort(403, 'not allowed to perform operation')
             return exec_op(method, _id=_id, query=query, payload=payload, projection=projection)
         return f
@@ -30,7 +30,7 @@ def list_permission_checker(handler, uid=None):
         def f(method, query=None, projection=None):
             if uid is not None:
                 if uid != handler.uid and not handler.superuser_request and not handler.user_is_admin:
-                    handler.abort(403, 'User ' + handler.uid + ' may not see the Groups of User ' + uid)
+                    handler.abort(403, 'User ' + handler.uid + ' may not see the Groups of User ' + uid) # cover 100
                 query = query or {}
                 query['permissions._id'] = uid
                 projection = projection or {}
@@ -40,7 +40,7 @@ def list_permission_checker(handler, uid=None):
                     query = query or {}
                     projection = projection or {}
                     if handler.is_true('admin'):
-                        query['permissions'] = {'$elemMatch': {'_id': handler.uid, 'access': 'admin'}}
+                        query['permissions'] = {'$elemMatch': {'_id': handler.uid, 'access': 'admin'}} # cover 100
                     else:
                         query['permissions._id'] = handler.uid
             log.debug(query)

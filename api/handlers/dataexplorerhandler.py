@@ -313,7 +313,7 @@ class DataExplorerHandler(base.RequestHandler):
                     if "null" in v:
                         if isinstance(v, list):
                             v.remove("null")
-                        elif isinstance(v, str):
+                        elif isinstance(v, str): # cover 100
                             v = None
                         null_filter = {
                             'bool': {
@@ -336,7 +336,7 @@ class DataExplorerHandler(base.RequestHandler):
                                 ]
                             }
                         }
-                        if len(k.split('.')) > 1:
+                        if len(k.split('.')) > 1: # cover 100
                             null_filter['bool']['should'][0]['bool']['must'].append({'exists': {'field': k.split('.')[0]}})
                         if v:
                             null_filter['bool']['should'].append({'terms': {k+'.raw': v}})
@@ -391,7 +391,7 @@ class DataExplorerHandler(base.RequestHandler):
                 }
             }
         }
-        if not filters:
+        if not filters: # cover 100
             # TODO add non-user auth support (#865)
             body['query']['bool'].pop('filter')
         if search_string is None:
@@ -466,7 +466,7 @@ class DataExplorerHandler(base.RequestHandler):
                 doc_type='flywheel_field',
                 body=es_query
             )
-        except TransportError as e:
+        except TransportError as e: # cover 100
             config.log.warning('Fields not yet indexed for search: {}'.format(e))
             return []
 
@@ -483,7 +483,7 @@ class DataExplorerHandler(base.RequestHandler):
         size = self.request.params.get('size', 100)
         results = self._run_query(self._construct_query(return_type, search_string, filters, size), return_type)
         response = {'results': results}
-        if self.is_true('facets'):
+        if self.is_true('facets'): # cover 100
             response['facets'] = self.get_facets()
         return response
 
@@ -634,7 +634,7 @@ class DataExplorerHandler(base.RequestHandler):
             if field_name in ignore_fields:
                 continue
 
-            elif 'properties' in field:
+            elif 'properties' in field: # cover 100
                 new_curr_field = current_field_name+'.'+field_name if current_field_name != '' else field_name
                 cls._handle_properties(field['properties'], new_curr_field)
 
@@ -671,10 +671,10 @@ class DataExplorerHandler(base.RequestHandler):
                     facet_doc_count = sum([bucket['doc_count'] for bucket in aggs['buckets']])
                     total_doc_count = other_doc_count+facet_doc_count
 
-                    if other_doc_count == 0 and facet_doc_count > 0:
+                    if other_doc_count == 0 and facet_doc_count > 0: # cover 100
                         # All values fit in 15 or fewer buckets
                         facet_status = True
-                    elif other_doc_count > 0 and facet_doc_count > 0 and (facet_doc_count/total_doc_count) > 0.85:
+                    elif other_doc_count > 0 and facet_doc_count > 0 and (facet_doc_count/total_doc_count) > 0.85: # cover 100
                         # Greater than 85% of values fit in 15 or fewer buckets
                         facet_status = True
                     else:

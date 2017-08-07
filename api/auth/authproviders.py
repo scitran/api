@@ -37,7 +37,7 @@ class AuthProvider(object):
         else:
             raise NotImplementedError('Auth type {} is not supported'.format(auth_type))
 
-    def validate_code(self, code, **kwargs):
+    def validate_code(self, code, **kwargs): # cover 100
         raise NotImplementedError
 
     def ensure_user_exists(self, uid):
@@ -71,7 +71,7 @@ class AuthProvider(object):
             if not token:
                 # user does not have refresh token, alert the client
                 raise APIRefreshTokenException('invalid_refresh_token')
-            else:
+            else: # cover 100
                 # user does have a previously saved refresh token, move on
                 return
 
@@ -331,7 +331,7 @@ class APIKeyAuthProvider(AuthProvider):
         user = config.db.users.find_one_and_update({'api_key.key': key}, {'$set': {'api_key.last_used': timestamp}}, ['_id'])
         if user:
             return user['_id']
-        else:
+        else: # cover 100
             raise APIAuthProviderException('Invalid API key')
 
 

@@ -43,7 +43,7 @@ def get(batch_id, projection=None, get_jobs=False):
 
     if get_jobs:
         jobs = []
-        for jid in batch_job.get('jobs', []):
+        for jid in batch_job.get('jobs', []): # cover 100
             job = Job.get(jid)
             jobs.append(job)
         batch_job['jobs'] = jobs
@@ -74,16 +74,16 @@ def find_matching_conts(gear, containers, container_type):
             ambiguous = False # Are any of the inputs ambiguous?
             not_matched = False
             for files in suggestions.itervalues():
-                if len(files) > 1:
+                if len(files) > 1: # cover 100
                     ambiguous = True
-                elif len(files) == 0:
+                elif len(files) == 0: # cover 100
                     not_matched = True
                     break
 
             # Based on results, add to proper list
-            if not_matched:
+            if not_matched: # cover 100
                 not_matched_conts.append(c)
-            elif ambiguous:
+            elif ambiguous: # cover 100
                 ambiguous_conts.append(c)
             else:
                 # Create input map of file refs
@@ -92,7 +92,7 @@ def find_matching_conts(gear, containers, container_type):
                     inputs[input_name] = {'type': container_type, 'id': str(c['_id']), 'name': files[0]}
                 c['inputs'] = inputs
                 matched_conts.append(c)
-        else:
+        else: # cover 100
             not_matched_conts.append(c)
     return {
         'matched': matched_conts,
@@ -123,7 +123,7 @@ def update(batch_id, payload):
         # Require that the batch job has the previous state
         query['state'] = BATCH_JOB_TRANSITIONS[payload.get('state')]
     result = config.db.batch.update_one({'_id': bid}, {'$set': payload})
-    if result.modified_count != 1:
+    if result.modified_count != 1: # cover 100
         raise Exception('Batch job not updated')
 
 def run(batch_job):
@@ -132,7 +132,7 @@ def run(batch_job):
     """
 
     proposal = batch_job.get('proposal')
-    if not proposal:
+    if not proposal: # cover 100
         raise APIStorageException('The batch job is not formatted correctly.')
     proposed_inputs = proposal.get('inputs', [])
 
@@ -202,7 +202,7 @@ def cancel(batch_job):
         try:
             Queue.mutate(job, {'state': 'cancelled'})
             cancelled_jobs += 1
-        except Exception: # pylint: disable=broad-except
+        except Exception: # cover 100 # pylint: disable=broad-except
             # if the cancellation fails, move on to next job
             continue
 
@@ -217,7 +217,7 @@ def check_state(batch_id):
 
     batch = get(str(batch_id))
 
-    if batch.get('state') == 'cancelled':
+    if batch.get('state') == 'cancelled': # cover 100
         return None
     batch_jobs = config.db.jobs.find({'_id':{'$in': batch.get('jobs', [])}, 'state': {'$nin': ['complete', 'failed', 'cancelled']}})
     non_failed_batch_jobs = config.db.jobs.find({'_id':{'$in': batch.get('jobs', [])}, 'state': {'$ne': 'failed'}})
@@ -227,20 +227,20 @@ def check_state(batch_id):
             return 'complete'
         else:
             return 'failed'
-    else:
+    else: # cover 100
         return None
 
 def get_stats():
     """
     Return the number of jobs by state.
     """
-    raise NotImplementedError()
+    raise NotImplementedError() # cover 100
 
 def resume():
     """
     Move cancelled jobs back to pending.
     """
-    raise NotImplementedError()
+    raise NotImplementedError() # cover 100
 
 def delete():
     """
@@ -249,4 +249,4 @@ def delete():
       -  it's spawned jobs
       - all the files it's jobs produced.
     """
-    raise NotImplementedError()
+    raise NotImplementedError() # cover 100

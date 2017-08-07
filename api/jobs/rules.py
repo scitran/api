@@ -84,7 +84,7 @@ def eval_match(match_type, match_param, file_, container):
                 return match_param.lower() in map(lower, file_.get('measurements', []))
             else:
                 return False
-        except KeyError:
+        except KeyError: # cover 100
             _log_file_key_error(file_, container, 'has no measurements key')
             return False
 
@@ -142,7 +142,7 @@ def queue_job_legacy(algorithm_id, input_):
 
     gear = gears.get_gear_by_name(algorithm_id)
 
-    if len(gear['gear']['inputs']) != 1:
+    if len(gear['gear']['inputs']) != 1: # cover 100
         raise Exception("Legacy gear enqueue attempt of " + algorithm_id + " failed: must have exactly 1 input in manifest")
 
     input_name = gear['gear']['inputs'].keys()[0]
@@ -154,7 +154,7 @@ def queue_job_legacy(algorithm_id, input_):
     job = Job(str(gear['_id']), inputs, tags=['auto', algorithm_id])
     return job
 
-def find_type_in_container(container, type_):
+def find_type_in_container(container, type_): # cover 100
     for c_file in container['files']:
         if type_ == c_file['type']:
             return c_file
@@ -173,7 +173,7 @@ def create_potential_jobs(db, container, container_type, file_):
     rules = get_rules_for_container(db, container)
 
     # Add hardcoded rules that cannot be removed or changed
-    for hardcoded_rule in get_base_rules():
+    for hardcoded_rule in get_base_rules(): # cover 100
         rules.append(hardcoded_rule)
 
     for rule in rules:
@@ -185,7 +185,7 @@ def create_potential_jobs(db, container, container_type, file_):
             if rule.get('match') is None:
                 input_ = FileReference(type=container_type, id=str(container['_id']), name=file_['name'])
                 job = queue_job_legacy(alg_name, input_)
-            else:
+            else: # cover 100
                 inputs = { }
 
                 for input_name, match_type in rule['match'].iteritems():

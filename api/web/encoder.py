@@ -15,7 +15,7 @@ def custom_json_serializer(obj):
         return obj.map()
     elif isinstance(obj, Cursor):
         return list(obj)
-    raise TypeError(repr(obj) + " is not JSON serializable")
+    raise TypeError(repr(obj) + " is not JSON serializable") # cover 100
 
 
 def sse_pack(d):

@@ -32,7 +32,7 @@ class TemporaryDirectory(object):
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
-    def __enter__(self):
+    def __enter__(self): # cover 100
         return self.name
 
     def cleanup(self, _warn=False):
@@ -42,7 +42,7 @@ class TemporaryDirectory(object):
                            Warning)
             try:
                 self._rmtree(self.name)
-            except (TypeError, AttributeError) as ex:
+            except (TypeError, AttributeError) as ex: # cover 100
                 # Issue #10188: Emit a warning on stderr
                 # if the directory could not be cleaned
                 # up due to missing globals
@@ -56,7 +56,7 @@ class TemporaryDirectory(object):
                 self._warn("end: Implicitly cleaning up {!r}".format(self),
                            Warning)
 
-    def __exit__(self, exc, value, tb):
+    def __exit__(self, exc, value, tb): # cover 100
         self.cleanup()
 
     def __del__(self):
@@ -83,16 +83,16 @@ class TemporaryDirectory(object):
             fullname = self._path_join(path, name)
             try:
                 isdir = self._isdir(fullname) and not self._islink(fullname)
-            except self._os_error:
+            except self._os_error: # cover 100
                 isdir = False
-            if isdir:
+            if isdir: # cover 100
                 self._rmtree(fullname)
             else:
                 try:
                     self._remove(fullname)
-                except self._os_error:
+                except self._os_error: # cover 100
                     pass
         try:
             self._rmdir(path)
-        except self._os_error:
+        except self._os_error: # cover 100
             pass

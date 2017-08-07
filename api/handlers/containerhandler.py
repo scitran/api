@@ -100,9 +100,9 @@ class ContainerHandler(base.RequestHandler):
         try:
             # This line exec the actual get checking permissions using the decorator permchecker
             result = permchecker(self.storage.exec_op)('GET', _id)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
-        if result is None:
+        if result is None: # cover 100
             self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, _id))
         if not self.superuser_request and not self.is_true('join_avatars'):
             self._filter_permissions(result, self.uid)
@@ -239,7 +239,7 @@ class ContainerHandler(base.RequestHandler):
         acquisitions = cont.get('acquisitions', [])
 
         results = []
-        if not acquisitions and not analyses:
+        if not acquisitions and not analyses: # cover 100
             # no jobs
             return {'jobs': results}
 
@@ -275,7 +275,7 @@ class ContainerHandler(base.RequestHandler):
         jobs.sort(key=lambda j: j.created)
 
         response = {'jobs': jobs}
-        if join_gears:
+        if join_gears: # cover 100
             response['gears'] = {}
             for g_id in seen_gears:
                 response['gears'][g_id] = get_gear(g_id)
@@ -297,7 +297,7 @@ class ContainerHandler(base.RequestHandler):
         if self.is_true('info'):
             projection.pop('info')
         if self.is_true('permissions'):
-            if not projection:
+            if not projection: # cover 100
                 projection = None
 
         # select which permission filter will be applied to the list of results.
@@ -310,10 +310,10 @@ class ContainerHandler(base.RequestHandler):
         # if par_cont_name (parent container name) and par_id are not null we return only results
         # within that container
         if par_cont_name:
-            if not par_id:
+            if not par_id: # cover 100
                 self.abort(500, 'par_id is required when par_cont_name is provided')
             if self.use_object_id.get(par_cont_name):
-                if not bson.ObjectId.is_valid(par_id):
+                if not bson.ObjectId.is_valid(par_id): # cover 100
                     self.abort(400, 'not a valid object id')
                 par_id = bson.ObjectId(par_id)
             query = {par_cont_name[:-1]: par_id}
@@ -323,7 +323,7 @@ class ContainerHandler(base.RequestHandler):
             query['archived'] = {'$ne': True}
         # this request executes the actual reqeust filtering containers based on the user permissions
         results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection)
-        if results is None:
+        if results is None: # cover 100
             self.abort(404, 'No elements found in container {}'.format(self.storage.cont_name))
         # return only permissions of the current user unless superuser or getting avatars
         if not self.superuser_request and not self.is_true('join_avatars'):
@@ -383,9 +383,9 @@ class ContainerHandler(base.RequestHandler):
         }
         try:
             results = permchecker(self.storage.exec_op)('GET', query=query, user=user, projection=projection)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
-        if results is None:
+        if results is None: # cover 100
             self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, uid))
         self._filter_all_permissions(results, uid)
         return results
@@ -427,7 +427,7 @@ class ContainerHandler(base.RequestHandler):
         result = mongo_validator(permchecker(self.storage.exec_op))('POST', payload=payload)
         if result.acknowledged:
             return {'_id': result.inserted_id}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not added in container {}'.format(self.storage.cont_name))
 
     @validators.verify_payload_exists
@@ -482,12 +482,12 @@ class ContainerHandler(base.RequestHandler):
             # and checking permissions using respectively the two decorators, mongo_validator and permchecker
             result = mongo_validator(permchecker(self.storage.exec_op))('PUT',
                         _id=_id, payload=payload, recursive=rec, r_payload=r_payload, replace_metadata=replace_metadata)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
 
         if result.modified_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not updated in container {} {}'.format(self.storage.cont_name, _id))
 
     def delete(self, cont_name, **kwargs):
@@ -506,12 +506,12 @@ class ContainerHandler(base.RequestHandler):
         try:
             # This line exec the actual delete checking permissions using the decorator permchecker
             result = permchecker(self.storage.exec_op)('DELETE', _id)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
 
         if result.deleted_count == 1:
             return {'deleted': result.deleted_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not removed from container {} {}'.format(self.storage.cont_name, _id))
 
     def get_groups_with_project(self):
@@ -586,7 +586,7 @@ class ContainerHandler(base.RequestHandler):
         if parent_id:
             parent_storage.dbc = config.db[parent_storage.cont_name]
             parent_container = parent_storage.get_container(parent_id)
-            if parent_container is None:
+            if parent_container is None: # cover 100
                 self.abort(404, 'Element {} not found in container {}'.format(parent_id, parent_storage.cont_name))
             parent_container['cont_name'] = parent_storage.cont_name[:-1]
         else:
@@ -596,11 +596,11 @@ class ContainerHandler(base.RequestHandler):
     def _get_container(self, _id, projection=None, get_children=False):
         try:
             container = self.storage.get_container(_id, projection=projection, get_children=get_children)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         if container is not None:
             return container
-        else:
+        else: # cover 100
             self.abort(404, 'Element {} not found in container {}'.format(_id, self.storage.cont_name))
 
     def _get_permchecker(self, container=None, parent_container=None):

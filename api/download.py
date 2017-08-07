@@ -176,7 +176,7 @@ class Download(base.RequestHandler):
 
                 # If the param `collection` holding a collection id is not None, filter out acquisitions that are not in the collection
                 a_query = {'session': item_id}
-                if collection:
+                if collection: # cover 100
                     a_query['collections'] = bson.ObjectId(collection)
                 acquisitions = config.db.acquisitions.find(a_query, ['label', 'files', 'uid', 'timestamp', 'timezone'])
 
@@ -201,7 +201,7 @@ class Download(base.RequestHandler):
 
             elif item['level'] == 'analysis':
                 analysis = config.db.analyses.find_one(base_query, ['parent', 'label', 'files', 'uid', 'timestamp'])
-                if not analysis:
+                if not analysis: # cover 100
                     # silently skip missing objects/objects user does not have access to
                     continue
                 prefix = self._path_from_container(analysis, used_subpaths, util.sanitize_string_to_filename(analysis['label']))
@@ -233,13 +233,13 @@ class Download(base.RequestHandler):
         path = None
         if not path and container.get('label'):
             path = container['label']
-        if not path and container.get('timestamp'):
+        if not path and container.get('timestamp'): # cover 100
             timezone = container.get('timezone')
             if timezone:
                 path = pytz.timezone('UTC').localize(container['timestamp']).astimezone(pytz.timezone(timezone)).strftime('%Y%m%d_%H%M')
             else:
                 path = container['timestamp'].strftime('%Y%m%d_%H%M')
-        if not path and container.get('uid'):
+        if not path and container.get('uid'): # cover 100
             path = container['uid']
         if not path and container.get('code'):
             path = container['code']
@@ -294,7 +294,7 @@ class Download(base.RequestHandler):
                 self.response.app_iter = self.archivestream(ticket)
             self.response.headers['Content-Type'] = 'application/octet-stream'
             self.response.headers['Content-Disposition'] = 'attachment; filename=' + str(ticket['filename'])
-            for project_id in ticket['projects']:
+            for project_id in ticket['projects']: # cover 100
                 config.db.projects.update_one({'_id': project_id}, {'$inc': {'counter': 1}})
         else:
             req_spec = self.request.json_body

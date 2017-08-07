@@ -87,7 +87,7 @@ def require_superuser(handler_method):
         return handler_method(self, *args, **kwargs)
     return check_superuser
 
-def require_drone(handler_method):
+def require_drone(handler_method): # cover 100
     """
     A decorator to ensure the request is made as a drone.
 
