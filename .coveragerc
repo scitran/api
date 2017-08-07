@@ -1,0 +1,13 @@
+# pragma: no cover - the standard coverage exclusion pattern
+# To be used for code that's impossible to reach and/or not worth the effort.
+
+# cover 100 - custom coverage exclusion pattern
+# Used for one-time jump to 100% coverage to enable checking whether test were added for new code.
+# Not meant for further use - existing exclusions are considered TODOs.
+
+# Adding code to excluded blocks should be considered carefully and avoided if possible.
+
+[report]
+exclude_lines =
+    pragma: no cover
+    cover 100
