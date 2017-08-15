@@ -53,10 +53,10 @@ class Queue(object):
         Validate and save a job mutation
         """
 
-        if job.state not in JOB_STATES_ALLOWED_MUTATE:
+        if job.state not in JOB_STATES_ALLOWED_MUTATE: # cover 100
             raise Exception('Cannot mutate a job that is ' + job.state + '.')
 
-        if 'state' in mutation and not valid_transition(job.state, mutation['state']):
+        if 'state' in mutation and not valid_transition(job.state, mutation['state']): # cover 100
             raise Exception('Mutating job from ' + job.state + ' to ' + mutation['state'] + ' not allowed.')
 
         # Any modification must be a timestamp update
@@ -69,11 +69,11 @@ class Queue(object):
         }
 
         result = config.db.jobs.update_one(job_query, {'$set': mutation})
-        if result.modified_count != 1:
+        if result.modified_count != 1: # cover 100
             raise Exception('Job modification not saved')
 
         # If the job did not succeed, check to see if job should be retried.
-        if 'state' in mutation and mutation['state'] == 'failed' and retry_on_explicit_fail():
+        if 'state' in mutation and mutation['state'] == 'failed' and retry_on_explicit_fail(): # cover 100
             job.state = 'failed'
             Queue.retry(job)
 
@@ -84,18 +84,18 @@ class Queue(object):
         Can override the attempt limit by passing force=True.
         """
 
-        if job.attempt >= max_attempts() and not force:
+        if job.attempt >= max_attempts() and not force: # cover 100
             log.info('Permanently failed job %s (after %d attempts)', job.id_, job.attempt)
             return
 
-        if job.state != 'failed':
+        if job.state != 'failed': # cover 100
             raise Exception('Can only retry a job that is failed')
 
         # Race condition: jobs should only be marked as failed once a new job has been spawned for it (if any).
         # No transactions in our database, so we can't do that.
         # Instead, make a best-hope attempt.
         check = config.db.jobs.find_one({'previous_job_id': job.id_ })
-        if check is not None:
+        if check is not None: # cover 100
             found = Job.load(check)
             raise Exception('Job ' + job.id_ + ' has already been retried as ' + str(found.id_))
 
@@ -118,7 +118,7 @@ class Queue(object):
             {'jobs': job.id_},
             {'$pull': {'jobs': job.id_}, '$push': {'jobs': new_id}}
         )
-        if result.modified_count == 1:
+        if result.modified_count == 1: # cover 100
             log.info('updated batch job list, replacing {} with {}'.format(job.id_, new_id))
 
         return new_id
@@ -188,7 +188,7 @@ class Queue(object):
                 return_document=pymongo.collection.ReturnDocument.AFTER
             )
 
-            if result is None:
+            if result is None: # cover 100
                 raise Exception('Marked job as running but could not generate and save formula')
 
             return Job.load(result)
@@ -207,15 +207,15 @@ class Queue(object):
         # Limitation: container types must match.
         type1 = containers[0].type
         for container in containers:
-            if container.type != type1:
+            if container.type != type1: # cover 100
                 raise Exception('All containers passed to Queue.search must be of the same type')
 
         query = {'inputs.id': {'$in': [x.id for x in containers]}, 'inputs.type': type1}
 
-        if states is not None and len(states) > 0:
+        if states is not None and len(states) > 0: # cover 100
             query['state'] = {"$in": states}
 
-        if tags is not None and len(tags) > 0:
+        if tags is not None and len(tags) > 0: # cover 100
             query['tags'] = {"$in": tags}
 
         # For now, mandate reverse-crono sort
@@ -274,7 +274,7 @@ class Queue(object):
 
             if doc is None:
                 break
-            else:
+            else: # cover 100
                 orphaned += 1
                 j = Job.load(doc)
                 Queue.retry(j)

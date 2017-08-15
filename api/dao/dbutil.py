@@ -21,11 +21,9 @@ def fault_tolerant_replace_one(coll_name, query, update, upsert=False):
         attempts += 1
         try:
             result = config.db[coll_name].replace_one(query, update, upsert=upsert)
-        except DuplicateKeyError:
+        except DuplicateKeyError: # cover 100
             time.sleep(random.uniform(0.01,0.05))
         else:
             return result
 
-    raise APIStorageException('Unable to replace object.')
-
-
+    raise APIStorageException('Unable to replace object.') # cover 100

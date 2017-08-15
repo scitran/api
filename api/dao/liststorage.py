@@ -54,7 +54,7 @@ class ListStorage(object):
         if self.use_object_id:
             try:
                 _id = bson.objectid.ObjectId(_id)
-            except bson.errors.InvalidId as e:
+            except bson.errors.InvalidId as e: # cover 100
                 raise APIStorageException(e.message)
         if action == 'GET':
             return self._get_el(_id, query_params)
@@ -64,7 +64,7 @@ class ListStorage(object):
             return self._update_el(_id, query_params, payload, exclude_params)
         if action == 'POST':
             return self._create_el(_id, payload, exclude_params)
-        raise ValueError('action should be one of GET, POST, PUT, DELETE')
+        raise ValueError('action should be one of GET, POST, PUT, DELETE') # cover 100
 
     def _create_el(self, _id, payload, exclude_params):
         log.debug('payload {}'.format(payload))
@@ -78,7 +78,7 @@ class ListStorage(object):
         log.debug('query {}'.format(query))
         log.debug('update {}'.format(update))
         result = self.dbc.update_one(query, update)
-        if result.matched_count < 1:
+        if result.matched_count < 1: # cover 100
             raise APIConflictException('Item already exists in list.')
         return result
 
@@ -115,7 +115,7 @@ class ListStorage(object):
         log.debug('update {}'.format(update))
         result =  self.dbc.update_one(query, update)
         if self.list_name is 'files' and self.cont_name in ['sessions', 'acquisitions']:
-            if self.cont_name == 'sessions':
+            if self.cont_name == 'sessions': # cover 100
                 session_id = _id
             else:
                 session_id = AcquisitionStorage().get_container(_id).get('session')
@@ -140,12 +140,12 @@ class StringListStorage(ListStorage):
     """
 
     def get_container(self, _id, query_params=None):
-        if self.dbc is None:
+        if self.dbc is None: # cover 100
             raise RuntimeError('collection not initialized before calling get_container')
         if self.use_object_id:
             try:
                 _id = bson.objectid.ObjectId(_id)
-            except bson.errors.InvalidId as e:
+            except bson.errors.InvalidId as e: # cover 100
                 raise APIStorageException(e.message)
         query = {'_id': _id}
         projection = {self.list_name : 1, 'permissions': 1, 'public': 1}
@@ -159,7 +159,7 @@ class StringListStorage(ListStorage):
             query_params = query_params['value']
         if payload is not None:
             payload = payload.get('value')
-            if payload is None:
+            if payload is None: # cover 100
                 raise ValueError('payload Key "value" should be defined')
         return super(StringListStorage, self).exec_op(action, _id, query_params, payload, exclude_params)
 

@@ -6,7 +6,7 @@
 /runtime
 bootstrap.json
 .cache
-/.coverage*
+/.coverage
 coverage.xml
 /htmlcov
 node_modules/

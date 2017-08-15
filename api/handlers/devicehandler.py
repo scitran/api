@@ -47,7 +47,7 @@ class DeviceHandler(base.RequestHandler):
         result = self.storage.update_el(device_id, payload)
         if result.matched_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             raise APINotFoundException('Device with id {} not found, state not updated'.format(device_id))
 
     # NOTE method not routed in api.py

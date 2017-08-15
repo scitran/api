@@ -120,7 +120,7 @@ class ListHandler(base.RequestHandler):
         permchecker, storage, _, _, keycheck = self._initialize_request(cont_name, list_name, _id, query_params=kwargs)
         try:
             result = keycheck(permchecker(storage.exec_op))('GET', _id, query_params=kwargs)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
 
         if result is None:
@@ -137,7 +137,7 @@ class ListHandler(base.RequestHandler):
 
         if result.modified_count == 1:
             return {'modified':result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not added in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
 
     def put(self, cont_name, list_name, **kwargs):
@@ -148,7 +148,7 @@ class ListHandler(base.RequestHandler):
         payload_validator(payload, 'PUT')
         try:
             result = keycheck(mongo_validator(permchecker(storage.exec_op)))('PUT', _id=_id, query_params=kwargs, payload=payload)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         # abort if the query of the update wasn't able to find any matching documents
         if result.matched_count == 0:
@@ -161,11 +161,11 @@ class ListHandler(base.RequestHandler):
         permchecker, storage, _, _, keycheck = self._initialize_request(cont_name, list_name, _id, query_params=kwargs)
         try:
             result = keycheck(permchecker(storage.exec_op))('DELETE', _id, query_params=kwargs)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         if result.modified_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not removed from list {} in container {} {}'.format(storage.list_name, storage.cont_name, _id))
 
     def _initialize_request(self, cont_name, list_name, _id, query_params=None):
@@ -187,7 +187,7 @@ class ListHandler(base.RequestHandler):
         if container is not None:
             if self.superuser_request:
                 permchecker = always_ok
-            elif self.public_request:
+            elif self.public_request: # cover 100
                 permchecker = listauth.public_request(self, container)
             else:
                 permchecker = permchecker(self, container)
@@ -236,7 +236,7 @@ class PermissionsListHandler(ListHandler):
                     'permissions': config.db.projects.find_one({'_id': oid},{'permissions': 1})['permissions']
                 }}
                 hierarchy.propagate_changes(cont_name, oid, {}, update)
-            except APIStorageException:
+            except APIStorageException: # cover 100
                 self.abort(500, 'permissions not propagated from project {} to sessions'.format(_id))
 
 
@@ -255,13 +255,13 @@ class NotesListHandler(ListHandler):
         payload['_id'] = payload.get('_id') or str(bson.objectid.ObjectId())
         payload['user'] = payload.get('user', self.uid)
         payload['created'] = payload['modified'] = datetime.datetime.utcnow()
-        if payload.get('timestamp'):
+        if payload.get('timestamp'): # cover 100
             payload['timestamp'] = dateutil.parser.parse(payload['timestamp'])
         result = keycheck(mongo_validator(permchecker(storage.exec_op)))('POST', _id=_id, payload=payload)
 
         if result.modified_count == 1:
             return {'modified':result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not added in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
 
     def put(self, cont_name, list_name, **kwargs):
@@ -271,11 +271,11 @@ class NotesListHandler(ListHandler):
         payload = self.request.json_body
         input_validator(payload, 'PUT')
         payload['modified'] = datetime.datetime.utcnow()
-        if payload.get('timestamp'):
+        if payload.get('timestamp'): # cover 100
             payload['timestamp'] = dateutil.parser.parse(payload['timestamp'])
         result = keycheck(mongo_validator(permchecker(storage.exec_op)))('PUT', _id=_id, query_params=kwargs, payload=payload)
         # abort if the query of the update wasn't able to find any matching documents
-        if result.matched_count == 0:
+        if result.matched_count == 0: # cover 100
             self.abort(404, 'Element not updated in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
         else:
             return {'modified':result.modified_count}
@@ -315,7 +315,7 @@ class TagsListHandler(ListHandler):
         """
         try:
             hierarchy.propagate_changes(cont_name, _id, query, update)
-        except APIStorageException:
+        except APIStorageException: # cover 100
             self.abort(500, 'tag change not propagated from group {}'.format(_id))
 
 
@@ -329,7 +329,7 @@ class FileListHandler(ListHandler):
 
     def _check_ticket(self, ticket_id, _id, filename):
         ticket = config.db.downloads.find_one({'_id': ticket_id})
-        if not ticket:
+        if not ticket: # cover 100
             self.abort(404, 'no such ticket')
         if ticket['target'] != _id or ticket['filename'] != filename or ticket['ip'] != self.request.client_addr:
             self.abort(400, 'ticket not for this resource or source IP')
@@ -404,7 +404,7 @@ class FileListHandler(ListHandler):
         ticket = None
         if ticket_id:
             ticket = self._check_ticket(ticket_id, _id, filename)
-            if not self.origin.get('id'):
+            if not self.origin.get('id'): # cover 100
                 # If we don't have an origin with this request, use the ticket's origin
                 self.origin = ticket.get('origin')
             permchecker = always_ok
@@ -412,7 +412,7 @@ class FileListHandler(ListHandler):
         # Grab fileinfo from db
         try:
             fileinfo = keycheck(permchecker(storage.exec_op))('GET', _id, query_params=kwargs)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         if not fileinfo:
             self.abort(404, 'no such file')
@@ -451,14 +451,14 @@ class FileListHandler(ListHandler):
                 if not ticket.get('logged', False):
                     self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=_id)
                     config.db.downloads.update_one({'_id': ticket_id}, {'$set': {'logged': True}})
-            else:
+            else: # cover 100
                 self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=_id)
 
         # Authenticated or ticketed download request
         else:
             self.response.app_iter = open(filepath, 'rb')
             self.response.headers['Content-Length'] = str(fileinfo['size']) # must be set after setting app_iter
-            if self.is_true('view'):
+            if self.is_true('view'): # cover 100
                 self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
             else:
                 self.response.headers['Content-Type'] = 'application/octet-stream'
@@ -486,7 +486,7 @@ class FileListHandler(ListHandler):
         if cont_name.endswith('s'):
             cont_name_plural = cont_name
             cont_name = cont_name[:-1]
-        else:
+        else: # cover 100
             cont_name_plural = cont_name + 's'
 
         # Authorize
@@ -504,11 +504,11 @@ class FileListHandler(ListHandler):
         self.log_user_access(AccessType.delete_file, cont_name=cont_name, cont_id=_id)
         try:
             result = keycheck(storage.exec_op)('DELETE', _id, query_params=kwargs)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         if result.modified_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not removed from list {} in container {} {}'.format(storage.list_name, storage.cont_name, _id))
 
     def _check_packfile_token(self, project_id, token_id, check_user=True):
@@ -534,7 +534,7 @@ class FileListHandler(ListHandler):
         # Check for correct token
         result = config.db['tokens'].find_one(query)
 
-        if result is None:
+        if result is None: # cover 100
             raise Exception('Invalid or expired upload token')
 
         # Update token timestamp
@@ -569,7 +569,7 @@ class FileListHandler(ListHandler):
             for p in perms:
                 if p['_id'] == self.uid and p['access'] in ('rw', 'admin'):
                     break
-            else:
+            else: # cover 100
                 raise Exception('Not authorized')
 
         timestamp = datetime.datetime.utcnow()

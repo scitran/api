@@ -34,7 +34,7 @@ def default_container(handler, container=None, target_parent_container=None):
                 if target_parent_container:
                     has_access = _get_access(handler.uid, target_parent_container) >= INTEGER_PERMISSIONS[required_perm]
                 else:
-                    has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS[required_perm]
+                    has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS[required_perm] # cover 100
             elif method == 'PUT' and target_parent_container is not None:
                 has_access = (
                     _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['admin'] and
@@ -44,14 +44,14 @@ def default_container(handler, container=None, target_parent_container=None):
                 required_perm = 'rw'
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS[required_perm]
             else:
-                has_access = False
+                has_access = False # cover 100
 
             if has_access:
                 return exec_op(method, _id=_id, payload=payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata, projection=projection)
             else:
                 error_msg = 'user not authorized to perform a {} operation on the container.'.format(method)
                 if additional_error_msg:
-                    error_msg += ' '+additional_error_msg
+                    error_msg += ' '+additional_error_msg # cover 100
                 handler.abort(403, error_msg)
         return f
     return g
@@ -67,20 +67,20 @@ def collection_permissions(handler, container=None, _=None):
             if method == 'GET' and container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro']
+                has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['ro'] # cover 100
             elif method == 'DELETE':
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['admin']
             elif method == 'POST':
-                has_access = True
+                has_access = True # cover 100
             elif method == 'PUT':
                 has_access = _get_access(handler.uid, container) >= INTEGER_PERMISSIONS['rw']
             else:
-                has_access = False
+                has_access = False # cover 100
 
             if has_access:
                 return exec_op(method, _id=_id, payload=payload)
             else:
-                handler.abort(403, 'user not authorized to perform a {} operation on the container'.format(method))
+                handler.abort(403, 'user not authorized to perform a {} operation on the container'.format(method)) # cover 100
         return f
     return g
 
@@ -92,16 +92,16 @@ def default_referer(handler, parent_container=None):
             if method == 'GET' and parent_container.get('public', False):
                 has_access = True
             elif method == 'GET':
-                has_access = access >= INTEGER_PERMISSIONS['ro']
+                has_access = access >= INTEGER_PERMISSIONS['ro'] # cover 100
             elif method in ['POST', 'PUT', 'DELETE']:
                 has_access = access >= INTEGER_PERMISSIONS['rw']
             else:
-                has_access = False
+                has_access = False # cover 100
 
             if has_access:
                 return exec_op(method, _id=_id, payload=payload)
             else:
-                handler.abort(403, 'user not authorized to perform a {} operation on parent container'.format(method))
+                handler.abort(403, 'user not authorized to perform a {} operation on parent container'.format(method)) # cover 100
         return f
     return g
 
@@ -115,7 +115,7 @@ def public_request(handler, container=None):
             if method == 'GET' and container.get('public', False):
                 return exec_op(method, _id, payload)
             else:
-                handler.abort(403, 'not authorized to perform a {} operation on this container'.format(method))
+                handler.abort(403, 'not authorized to perform a {} operation on this container'.format(method)) # cover 100
         return f
     return g
 
@@ -126,7 +126,7 @@ def list_permission_checker(handler):
                 handler.abort(403, 'User ' + handler.uid + ' may not see the Projects of User ' + user['_id'])
             query['permissions'] = {'$elemMatch': {'_id': handler.uid}}
             if handler.is_true('public'):
-                query['$or'] = [{'public': True}, {'permissions': query.pop('permissions')}]
+                query['$or'] = [{'public': True}, {'permissions': query.pop('permissions')}] # cover 100
             return exec_op(method, query=query, user=user, public=public, projection=projection)
         return f
     return g

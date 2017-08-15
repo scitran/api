@@ -20,21 +20,21 @@ class GroupHandler(base.RequestHandler):
         result = permchecker(self.storage.exec_op)('GET', _id)
         if not self.superuser_request and not self.is_true('join_avatars'):
             self._filter_permissions([result], self.uid)
-        if self.is_true('join_avatars'):
+        if self.is_true('join_avatars'): # cover 100
             ContainerHandler.join_user_info([result])
         return result
 
     def delete(self, _id):
-        if _id == 'unknown':
+        if _id == 'unknown': # cover 100
             self.abort(400, 'The group "unknown" can\'t be deleted as it is integral within the API')
         group = self._get_group(_id)
         permchecker = groupauth.default(self, group)
         result = permchecker(self.storage.exec_op)('DELETE', _id)
         if result.deleted_count == 1:
             return {'deleted': result.deleted_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Group {} not removed'.format(_id))
-        return result
+        return result # cover 100
 
     def handle_projects(self, result):
         """
@@ -50,7 +50,7 @@ class GroupHandler(base.RequestHandler):
         results = permchecker(self.storage.exec_op)('GET', projection=projection)
         if not self.superuser_request and not self.is_true('join_avatars'):
             self._filter_permissions(results, self.uid)
-        if self.is_true('join_avatars'):
+        if self.is_true('join_avatars'): # cover 100
             results = ContainerHandler.join_user_info(results)
         if 'projects' in self.request.params.getall('join'):
             for result in results:
@@ -71,7 +71,7 @@ class GroupHandler(base.RequestHandler):
         result = mongo_validator(permchecker(self.storage.exec_op))('PUT', _id=_id, payload=payload)
         if result.modified_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Group {} not updated'.format(_id))
 
     def post(self):
@@ -88,17 +88,17 @@ class GroupHandler(base.RequestHandler):
         if result.acknowledged:
             if result.upserted_id:
                 return {'_id': result.upserted_id}
-            else:
+            else: # cover 100
                 self.response.status_int = 201
                 return {'_id': payload['_id']}
-        else:
+        else: # cover 100
             self.abort(404, 'Group {} not updated'.format(payload['_id']))
 
     def _get_group(self, _id):
         group = self.storage.get_container(_id)
         if group is not None:
             return group
-        else:
+        else: # cover 100
             self.abort(404, 'Group {} not found'.format(_id))
 
     def _filter_permissions(self, results, uid):

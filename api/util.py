@@ -95,7 +95,7 @@ def is_user_id(uid):
 
 
 # NOTE unused function
-def is_group_id(gid):
+def is_group_id(gid): # cover 100
     """
     Checks to make sure uid matches uid regex
     """
@@ -226,7 +226,7 @@ def mkdir_p(path):
     except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
-        else:
+        else: # cover 100
             raise
 
 NONCE_CHARS  = string.ascii_letters + string.digits

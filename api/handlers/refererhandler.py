@@ -47,7 +47,7 @@ class RefererHandler(base.RequestHandler):
     def get_permchecker(self, parent_container):
         if self.superuser_request:
             return always_ok
-        elif self.public_request:
+        elif self.public_request: # cover 100
             return containerauth.public_request(self, container=parent_container)
         else:
             # NOTE The handler (self) is passed implicitly
@@ -75,7 +75,7 @@ class AnalysesHandler(RefererHandler):
         permchecker(noop)('POST')
 
         if self.is_true('job'):
-            if cont_name != 'sessions':
+            if cont_name != 'sessions': # cover 100
                 self.abort(400, 'Analysis created via a job must be at the session level')
 
             payload = self.request.json_body
@@ -93,7 +93,7 @@ class AnalysesHandler(RefererHandler):
 
         if result.acknowledged:
             return {'_id': result.inserted_id}
-        else:
+        else: # cover 100
             self.abort(500, 'Analysis not added for container {} {}'.format(cont_name, cid))
 
     @validators.verify_payload_exists
@@ -115,7 +115,7 @@ class AnalysesHandler(RefererHandler):
 
         if result.modified_count == 1:
             return {'modified': result.modified_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Element not updated in container {} {}'.format(self.storage.cont_name, _id))
 
     def get(self, cont_name, cid, _id):
@@ -134,11 +134,11 @@ class AnalysesHandler(RefererHandler):
 
         try:
             result = self.storage.delete_el(_id)
-        except APIStorageException as e:
+        except APIStorageException as e: # cover 100
             self.abort(400, e.message)
         if result.deleted_count == 1:
             return {'deleted': result.deleted_count}
-        else:
+        else: # cover 100
             self.abort(404, 'Analysis {} not removed from container {} {}'.format(_id, cont_name, cid))
 
 
@@ -246,7 +246,7 @@ class AnalysesHandler(RefererHandler):
             permchecker(noop)('GET')
         elif ticket_id != '':
             ticket = self._check_ticket(ticket_id, cid, filename)
-            if not self.origin.get('id'):
+            if not self.origin.get('id'): # cover 100
                 self.origin = ticket.get('origin')
 
         analysis = self.storage.get_container(_id)
@@ -279,9 +279,9 @@ class AnalysesHandler(RefererHandler):
             if not filename:
                 if ticket:
                     self._send_batch(ticket)
-                else:
+                else: # cover 100
                     self.abort(400, 'batch downloads require a ticket')
-            elif not fileinfo:
+            elif not fileinfo: # cover 100
                 self.abort(404, "{} doesn't exist".format(filename))
             else:
                 fileinfo = fileinfo[0]
@@ -315,14 +315,14 @@ class AnalysesHandler(RefererHandler):
                         if not ticket.get('logged', False):
                             self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=cid)
                             config.db.downloads.update_one({'_id': ticket_id}, {'$set': {'logged': True}})
-                    else:
+                    else: # cover 100
                         self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=cid)
 
                 # Request to download the file itself
                 else:
                     self.response.app_iter = open(filepath, 'rb')
                     self.response.headers['Content-Length'] = str(fileinfo['size']) # must be set after setting app_iter
-                    if self.is_true('view'):
+                    if self.is_true('view'): # cover 100
                         self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
                     else:
                         self.response.headers['Content-Type'] = 'application/octet-stream'
@@ -334,7 +334,7 @@ class AnalysesHandler(RefererHandler):
                 if not ticket.get('logged', False):
                     self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=cid)
                     config.db.downloads.update_one({'_id': ticket_id}, {'$set': {'logged': True}})
-            else:
+            else: # cover 100
                 self.log_user_access(AccessType.download_file, cont_name=cont_name, cont_id=cid)
 
 
@@ -342,7 +342,7 @@ class AnalysesHandler(RefererHandler):
         ticket = config.db.downloads.find_one({'_id': ticket_id})
         if not ticket:
             self.abort(404, 'no such ticket')
-        if ticket['ip'] != self.request.client_addr:
+        if ticket['ip'] != self.request.client_addr: # cover 100
             self.abort(400, 'ticket not for this source IP')
         if not filename:
             return self._check_ticket_for_batch(ticket)
@@ -352,7 +352,7 @@ class AnalysesHandler(RefererHandler):
 
 
     def _check_ticket_for_batch(self, ticket):
-        if ticket.get('type') != 'batch':
+        if ticket.get('type') != 'batch': # cover 100
             self.abort(400, 'ticket not for this resource')
         return ticket
 

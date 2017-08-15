@@ -67,7 +67,7 @@ class Placer(object):
         """
         Helper function that throws unless a container was provided.
         """
-        if self.id_ is None or self.container is None or self.container_type is None:
+        if self.id_ is None or self.container is None or self.container_type is None: # cover 100
             raise Exception('Must specify a target')
 
     def requireMetadata(self):
@@ -325,7 +325,7 @@ class TokenPlacer(Placer):
     def check(self):
         token = self.context['token']
 
-        if token is None:
+        if token is None: # cover 100
             raise Exception('TokenPlacer requires a token')
 
         # This logic is used by:
@@ -381,7 +381,7 @@ class PackfilePlacer(Placer):
 
         token = self.context['token']
 
-        if token is None:
+        if token is None: # cover 100
             raise Exception('PackfilePlacer requires a token')
 
         # This logic is used by:
@@ -393,7 +393,7 @@ class PackfilePlacer(Placer):
         base_path = config.get_item('persistent', 'data_path')
         self.folder = os.path.join(base_path, 'tokens', 'packfile', token)
 
-        if not os.path.isdir(self.folder):
+        if not os.path.isdir(self.folder): # cover 100
             raise Exception('Packfile directory does not exist or has been deleted')
 
         self.requireMetadata()
@@ -539,7 +539,7 @@ class PackfilePlacer(Placer):
         insert_map['created'] = self.timestamp
         insert_map.update(self.metadata['session'])
         insert_map['subject'] = containerutil.add_id_to_subject(insert_map.get('subject'), bson.ObjectId(self.p_id))
-        if 'timestamp' in insert_map:
+        if 'timestamp' in insert_map: # cover 100
             insert_map['timestamp'] = dateutil.parser.parse(insert_map['timestamp'])
 
         session = config.db['session' + 's'].find_one_and_update(
@@ -635,14 +635,14 @@ class AnalysisPlacer(Placer):
 
 class AnalysisJobPlacer(Placer):
     def check(self):
-        if self.id_ is None:
+        if self.id_ is None: # cover 100
             raise Exception('Must specify a target analysis')
 
     def process_file_field(self, field, file_attrs):
         if self.metadata is not None:
             file_mds = self.metadata.get('acquisition', {}).get('files', [])
 
-            for file_md in file_mds:
+            for file_md in file_mds: # cover 100
                 if file_md['name'] == file_attrs['name']:
                     file_attrs.update(file_md)
                     break
@@ -670,7 +670,7 @@ class AnalysisJobPlacer(Placer):
             config.db.analyses.update_one(q, u)
             return self.saved
 
-class GearPlacer(Placer):
+class GearPlacer(Placer): # cover 100
     def check(self):
         self.requireMetadata()
 

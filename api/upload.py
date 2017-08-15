@@ -56,13 +56,13 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         Creates a packfile from uploaded files |          |           |        |     X
     """
 
-    if not isinstance(strategy, Strategy):
+    if not isinstance(strategy, Strategy): # cover 100
         raise Exception('Unknown upload strategy')
 
-    if id_ is not None and container_type == None:
+    if id_ is not None and container_type == None: # cover 100
         raise Exception('Unspecified container type')
 
-    if container_type is not None and container_type not in ('acquisition', 'session', 'project', 'collection', 'analysis', 'gear'):
+    if container_type is not None and container_type not in ('acquisition', 'session', 'project', 'collection', 'analysis', 'gear'): # cover 100
         raise Exception('Unknown container type')
 
     timestamp = datetime.datetime.utcnow()
@@ -78,7 +78,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
     if 'metadata' in form:
         try:
             metadata = json.loads(form['metadata'].value)
-        except Exception:
+        except Exception: # cover 100
             raise files.FileStoreException('wrong format for field "metadata"')
 
     placer_class = strategy.value
@@ -93,7 +93,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
     file_fields = [x for x in form if form[x].filename]
     # TODO: Change schemas to enabled targeted uploads of more than one file.
     # Ref docs from placer.TargetedPlacer for details.
-    if strategy == Strategy.targeted and len(file_fields) > 1:
+    if strategy == Strategy.targeted and len(file_fields) > 1: # cover 100
         raise Exception("Targeted uploads can only send one file")
 
 
@@ -103,7 +103,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         # Not the best practice. Open to improvements.
         # These are presumbed to be required by every function later called with field as a parameter.
         field.path	 = os.path.join(tempdir.name, field.filename)
-        if not os.path.exists(field.path):
+        if not os.path.exists(field.path): # cover 100
             tempdir_exists = os.path.exists(tempdir.name)
             raise Exception("file {} does not exist, tmpdir {} exists: {}, files in tmpdir: {}".format(
                 field.path,
@@ -137,7 +137,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         placer.process_file_field(field, file_attrs)
 
     # Respond either with Server-Sent Events or a standard json map
-    if placer.sse and not response:
+    if placer.sse and not response: # cover 100
         raise Exception("Programmer error: response required")
     elif placer.sse:
         response.headers['Content-Type'] = 'text/event-stream; charset=utf-8'
@@ -154,7 +154,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         for item in placer.finalize():
             try:
                 response.write(item)
-            except Exception: # pylint: disable=broad-except
+            except Exception: # cover 100 # pylint: disable=broad-except
                 log.info('SSE upload progress failed to send; continuing')
 
         return
@@ -183,7 +183,7 @@ class Upload(base.RequestHandler):
             strategy = Strategy.uidmatch
         elif strategy == 'reaper':
             strategy = Strategy.reaper
-        else:
+        else: # cover 100
             self.abort(500, 'stragegy {} not implemented'.format(strategy))
         return process_upload(self.request, strategy, origin=self.origin, context=context)
 
@@ -250,7 +250,7 @@ class Upload(base.RequestHandler):
                 result = config.db['tokens'].find_one({
                     '_id': token
                 })
-            except bson.errors.InvalidId:
+            except bson.errors.InvalidId: # cover 100
                 # Folders could be an invalid mongo ID, in which case they're definitely expired :)
                 pass
 

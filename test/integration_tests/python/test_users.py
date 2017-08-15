@@ -141,8 +141,12 @@ def test_generate_api_key(data_builder, as_public):
     assert 'key' in r.json()
 
 
-def test_reset_wechat_registration(data_builder, as_admin):
+def test_reset_wechat_registration(data_builder, as_admin, as_user):
     new_user = data_builder.create_user()
+
+    # Try to reset wechat registration code without admin permissions
+    r = as_user.post('/users/' + new_user + '/reset-registration')
+    assert r.status_code == 403
 
     # Reset (create) wechat registration code for user
     r = as_admin.post('/users/' + new_user + '/reset-registration')

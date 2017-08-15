@@ -48,7 +48,7 @@ def schema_uri(type_, schema_name):
     )
 
 def decorator_from_schema_path(schema_url):
-    if schema_url is None:
+    if schema_url is None: # cover 100
         return no_op
     schema, resolver = _resolve_schema(schema_url)
     def g(exec_op):
@@ -63,14 +63,14 @@ def decorator_from_schema_path(schema_url):
             if method in ['POST', 'PUT']:
                 try:
                     _validate_json(payload, _schema, resolver)
-                except jsonschema.ValidationError as e:
+                except jsonschema.ValidationError as e: # cover 100
                     raise DBValidationException(str(e))
             return exec_op(method, **kwargs)
         return validator
     return g
 
 def from_schema_path(schema_url):
-    if schema_url is None:
+    if schema_url is None: # cover 100
         return no_op
     # split the url in base_uri and schema_name
     schema, resolver = _resolve_schema(schema_url)
@@ -102,7 +102,7 @@ def key_check(schema_url):
     2. a GET will retrieve a single item
     3. a DELETE (most importantly) will delete a single item
     """
-    if schema_url is None:
+    if schema_url is None: # cover 100
         return no_op
     schema, _ = _resolve_schema(schema_url)
     log.debug(schema)
@@ -113,7 +113,7 @@ def key_check(schema_url):
             if method == 'POST':
                 try:
                     exclude_params = _post_exclude_params(schema.get('key_fields', []), payload)
-                except KeyError as e:
+                except KeyError as e: # cover 100
                     raise InputValidationException('missing key {} in payload'.format(e.args))
             else:
                 _check_query_params(schema.get('key_fields'), query_params)

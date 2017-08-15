@@ -29,15 +29,20 @@ clean_up () {
   kill $API_PID || true
   wait 2> /dev/null
 
-  # NOTE on omit: cross-site feature unused and planned for removal
-  local OMIT="--omit api/centralclient.py"
   echo -e "\nUNIT TEST COVERAGE:"
-  coverage report $OMIT --skip-covered
+  coverage report --skip-covered
 
   coverage combine
   echo -e "\nOVERALL COVERAGE:"
-  coverage report $OMIT --show-missing
-  coverage html $OMIT
+  coverage report --show-missing
+  coverage html
+
+  local percent=$(coverage report | grep TOTAL | awk '{print $4}')
+  if [ "$percent" != "100%" ]; then
+    # override exit code even if all tests passed
+    echo -e "\nError: coverage dropped to $percent" >&2
+    exit 1
+  fi
 }
 
 trap clean_up EXIT

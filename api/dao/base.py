@@ -60,7 +60,7 @@ class ContainerStorage(object):
         for subclass in cls.__subclasses__():
             if subclass.__name__ == cont_storage_name:
                 return subclass()
-        return cls(containerutil.pluralize(cont_name))
+        return cls(containerutil.pluralize(cont_name)) # cover 100
 
     def _fill_default_values(self, cont):
         if cont:
@@ -83,7 +83,7 @@ class ContainerStorage(object):
     def get_children(self, _id, projection=None, uid=None):
         try:
             child_name = CHILD_MAP[self.cont_name]
-        except KeyError:
+        except KeyError: # cover 100
             raise APINotFoundException('Children cannot be listed from the {0} level'.format(self.cont_name))
         if not self.use_object_id:
             query = {containerutil.singularize(self.cont_name): _id}
@@ -122,20 +122,20 @@ class ContainerStorage(object):
             return self.update_el(_id, payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata)
         if action == 'POST':
             return self.create_el(payload)
-        raise ValueError('action should be one of GET, POST, PUT, DELETE')
+        raise ValueError('action should be one of GET, POST, PUT, DELETE') # cover 100
 
     def create_el(self, payload):
         log.debug(payload)
         payload = self._to_mongo(payload)
         try:
             result = self.dbc.insert_one(payload)
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError: # cover 100
             raise APIConflictException('Object with id {} already exists.'.format(payload['_id']))
         return result
 
     def update_el(self, _id, payload, unset_payload=None, recursive=False, r_payload=None, replace_metadata=False):
         replace = None
-        if replace_metadata:
+        if replace_metadata: # cover 100
             replace = {}
             if payload.get('info') is not None:
                 replace['info'] = util.mongo_sanitize_fields(payload.pop('info'))
@@ -152,12 +152,12 @@ class ContainerStorage(object):
             update['$unset'] = util.mongo_dict(unset_payload)
 
         if replace is not None:
-            update['$set'].update(replace)
+            update['$set'].update(replace) # cover 100
 
         if self.use_object_id:
             try:
                 _id = bson.ObjectId(_id)
-            except bson.InvalidId as e:
+            except bson.InvalidId as e: # cover 100
                 raise APIStorageException(e.message)
         if recursive and r_payload is not None:
             hierarchy.propagate_changes(self.cont_name, _id, {}, {'$set': util.mongo_dict(r_payload)})
@@ -167,7 +167,7 @@ class ContainerStorage(object):
         if self.use_object_id:
             try:
                 _id = bson.ObjectId(_id)
-            except bson.InvalidId as e:
+            except bson.InvalidId as e: # cover 100
                 raise APIStorageException(e.message)
         return self.dbc.delete_one({'_id':_id})
 
@@ -175,7 +175,7 @@ class ContainerStorage(object):
         if self.use_object_id:
             try:
                 _id = bson.ObjectId(_id)
-            except bson.InvalidId as e:
+            except bson.InvalidId as e: # cover 100
                 raise APIStorageException(e.message)
         cont = self._from_mongo(self.dbc.find_one(_id, projection))
         if fill_defaults:
@@ -185,7 +185,7 @@ class ContainerStorage(object):
     def get_all_el(self, query, user, projection, fill_defaults=False):
         if user:
             if query.get('permissions'):
-                query['$and'] = [{'permissions': {'$elemMatch': user}}, {'permissions': query.pop('permissions')}]
+                query['$and'] = [{'permissions': {'$elemMatch': user}}, {'permissions': query.pop('permissions')}] # cover 100
             else:
                 query['permissions'] = {'$elemMatch': user}
         log.debug(query)

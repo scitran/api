@@ -38,7 +38,7 @@ class GearsHandler(base.RequestHandler):
         gears   = get_gears()
         filters = self.request.GET.getall('filter')
 
-        if 'single_input' in filters:
+        if 'single_input' in filters: # cover 100
             gears = list(filter(lambda x: len(x["gear"]["inputs"].keys()) <= 1, gears))
 
         return gears
@@ -117,7 +117,7 @@ class GearHandler(base.RequestHandler):
 
         except ValidationError as err:
             key = "none"
-            if len(err.relative_path) > 0:
+            if len(err.relative_path) > 0: # cover 100
                 key = err.relative_path[0]
 
             message = err.message.replace("u'", "'")
@@ -333,7 +333,7 @@ class JobHandler(base.RequestHandler):
             self.abort(403, 'Request requires superuser')
 
         c = Job.get(_id).config
-        if c is None:
+        if c is None: # cover 100
             c = {}
 
         self.response.headers['Content-Type'] = 'application/octet-stream'

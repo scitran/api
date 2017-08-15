@@ -24,7 +24,7 @@ def move_form_file_field_into_cas(file_field):
     Requires an augmented file field; see upload.process_upload() for details.
     """
 
-    if not file_field.hash or not file_field.path:
+    if not file_field.hash or not file_field.path: # cover 100
         raise Exception("Field is not a file field with hash and path")
 
     base   = config.get_item('persistent', 'data_path')
@@ -147,7 +147,7 @@ def getHashingFieldStorage(upload_dir, hash_alg):
                 self._FieldStorage__file = None
             self.file.write(line)
 
-        def get_hash(self):
+        def get_hash(self): # cover 100
             return self.open_file.get_hash()
 
     return HashingFieldStorage

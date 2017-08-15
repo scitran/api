@@ -23,7 +23,7 @@ class GroupStorage(ContainerStorage):
         cont = super(GroupStorage,self)._fill_default_values(cont)
         if cont:
             if 'permissions' not in cont:
-                cont['permissions'] = []
+                cont['permissions'] = [] # cover 100
         return cont
 
     def create_el(self, payload):
@@ -47,7 +47,7 @@ class ProjectStorage(ContainerStorage):
         result = super(ProjectStorage, self).update_el(_id, payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata)
 
         if result.modified_count < 1:
-            raise APINotFoundException('Could not find project {}'.format(_id))
+            raise APINotFoundException('Could not find project {}'.format(_id)) # cover 100
 
         if payload and 'template' in payload:
             # We are adding/changing the project template, update session compliance
@@ -69,7 +69,7 @@ class ProjectStorage(ContainerStorage):
         if project_id is None:
             # Recalc all projects
             projects = self.get_all_el({'template': {'$exists': True}}, None, None)
-        else:
+        else: # cover 100
             project = self.get_container(project_id)
             if project:
                 projects = [project]
@@ -79,14 +79,14 @@ class ProjectStorage(ContainerStorage):
 
         for project in projects:
             template = project.get('template',{})
-            if not template:
+            if not template: # cover 100
                 continue
             else:
                 session_storage = SessionStorage()
                 sessions = session_storage.get_all_el({'project': project['_id']}, None, None)
                 for s in sessions:
                     changed = session_storage.recalc_session_compliance(s['_id'], session=s, template=template, hard=True)
-                    if changed:
+                    if changed: # cover 100
                         changed_sessions.append(s['_id'])
         return changed_sessions
 
@@ -106,14 +106,14 @@ class SessionStorage(ContainerStorage):
 
     def create_el(self, payload):
         project = ProjectStorage().get_container(payload['project'])
-        if project.get('template'):
+        if project.get('template'): # cover 100
             payload['project_has_template'] = True
             payload['satisfies_template'] = hierarchy.is_session_compliant(payload, project.get('template'))
         return super(SessionStorage, self).create_el(payload)
 
     def update_el(self, _id, payload, unset_payload=None, recursive=False, r_payload=None, replace_metadata=False):
         session = self.get_container(_id)
-        if session is None:
+        if session is None: # cover 100
             raise APINotFoundException('Could not find session {}'.format(_id))
 
         # If the subject code is changed, change the subject id to either
@@ -130,7 +130,7 @@ class SessionStorage(ContainerStorage):
         # First check if project is being changed
         if payload and payload.get('project'):
             project = ProjectStorage().get_container(payload['project'])
-            if not project:
+            if not project: # cover 100
                 raise APINotFoundException("Could not find project {}".format(payload['project']))
         else:
             project = ProjectStorage().get_container(session['project'])
@@ -159,13 +159,13 @@ class SessionStorage(ContainerStorage):
         """
         if session is None:
             session = self.get_container(session_id)
-        if session is None:
+        if session is None: # cover 100
             raise APINotFoundException('Could not find session {}'.format(session_id))
         if hard:
             # A "hard" flag will also recalc if session is tracked by a project template
             project = ProjectStorage().get_container(session['project'])
             project_has_template = bool(project.get('template'))
-            if session.get('project_has_template', False) != project_has_template:
+            if session.get('project_has_template', False) != project_has_template: # cover 100
                 if project_has_template == True:
                     self.update_el(session['_id'], {'project_has_template': True})
                 else:
@@ -195,14 +195,14 @@ class AcquisitionStorage(ContainerStorage):
     def update_el(self, _id, payload, unset_payload=None, recursive=False, r_payload=None, replace_metadata=False):
         result = super(AcquisitionStorage, self).update_el(_id, payload, unset_payload=unset_payload, recursive=recursive, r_payload=r_payload, replace_metadata=replace_metadata)
         acquisition = self.get_container(_id)
-        if acquisition is None:
+        if acquisition is None: # cover 100
             raise APINotFoundException('Could not find acquisition {}'.format(_id))
         SessionStorage().recalc_session_compliance(acquisition['session'])
         return result
 
     def delete_el(self, _id):
         acquisition = self.get_container(_id)
-        if acquisition is None:
+        if acquisition is None: # cover 100
             raise APINotFoundException('Could not find acquisition {}'.format(_id))
         result = super(AcquisitionStorage, self).delete_el(_id)
         SessionStorage().recalc_session_compliance(acquisition['session'])
@@ -242,13 +242,13 @@ class AcquisitionStorage(ContainerStorage):
             session_ids = [s['_id'] for s in SessionStorage().get_all_el(query, user, {'_id':1})]
         elif target_type in ['session', 'sessions']:
             session_ids = target_ids
-        else:
+        else: # cover 100
             raise ValueError('Target type must be of type project, session or acquisition.')
 
         # Using session ids, find acquisitions
         query.pop('project', None)
         query['session'] = {'$in':session_ids}
-        if collection_id:
+        if collection_id: # cover 100
             query['collections'] = collection_id
         return self.get_all_el(query, user, projection)
 
@@ -324,7 +324,7 @@ class AnalysisStorage(ContainerStorage):
         analysis['files'] = files
 
         result = self.create_el(analysis)
-        if not result.acknowledged:
+        if not result.acknowledged: # cover 100
             raise APIStorageException('Analysis not created for container {} {}'.format(cont_name, cid))
 
         # Prepare job
@@ -334,7 +334,7 @@ class AnalysisStorage(ContainerStorage):
 
         # Config manifest check
         gear = get_gear(job['gear_id'])
-        if gear.get('gear', {}).get('custom', {}).get('flywheel', {}).get('invalid', False):
+        if gear.get('gear', {}).get('custom', {}).get('flywheel', {}).get('invalid', False): # cover 100
             raise APIConflictException('Gear marked as invalid, will not run!')
         validate_gear_config(gear, job.get('config'))
 
@@ -345,7 +345,7 @@ class AnalysisStorage(ContainerStorage):
             destination=destination, tags=tags, config_=job.get('config'), origin=origin, batch=job.get('batch'))
         job_id = job.insert()
 
-        if not job_id:
+        if not job_id: # cover 100
             # NOTE #775 remove unusable analysis - until jobs have a 'hold' state
             self.delete_el(analysis['_id'])
             raise APIStorageException(500, 'Job not created for analysis of container {} {}'.format(cont_name, cid))
@@ -368,13 +368,13 @@ class AnalysisStorage(ContainerStorage):
             return analysis
         try:
             job = Job.get(analysis['job'])
-        except:
+        except: # cover 100
             raise Exception('No job with id {} found.'.format(analysis['job']))
 
         # If the job currently tied to the analysis failed, try to find one that didn't
         while job.state == 'failed' and job.id_ is not None:
             next_job = config.db.jobs.find_one({'previous_job_id': job.id_})
-            if next_job is None:
+            if next_job is None: # cover 100
                 break
             job = Job.load(next_job)
         if job.id_ != str(analysis['job']):
