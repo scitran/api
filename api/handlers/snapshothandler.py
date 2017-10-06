@@ -32,21 +32,21 @@ class SnapshotHandler(containerhandler.ContainerHandler):
         'projects': {
             'storage': containerstorage.ContainerStorage('project_snapshots', use_object_id=use_object_id['projects']),
             'permchecker': containerauth.default_container,
-            'list_projection': {'metadata': 0},
+            'list_projection': {'metadata': 0, 'files': 0},
             'children_cont': 'session_snapshots'
         },
         'sessions': {
             'storage': containerstorage.ContainerStorage('session_snapshots', use_object_id=use_object_id['sessions']),
             'permchecker': containerauth.default_container,
             'parent_storage': containerstorage.ContainerStorage('project_snapshots', use_object_id=use_object_id['projects']),
-            'list_projection': {'metadata': 0},
+            'list_projection': {'metadata': 0, 'files': 0},
             'children_cont': 'acquisition_snapshots'
         },
         'acquisitions': {
             'storage': containerstorage.ContainerStorage('acquisition_snapshots', use_object_id=use_object_id['acquisitions']),
             'permchecker': containerauth.default_container,
             'parent_storage': containerstorage.ContainerStorage('sessions', use_object_id=use_object_id['sessions']),
-            'list_projection': {'metadata': 0}
+            'list_projection': {'metadata': 0, 'files': 0}
         }
     }
 
