@@ -49,7 +49,7 @@ class ContainerHandler(base.RequestHandler):
             'parent_storage': containerstorage.ContainerStorage('groups', use_object_id=use_object_id['groups']),
             'storage_schema_file': 'project.json',
             'payload_schema_file': 'project.json',
-            'list_projection': {'metadata': 0},
+            'list_projection': {'metadata': 0, 'files': 0},
             'children_cont': 'sessions'
         },
         'sessions': {
@@ -58,7 +58,7 @@ class ContainerHandler(base.RequestHandler):
             'parent_storage': containerstorage.ContainerStorage('projects', use_object_id=use_object_id['projects']),
             'storage_schema_file': 'session.json',
             'payload_schema_file': 'session.json',
-            'list_projection': {'metadata': 0},
+            'list_projection': {'metadata': 0, 'files': 0},
             'children_cont': 'acquisitions'
         },
         'acquisitions': {
@@ -67,7 +67,7 @@ class ContainerHandler(base.RequestHandler):
             'parent_storage': containerstorage.ContainerStorage('sessions', use_object_id=use_object_id['sessions']),
             'storage_schema_file': 'acquisition.json',
             'payload_schema_file': 'acquisition.json',
-            'list_projection': {'metadata': 0}
+            'list_projection': {'metadata': 0, 'files': 0}
         }
     }
 
