@@ -35,11 +35,16 @@ DEFAULT_CONFIG = {
         'ssl_cert': None,
     },
     'auth': {
-        'client_id': '1052740023071-n20pk8h5uepdua3r8971pc6jrf25lvee.apps.googleusercontent.com',
-        'id_endpoint': 'https://www.googleapis.com/plus/v1/people/me/openIdConnect',
-        'auth_endpoint': 'https://accounts.google.com/o/oauth2/auth',
-        'verify_endpoint': 'https://www.googleapis.com/oauth2/v1/tokeninfo',
-
+        'google': {
+            'client_id': '1052740023071-n20pk8h5uepdua3r8971pc6jrf25lvee.apps.googleusercontent.com',
+            'id_endpoint': 'https://www.googleapis.com/plus/v1/people/me/openIdConnect',
+            'auth_endpoint': 'https://accounts.google.com/o/oauth2/auth',
+            'verify_endpoint': 'https://www.googleapis.com/oauth2/v1/tokeninfo',
+        },
+        'orcid': {
+            'client_id': 'APP-49K91C7AJNU1L5G1',
+            'api_endpoint': 'https://api.sandbox.orcid.org',
+        },
     },
     'persistent': {
         'db_uri': 'mongodb://localhost:9001/scitran',

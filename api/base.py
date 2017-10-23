@@ -7,6 +7,8 @@ import requests
 import urlparse
 import jsonschema
 
+from auth.provider import AuthProviders
+
 from . import config
 
 log = config.log
@@ -29,6 +31,7 @@ class RequestHandler(webapp2.RequestHandler):
 
         user_agent = self.request.headers.get('User-Agent', '')
         access_token = self.request.headers.get('Authorization', None)
+        access_provider = self.request.headers.get('Authorization-Provider', 'google')
         drone_secret = self.request.headers.get('X-SciTran-Auth', None)
 
         site_id = config.get_item('site', 'id')
@@ -42,30 +45,30 @@ class RequestHandler(webapp2.RequestHandler):
                 self.uid = cached_token['uid']
                 log.debug('looked up cached token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
             else:
-                r = requests.get(config.get_item('auth', 'id_endpoint'), headers={'Authorization': 'Bearer ' + access_token})
-                if r.ok:
-                    identity = json.loads(r.content)
-                    self.uid = identity.get('email')
-                    if not self.uid:
-                        self.abort(400, 'OAuth2 token resolution did not return email address')
-                    config.db.authtokens.replace_one({'_id': access_token}, {'uid': self.uid, 'timestamp': request_start}, upsert=True)
-                    config.db.users.update_one({'_id': self.uid, 'firstlogin': None}, {'$set': {'firstlogin': request_start}})
-                    config.db.users.update_one({'_id': self.uid}, {'$set': {'lastlogin': request_start}})
-                    log.debug('looked up remote token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
+                # Fallback for Google oAuth provider
+                if access_provider not in AuthProviders:
+                    access_provider = 'google'
 
-                    # Set user's auth provider avatar
-                    # TODO: switch on auth.provider rather than manually comparing endpoint URL.
-                    if config.get_item('auth', 'id_endpoint') == 'https://www.googleapis.com/plus/v1/people/me/openIdConnect':
-                        provider_avatar = identity.get('picture', '')
-                        # Remove attached size param from URL.
-                        u = urlparse.urlparse(provider_avatar)
-                        query = urlparse.parse_qs(u.query)
-                        query.pop('sz', None)
-                        u = u._replace(query=urllib.urlencode(query, True))
-                        provider_avatar = urlparse.urlunparse(u)
-                else:
+                provider = AuthProviders[access_provider]
+                identity = provider(access_token)
+                if not identity:
                     headers = {'WWW-Authenticate': 'Bearer realm="{}", error="invalid_token", error_description="Invalid OAuth2 token."'.format(site_id)}
                     self.abort(401, 'invalid oauth2 token', headers=headers)
+
+                if not identity.get('uid'):
+                    self.abort(400, 'OAuth2 token resolution did not return user identification')
+
+                self.uid = identity.get('uid')
+
+                config.db.authtokens.replace_one({'_id': access_token}, {'uid': self.uid, 'timestamp': request_start}, upsert=True)
+                config.db.users.update_one({'_id': self.uid, 'firstlogin': None}, {'$set': {'firstlogin': request_start}})
+                config.db.users.update_one({'_id': self.uid}, {'$set': {'lastlogin': request_start}})
+
+                log.debug('looked up remote token in %dms' % ((datetime.datetime.utcnow() - request_start).total_seconds() * 1000.))
+
+                # Set user's auth provider avatar
+                if 'avatar' in identity:
+                    provider_avatar = identity.get('avatar')
 
         # 'Debug' (insecure) setting: allow request to act as requested user
         elif self.debug and self.get_param('user'):
