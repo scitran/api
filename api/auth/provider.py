@@ -9,7 +9,8 @@ from .. import config
 
 def google(access_token):
     provider_config = config.get_item('auth', 'google')
-    r = requests.get(provider_config.get('id_endpoint'), headers={'Authorization': 'Bearer ' + access_token})
+    r = requests.get(provider_config.get('id_endpoint'),
+                     headers={'Authorization': 'Bearer ' + access_token})
     if r.ok:
         identity = json.loads(r.content)
 
@@ -31,7 +32,7 @@ def google(access_token):
 def orcid(access_token):
     provider_config = config.get_item('auth', 'orcid')
     orcid, access_token = access_token.split(':')
-    r = requests.get( provider_config.get('api_endpoint') + '/v2.0/' + orcid +  '/record',
+    r = requests.get(provider_config.get('api_endpoint') + '/v2.0/' + orcid +  '/record',
                      headers={'Authorization': 'Bearer ' + access_token})
     if r.ok:
         doc = untangle.parse(r.content)
