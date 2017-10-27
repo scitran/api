@@ -9,13 +9,14 @@ from .. import config
 
 def google(access_token):
     provider_config = config.get_item('auth', 'google')
+
     r = requests.get(provider_config.get('id_endpoint'),
                      headers={'Authorization': 'Bearer ' + access_token})
     if r.ok:
         identity = json.loads(r.content)
 
         uid = identity.get('email')
-        identity.set('uid', uid)
+        identity['uid'] = uid
 
         avatar = identity.get('picture', '')
         # Remove attached size param from URL.
@@ -24,7 +25,7 @@ def google(access_token):
         query.pop('sz', None)
         u = u._replace(query=urllib.urlencode(query, True))
         avatar = urlparse.urlunparse(u)
-        identity.set('avatar', avatar)
+        identity['avatar'] = avatar
 
         return identity
 
