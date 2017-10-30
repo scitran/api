@@ -10,3 +10,4 @@ requests==2.9.1
 rfc3987==1.3.4
 webapp2==2.5.2
 WebOb==1.5.1
+untangle==1.1.1
