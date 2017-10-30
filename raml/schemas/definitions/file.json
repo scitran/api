@@ -37,7 +37,7 @@
             },
             "additionalProperties":false
         },
-        "hash":{"type":"string", "length":106},
+        "uuid":{"type":"string", "length":36},
         "size":{"type":"integer"},
         "file-input":{
             "type": "object",
@@ -77,7 +77,7 @@
               "tags": {"$ref":"#/definitions/tags"},
               "info": {"$ref":"#/definitions/info"},
               "origin":{"$ref":"#/definitions/origin"},
-              "hash":{"$ref":"#/definitions/hash"},
+              "uuid":{"$ref":"#/definitions/uuid"},
               "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
               "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
               "size":{"$ref":"#/definitions/size"},

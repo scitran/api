@@ -182,27 +182,6 @@ def obj_from_map(_map):
 
     return type('',(object,),_map)()
 
-def path_from_hash(hash_):
-    """
-    create a filepath from a hash
-    e.g.
-    hash_ = v0-sha384-01b395a1cbc0f218
-    will return
-    v0/sha384/01/b3/v0-sha384-01b395a1cbc0f218
-    """
-    hash_version, hash_alg, actual_hash = hash_.split('-')
-    first_stanza = actual_hash[0:2]
-    second_stanza = actual_hash[2:4]
-    path = (hash_version, hash_alg, first_stanza, second_stanza, hash_)
-    return os.path.join(*path)
-
-
-def format_hash(hash_alg, hash_):
-    """
-    format the hash including version and algorithm
-    """
-    return '-'.join(('v0', hash_alg, hash_))
-
 
 def create_json_http_exception_response(message, code, request_id, custom=None):
     content = {

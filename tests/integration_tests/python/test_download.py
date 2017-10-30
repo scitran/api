@@ -167,7 +167,7 @@ def test_filelist_download(data_builder, file_form, as_admin):
     assert r.status_code == 404
 
     # try to get file w/ non-matching hash
-    r = as_admin.get(session_files + '/one.csv', params={'hash': 'match me if you can'})
+    r = as_admin.get(session_files + '/one.csv', params={'uuid': 'match me if you can'})
     assert r.status_code == 409
 
     # get download ticket for single file

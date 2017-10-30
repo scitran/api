@@ -5,7 +5,7 @@
           "id": "58063f24e5dc5b001657a87f"
       },
       "mimetype": "application/octet-stream",
-      "hash": "v0-sha384-12188e00a26650b2baa3f0195337dcf504f4362bb2136eef0cdbefb57159356b1355a0402fca0ab5ab081f21c305e5c2",
+      "uuid": "50708f69-7549-4331-bac0-b4789e5c9ca1",
       "name": "cortical_surface_right_hemisphere.obj",
       "tags": [],
       "measurements": [],
@@ -20,7 +20,7 @@
           "id": "58065fa7e5dc5b001457a882"
       },
       "mimetype": "application/octet-stream",
-      "hash": "v0-sha384-12188e00a26650b2baa3f0195337dcf504f4362bb2136eef0cdbefb57159356b1355a0402fca0ab5ab081f21c305e5c2",
+      "uuid": "50708f69-7549-4331-bac0-b4779e5c9ca1",
       "name": "cortical_surface_right_hemisphere.obj",
       "tags": [],
       "measurements": [],

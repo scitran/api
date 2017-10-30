@@ -441,10 +441,10 @@ class FileListHandler(ListHandler):
         if not fileinfo:
             self.abort(404, 'no such file')
 
-        hash_ = self.get_param('hash')
-        if hash_ and hash_ != fileinfo['hash']:
+        uuid_ = self.get_param('uuid')
+        if uuid_ and uuid_ != fileinfo['uuid']:
             self.abort(409, 'file exists, hash mismatch')
-        filepath = os.path.join(config.get_item('persistent', 'data_path'), util.path_from_hash(fileinfo['hash']))
+        filepath = os.path.join(config.get_item('persistent', 'data_path'), fileinfo['uuid'])
 
         # Request for download ticket
         if self.get_param('ticket') == '':

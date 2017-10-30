@@ -5,6 +5,7 @@ import dateutil
 import os
 import pymongo
 import shutil
+import uuid
 import zipfile
 
 from . import config
@@ -87,7 +88,7 @@ class Placer(object):
 
         # Save file
         if field is not None:
-            files.move_form_file_field_into_cas(field)
+            files.move_form_file_field_into_storage(field)
 
         # Update the DB
         if file_attrs is not None:
@@ -188,7 +189,7 @@ class UIDPlacer(Placer):
             self.save_file(field, file_attrs)
         else:
             if field is not None:
-                files.move_form_file_field_into_cas(field)
+                files.move_form_file_field_into_storage(field)
             if file_attrs is not None:
                 container.upsert_file(file_attrs)
 
@@ -512,7 +513,7 @@ class PackfilePlacer(Placer):
             'filename': self.name,
             'path':	 self.path,
             'size':	 os.path.getsize(self.path),
-            'hash':	 files.hash_file_formatted(self.path),
+            'uuid':	 str(uuid.uuid4()),
             'mimetype': util.guess_mimetype('lol.zip'),
             'modified': self.timestamp
         })
@@ -524,7 +525,7 @@ class PackfilePlacer(Placer):
             'name':	 cgi_field.filename,
             'modified': cgi_field.modified,
             'size':	 cgi_field.size,
-            'hash':	 cgi_field.hash,
+            'uuid':	 cgi_field.uuid,
             'mimetype': cgi_field.mimetype,
 
             'type': self.metadata['packfile']['type'],

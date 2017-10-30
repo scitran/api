@@ -60,7 +60,7 @@
 			                "tags": {"$ref":"../definitions/file.json#/definitions/tags"},
 			                "info": {"$ref":"../definitions/file.json#/definitions/info"},
 			                "origin":{"$ref":"../definitions/file.json#/definitions/origin"},
-			                "hash":{"$ref":"../definitions/file.json#/definitions/hash"},
+			                "uuid":{"$ref":"../definitions/file.json#/definitions/uuid"},
 							"created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
 			                "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
 			                "size":{"$ref":"../definitions/file.json#/definitions/size"},
