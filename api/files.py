@@ -2,10 +2,13 @@ import os
 import cgi
 import json
 import shutil
+import hashlib
 
 from . import config
 from . import tempdir as tempfile
+from . import util
 
+DEFAULT_HASH_ALG='sha384'
 
 def move_file(path, target_path):
     target_dir = os.path.dirname(target_path)
@@ -25,7 +28,25 @@ def move_form_file_field_into_storage(file_field):
         raise Exception("Field is not a file field with uuid and path")
 
     base = config.get_item('persistent', 'data_path')
-    move_file(file_field.path, os.path.join(base, file_field.uuid))
+    move_file(file_field.path, os.path.join(base, util.path_from_uuid(file_field.uuid)))
+
+
+def hash_file_formatted(path, hash_alg=None, buffer_size=65536):
+    """
+    Return the scitran-formatted hash of a file, specified by path.
+    """
+
+    hash_alg = hash_alg or DEFAULT_HASH_ALG
+    hasher = hashlib.new(hash_alg)
+
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(buffer_size)
+            if not data:
+                break
+            hasher.update(data)
+
+    return util.format_hash(hash_alg, hasher.hexdigest())
 
 
 class FileStoreException(Exception):

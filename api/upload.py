@@ -114,8 +114,9 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
                 tempdir_exists,
                 tempdir_exists and os.listdir(tempdir.name),
             ))
-        field.size	 = os.path.getsize(field.path)
-        field.uuid	 = str(uuid.uuid4())
+        field.size = os.path.getsize(field.path)
+        field.hash = files.hash_file_formatted(field.path)
+        field.uuid = str(uuid.uuid4())
         field.mimetype = util.guess_mimetype(field.filename) # TODO: does not honor metadata's mime type if any
         field.modified = timestamp
 
@@ -126,6 +127,7 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
             'modified': field.modified, #
             'size':	 field.size,
             'mimetype': field.mimetype,
+            'hash': field.hash,
             'uuid':	 field.uuid,
             'origin': origin,
 

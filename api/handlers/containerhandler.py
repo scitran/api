@@ -112,7 +112,7 @@ class ContainerHandler(base.RequestHandler):
         # build and insert file paths if they are requested
         if self.is_true('paths'):
             for fileinfo in result['files']:
-                fileinfo['path'] = fileinfo['uuid']
+                fileinfo['path'] = util.path_from_uuid(fileinfo['uuid'])
 
         inflate_job_info = cont_name == 'sessions'
         result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)

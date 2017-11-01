@@ -182,6 +182,11 @@ def obj_from_map(_map):
 
     return type('',(object,),_map)()
 
+def format_hash(hash_alg, hash_):
+    """
+    format the hash including version and algorithm
+    """
+    return '-'.join(('v0', hash_alg, hash_))
 
 def create_json_http_exception_response(message, code, request_id, custom=None):
     content = {
@@ -241,3 +246,17 @@ def create_nonce():
     randrange = random.SystemRandom().randrange
 
     return ''.join([NONCE_CHARS[randrange(x)] for _ in range(NONCE_LENGTH)])
+
+def path_from_uuid(uuid_):
+    """
+    create a filepath from a UUID
+    e.g.
+    hash_ = v0-sha384-01b395a1cbc0f218
+    will return
+    v0/sha384/01/b3/v0-sha384-01b395a1cbc0f218
+    """
+    uuid_1 = uuid_.split('-')[0]
+    first_stanza = uuid_1[0:2]
+    second_stanza = uuid_1[2:4]
+    path = (first_stanza, second_stanza, uuid_)
+    return os.path.join(*path)

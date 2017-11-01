@@ -513,6 +513,7 @@ class PackfilePlacer(Placer):
             'filename': self.name,
             'path':	 self.path,
             'size':	 os.path.getsize(self.path),
+            'hash': files.hash_file_formatted(self.path),
             'uuid':	 str(uuid.uuid4()),
             'mimetype': util.guess_mimetype('lol.zip'),
             'modified': self.timestamp
@@ -525,6 +526,7 @@ class PackfilePlacer(Placer):
             'name':	 cgi_field.filename,
             'modified': cgi_field.modified,
             'size':	 cgi_field.size,
+            'hash': cgi_field.hash,
             'uuid':	 cgi_field.uuid,
             'mimetype': cgi_field.mimetype,
 
