@@ -42,8 +42,8 @@ DEFAULT_CONFIG = {
             'verify_endpoint': 'https://www.googleapis.com/oauth2/v1/tokeninfo',
         },
         'orcid': {
-            'client_id': 'APP-49K91C7AJNU1L5G1',
-            'api_endpoint': 'https://api.sandbox.orcid.org',
+            'client_id': 'APP-B03HAPXN425Y5C95',
+            'api_endpoint': 'https://pub.orcid.org',
         },
     },
     'persistent': {
