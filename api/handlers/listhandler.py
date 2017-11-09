@@ -445,9 +445,8 @@ class FileListHandler(ListHandler):
         if hash_ and hash_ != fileinfo['hash']:
             self.abort(409, 'file exists, hash mismatch')
         data_path = config.get_item('persistent', 'data_path')
-        file_uuid = fileinfo.get('uuid', '')
-        filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
-        if not filepath or not os.path.exists(filepath):
+        filepath = os.path.join(data_path, util.path_from_uuid(fileinfo.get('uuid', '')))
+        if not util.file_exists(filepath):
             filepath = os.path.join(data_path, util.path_from_hash(fileinfo['hash']))
 
         # Request for download ticket

@@ -46,11 +46,10 @@ class Download(base.RequestHandler):
                         break
                 if filtered:
                     continue
-            file_uuid = f.get('uuid', '')
-            filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
-            if not file_uuid or not os.path.exists(filepath):
+            filepath = os.path.join(data_path, util.path_from_uuid(f.get('uuid', '')))
+            if not util.file_exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
-            if os.path.exists(filepath): # silently skip missing files
+            if util.file_exists(filepath): # silently skip missing files
                 if cont_name == 'analyses':
                     targets.append((filepath, prefix + '/' + ('input' if f.get('input') else 'output') + '/' + f['name'], cont_name, str(container.get('_id')),f['size']))
                 else:

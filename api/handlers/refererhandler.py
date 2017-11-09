@@ -349,9 +349,8 @@ class AnalysesHandler(RefererHandler):
             else:
                 fileinfo = fileinfo[0]
                 data_path = config.get_item('persistent', 'data_path')
-                file_uuid = fileinfo.get('uuid', '')
-                filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
-                if not file_uuid or not os.path.exists(filepath):
+                filepath = os.path.join(data_path, util.path_from_uuid(fileinfo.get('uuid', '')))
+                if not util.file_exists(filepath):
                     filepath = os.path.join(
                         data_path,
                         util.path_from_hash(fileinfo['hash'])
@@ -431,11 +430,10 @@ class AnalysesHandler(RefererHandler):
         total_size = total_cnt = 0
         data_path = config.get_item('persistent', 'data_path')
         for f in fileinfo:
-            file_uuid = f.get('uuid', '')
-            filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
-            if not filepath or not os.path.exists(filepath):
+            filepath = os.path.join(data_path, util.path_from_uuid(f.get('uuid', '')))
+            if not util.file_exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
-            if os.path.exists(filepath): # silently skip missing files
+            if util.file_exists(filepath): # silently skip missing files
                 targets.append((filepath,
                                 util.sanitize_string_to_filename(analysis['label']) + '/' + ('input' if f.get('input') else 'output') + '/'+ f['name'],
                                 'analyses', analysis['_id'], f['size']))

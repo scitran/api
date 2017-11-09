@@ -114,10 +114,9 @@ class ContainerHandler(base.RequestHandler):
         if self.is_true('paths'):
             for fileinfo in result['files']:
                 data_path = config.get_item('persistent', 'data_path')
-                file_uuid = fileinfo.get('uuid', '')
-                filepath_uuid = util.path_from_uuid(file_uuid)
+                filepath_uuid = util.path_from_uuid(fileinfo.get('uuid', ''))
                 filepath_hash = util.path_from_hash(fileinfo['hash'])
-                if file_uuid and os.path.exists(os.path.join(data_path, filepath_uuid)):
+                if util.file_exists(os.path.join(data_path, filepath_uuid)):
                     fileinfo['path'] = filepath_uuid
                 else:
                     fileinfo['path'] = filepath_hash

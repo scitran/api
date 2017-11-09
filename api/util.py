@@ -276,3 +276,7 @@ def path_from_hash(hash_):
     second_stanza = actual_hash[2:4]
     path = (hash_version, hash_alg, first_stanza, second_stanza, hash_)
     return os.path.join(*path)
+
+
+def file_exists(path):
+    return os.path.exists(path) and os.path.isfile(path)
