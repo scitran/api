@@ -1,6 +1,7 @@
 import bson
 import datetime
 import dateutil
+import os
 
 from .. import config
 from .. import util
@@ -112,7 +113,14 @@ class ContainerHandler(base.RequestHandler):
         # build and insert file paths if they are requested
         if self.is_true('paths'):
             for fileinfo in result['files']:
-                fileinfo['path'] = util.path_from_uuid(fileinfo['uuid'])
+                data_path = config.get_item('persistent', 'data_path')
+                file_uuid = fileinfo.get('uuid', '')
+                filepath_uuid = util.path_from_uuid(file_uuid)
+                filepath_hash = util.path_from_hash(fileinfo['hash'])
+                if file_uuid and os.path.exists(os.path.join(data_path, filepath_uuid)):
+                    fileinfo['path'] = filepath_uuid
+                else:
+                    fileinfo['path'] = filepath_hash
 
         inflate_job_info = cont_name == 'sessions'
         result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)

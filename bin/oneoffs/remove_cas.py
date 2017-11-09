@@ -20,21 +20,6 @@ logging.basicConfig(
 log = logging.getLogger('remove_cas')
 
 
-def path_from_hash(hash_):
-    """
-    create a filepath from a hash
-    e.g.
-    hash_ = v0-sha384-01b395a1cbc0f218
-    will return
-    v0/sha384/01/b3/v0-sha384-01b395a1cbc0f218
-    """
-    hash_version, hash_alg, actual_hash = hash_.split('-')
-    first_stanza = actual_hash[0:2]
-    second_stanza = actual_hash[2:4]
-    path = (hash_version, hash_alg, first_stanza, second_stanza, hash_)
-    return os.path.join(*path)
-
-
 def get_files_by_prefix(document, prefix):
     for key in prefix.split('.'):
         document = document.get(key, {})
@@ -85,7 +70,7 @@ def remove_cas():
         base = config.get_item('persistent', 'data_path')
         for f in _files:
             f_uuid = str(uuid.uuid4())
-            f_path = os.path.join(base, path_from_hash(f['fileinfo']['hash']))
+            f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
             f['uuid'] = f_uuid
             log.info('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
             copy_file(f_path, os.path.join(base, util.path_from_uuid(f_uuid)))
@@ -112,7 +97,7 @@ def remove_cas():
         base = config.get_item('persistent', 'data_path')
         for f in _files:
             if f.get('uuid', ''):
-                hash_path = os.path.join(base, path_from_hash(f['fileinfo']['hash']))
+                hash_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
                 uuid_path = util.path_from_uuid(f['uuid'])
                 if os.path.exists(hash_path) and os.path.exists(uuid_path):
                     os.remove(uuid_path)

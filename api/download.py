@@ -46,8 +46,10 @@ class Download(base.RequestHandler):
                         break
                 if filtered:
                     continue
-
-            filepath = os.path.join(data_path, util.path_from_uuid(f['uuid']))
+            file_uuid = f.get('uuid', '')
+            filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
+            if not file_uuid or not os.path.exists(filepath):
+                filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
             if os.path.exists(filepath): # silently skip missing files
                 if cont_name == 'analyses':
                     targets.append((filepath, prefix + '/' + ('input' if f.get('input') else 'output') + '/' + f['name'], cont_name, str(container.get('_id')),f['size']))
@@ -56,8 +58,7 @@ class Download(base.RequestHandler):
                 total_size += f['size']
                 total_cnt += 1
             else:
-                log.warn(
-                    "Expected {} to exist but it is missing. File will be skipped in download.".format(filepath))
+                log.warn("Expected {} to exist but it is missing. File will be skipped in download.".format(filepath))
         return total_size, total_cnt
 
     def _bulk_preflight_archivestream(self, file_refs):
@@ -97,7 +98,10 @@ class Download(base.RequestHandler):
                 log.warn("Expected file {} on Container {} {} to exist but it is missing. File will be skipped in download.".format(filename, cont_name, cont_id))
                 continue
 
-            filepath = os.path.join(data_path, util.path_from_uuid(file_obj['uuid']))
+            file_uuid = file_obj.get('uuid', '')
+            filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
+            if not file_uuid or not os.path.exists(filepath):
+                filepath = os.path.join(data_path, util.path_from_hash(file_obj['hash']))
             if os.path.exists(filepath): # silently skip missing files
                 targets.append((filepath, cont_name+'/'+cont_id+'/'+file_obj['name'], cont_name, cont_id, file_obj['size']))
                 total_size += file_obj['size']
