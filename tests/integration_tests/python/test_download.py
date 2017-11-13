@@ -4,7 +4,7 @@ import tarfile
 import zipfile
 
 
-def test_download(data_builder, file_form, as_admin, api_db):
+def test_download(data_builder, file_form, as_admin, api_db, legacy_cas_file):
     project = data_builder.create_project(label='project1')
     session = data_builder.create_session(label='session1')
     session2 = data_builder.create_session(label='session1')
@@ -151,8 +151,32 @@ def test_download(data_builder, file_form, as_admin, api_db):
     r = as_admin.get('/download', params={'ticket': ticket, 'symlinks': 'true'})
     assert r.ok
 
+    # test legacy cas file handling
+    (project_legacy, session_legacy, file_name_legacy) = legacy_cas_file
+    r = as_admin.post('/download', json={
+        'optional': False,
+        'nodes': [
+            {'level': 'project', '_id': project_legacy},
+        ]
+    })
+    assert r.ok
+    ticket = r.json()['ticket']
 
-def test_filelist_download(data_builder, file_form, as_admin):
+    # Perform the download
+    r = as_admin.get('/download', params={'ticket': ticket})
+    assert r.ok
+
+    tar_file = cStringIO.StringIO(r.content)
+    tar = tarfile.open(mode="r", fileobj=tar_file)
+
+    # Verify a single file in tar with correct file name
+    for tarinfo in tar:
+        assert os.path.basename(tarinfo.name) == file_name_legacy
+
+    tar.close()
+
+
+def test_filelist_download(data_builder, file_form, as_admin, legacy_cas_file):
     session = data_builder.create_session()
     zip_cont = cStringIO.StringIO()
     with zipfile.ZipFile(zip_cont, 'w') as zip_file:
@@ -207,6 +231,16 @@ def test_filelist_download(data_builder, file_form, as_admin):
     # get zip member
     r = as_admin.get(session_files + '/two.zip', params={'ticket': ticket, 'member': 'two.csv'})
     assert r.ok
+
+    # test legacy cas file handling
+    (_, session2, file_name) = legacy_cas_file
+    r = as_admin.get('/sessions/' + session2 + '/files' + '/' + file_name, params={'ticket': ''})
+    assert r.ok
+
+    ticket = r.json()['ticket']
+
+    r = as_admin.get('/sessions/' + session2 + '/files' + '/' + file_name, params={'ticket': ticket})
+    assert r.content == 'test\ndata\n'
 
 
 def test_analysis_download(data_builder, file_form, as_admin, default_payload):
