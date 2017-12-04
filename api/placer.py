@@ -523,11 +523,11 @@ class PackfilePlacer(Placer):
         # This could be coalesced into a single map thrown on file fields, for example.
         # Used in the API return.
         cgi_attrs = {
+            '_id': cgi_field.uuid,
             'name':	 cgi_field.filename,
             'modified': cgi_field.modified,
             'size':	 cgi_field.size,
             'hash': cgi_field.hash,
-            'uuid':	 cgi_field.uuid,
             'mimetype': cgi_field.mimetype,
 
             'type': self.metadata['packfile']['type'],

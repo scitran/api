@@ -7,10 +7,10 @@
         "id": "importer_Admin_Import",
         "name": "Admin Import"
       },
+      "_id": "50708f69-7549-4331-bac0-b4779e5c9ca1",
       "mimetype": "application/zip",
       "measurements": [],
       "hash": "v0-sha384-dd3c97bfe0ad1fcba75ae6718c6e81038c59af4f447f5db194d52732efa4f955b28455db02eb64cad3e4e55f11e3679f",
-      "uuid": "50708f69-7549-4331-bac0-b4779e5c9ca1",
       "name": "4784_1_1_localizer_dicom.zip",
       "tags": [],
       "created": "2016-09-21T14:56:09.943000+00:00",

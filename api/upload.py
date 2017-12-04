@@ -123,12 +123,12 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         # create a file-attribute map commonly used elsewhere in the codebase.
         # Stands in for a dedicated object... for now.
         file_attrs = {
+            '_id': field.uuid,
             'name':	 field.filename,
             'modified': field.modified, #
             'size':	 field.size,
             'mimetype': field.mimetype,
             'hash': field.hash,
-            'uuid':	 field.uuid,
             'origin': origin,
 
             'type': None,

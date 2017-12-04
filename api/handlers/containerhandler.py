@@ -1,7 +1,6 @@
 import bson
 import datetime
 import dateutil
-import os
 
 from .. import config
 from .. import util
@@ -110,16 +109,6 @@ class ContainerHandler(base.RequestHandler):
             self._filter_permissions(result, self.uid)
         if self.is_true('join_avatars'):
             self.join_user_info([result])
-        # build and insert file paths if they are requested
-        if self.is_true('paths'):
-            for fileinfo in result['files']:
-                data_path = config.get_item('persistent', 'data_path')
-                filepath_uuid = util.path_from_uuid(fileinfo.get('uuid', ''))
-                filepath_hash = util.path_from_hash(fileinfo['hash'])
-                if util.file_exists(os.path.join(data_path, filepath_uuid)):
-                    fileinfo['path'] = filepath_uuid
-                else:
-                    fileinfo['path'] = filepath_hash
 
         inflate_job_info = cont_name == 'sessions'
         result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)

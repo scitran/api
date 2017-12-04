@@ -213,31 +213,30 @@ def with_user(data_builder, randstr, as_public):
 def legacy_cas_file(as_admin, api_db, data_builder, randstr, file_form):
     """Yield legacy CAS file"""
     project = data_builder.create_project()
-    session = data_builder.create_session(project=project)
     file_name = '%s.csv' % randstr()
-    as_admin.post('/sessions/' + session + '/files', files=file_form(file_name))
+    as_admin.post('/projects/' + project + '/files', files=file_form(file_name))
 
-    file_uuid = api_db['sessions'].find_one(
+    file_id = api_db['projects'].find_one(
         {'files.name': file_name}
-    )['files'][0]['uuid']
+    )['files'][0]['_id']
     # verify cas backward compatibility
-    api_db['sessions'].find_one_and_update(
+    api_db['projects'].find_one_and_update(
         {'files.name': file_name},
-        {'$unset': {'files.$.uuid': ''}}
+        {'$unset': {'files.$._id': ''}}
     )
     data_path = os.getenv('SCITRAN_PERSISTENT_DATA_PATH')
     file_hash = 'v0-sha384-03a9df0a5e6e21f5d25aacbce76d8a5d9f8de14f6654c31ab2daed961cfbfb236b1708063350856f752a5a094fb64321'
     file_path = os.path.join(data_path, util.path_from_hash(file_hash))
     target_dir = os.path.dirname(file_path)
     os.makedirs(target_dir)
-    shutil.move(os.path.join(data_path, util.path_from_uuid(file_uuid)), file_path)
+    shutil.move(os.path.join(data_path, util.path_from_uuid(file_id)), file_path)
 
-    yield (project, session, file_name)
+    yield (project, file_name)
 
     # clean up
     os.remove(file_path)
     os.removedirs(target_dir)
-    api_db['sessions'].delete_one({'_id': session})
+    api_db['projects'].delete_one({'_id': project})
 
 class BaseUrlSession(requests.Session):
     """Requests session subclass using core api's base url"""

@@ -47,6 +47,7 @@
 					"items":{
 						"type":"object",
 						"properties":{
+							"_id":{"$ref":"../definitions/file.json#/definitions/_id"},
 							"name":           {"$ref":"../definitions/file.json#/definitions/name"},
 			                "type":           {"$ref":"../definitions/file.json#/definitions/file-type"},
 			                "mimetype":       {"$ref":"../definitions/file.json#/definitions/mimetype"},
@@ -61,7 +62,6 @@
 			                "info": {"$ref":"../definitions/file.json#/definitions/info"},
 			                "origin":{"$ref":"../definitions/file.json#/definitions/origin"},
 							"hash":{"$ref":"../definitions/file.json#/definitions/hash"},
-			                "uuid":{"$ref":"../definitions/file.json#/definitions/uuid"},
 							"created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
 			                "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
 			                "size":{"$ref":"../definitions/file.json#/definitions/size"},

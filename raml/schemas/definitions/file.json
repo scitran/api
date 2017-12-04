@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "definitions":{
+        "_id":{"type":"string", "length":36},
         "name":           { "type": "string" },
         "file-type":      { "type": "string" },
         "mimetype":       { "type": "string" },
@@ -38,7 +39,6 @@
             "additionalProperties":false
         },
         "hash":{"type":"string", "length":106},
-        "uuid":{"type":"string", "length":36},
         "size":{"type":"integer"},
         "file-input":{
             "type": "object",
@@ -65,6 +65,7 @@
         "file-output":{
             "type": "object",
             "properties": {
+              "_id":{"$ref":"#/definitions/_id"},
               "name":           {"$ref":"#/definitions/name"},
               "type":           {"$ref":"#/definitions/file-type"},
               "mimetype":       {"$ref":"#/definitions/mimetype"},
@@ -79,7 +80,6 @@
               "info": {"$ref":"#/definitions/info"},
               "origin":{"$ref":"#/definitions/origin"},
               "hash":{"$ref":"#/definitions/hash"},
-              "uuid":{"$ref":"#/definitions/uuid"},
               "created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
               "modified":{"$ref":"../definitions/created-modified.json#/definitions/modified"},
               "size":{"$ref":"#/definitions/size"},

@@ -46,7 +46,7 @@ class Download(base.RequestHandler):
                         break
                 if filtered:
                     continue
-            filepath = os.path.join(data_path, util.path_from_uuid(f.get('uuid', '')))
+            filepath = os.path.join(data_path, util.path_from_uuid(f.get('_id', '')))
             if not util.file_exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
             if util.file_exists(filepath): # silently skip missing files
@@ -97,9 +97,9 @@ class Download(base.RequestHandler):
                 log.warn("Expected file {} on Container {} {} to exist but it is missing. File will be skipped in download.".format(filename, cont_name, cont_id))
                 continue
 
-            file_uuid = file_obj.get('uuid', '')
-            filepath = os.path.join(data_path, util.path_from_uuid(file_uuid)) if file_uuid else ''
-            if not file_uuid or not os.path.exists(filepath):
+            file_id = file_obj.get('_id', '')
+            filepath = os.path.join(data_path, util.path_from_uuid(file_id)) if file_id else ''
+            if not file_id or not os.path.exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(file_obj['hash']))
             if os.path.exists(filepath): # silently skip missing files
                 targets.append((filepath, cont_name+'/'+cont_id+'/'+file_obj['name'], cont_name, cont_id, file_obj['size']))

@@ -152,7 +152,7 @@ def test_download(data_builder, file_form, as_admin, api_db, legacy_cas_file):
     assert r.ok
 
     # test legacy cas file handling
-    (project_legacy, session_legacy, file_name_legacy) = legacy_cas_file
+    (project_legacy, file_name_legacy) = legacy_cas_file
     r = as_admin.post('/download', json={
         'optional': False,
         'nodes': [
@@ -233,13 +233,13 @@ def test_filelist_download(data_builder, file_form, as_admin, legacy_cas_file):
     assert r.ok
 
     # test legacy cas file handling
-    (_, session2, file_name) = legacy_cas_file
-    r = as_admin.get('/sessions/' + session2 + '/files' + '/' + file_name, params={'ticket': ''})
+    (project, file_name) = legacy_cas_file
+    r = as_admin.get('/projects/' + project + '/files/' + file_name, params={'ticket': ''})
     assert r.ok
 
     ticket = r.json()['ticket']
 
-    r = as_admin.get('/sessions/' + session2 + '/files' + '/' + file_name, params={'ticket': ticket})
+    r = as_admin.get('/projects/' + project + '/files/' + file_name, params={'ticket': ticket})
     assert r.content == 'test\ndata\n'
 
 
