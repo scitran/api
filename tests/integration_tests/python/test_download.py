@@ -6,9 +6,9 @@ import zipfile
 
 def test_download(data_builder, file_form, as_admin, api_db, legacy_cas_file):
     project = data_builder.create_project(label='project1')
-    session = data_builder.create_session(label='session1')
-    session2 = data_builder.create_session(label='session1')
-    session3 = data_builder.create_session(label='session1')
+    session = data_builder.create_session(label='session1', project=project)
+    session2 = data_builder.create_session(label='session1', project=project)
+    session3 = data_builder.create_session(label='session1', project=project)
     acquisition = data_builder.create_acquisition(session=session)
     acquisition2 = data_builder.create_acquisition(session=session2)
     acquisition3 = data_builder.create_acquisition(session=session3)

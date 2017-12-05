@@ -70,7 +70,6 @@ def remove_cas():
         for f in _files:
             f_uuid = str(uuid.uuid4())
             f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-            f['_id'] = f_uuid
             log.info('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
             copy_file(f_path, os.path.join(base, util.path_from_uuid(f_uuid)))
 
@@ -84,6 +83,7 @@ def remove_cas():
                 {'_id': f['_id'], f['prefix'] + '.name': f['fileinfo']['name']},
                 {'$set': update_set}
             )
+
             # Decrease the count of the current hash, so we will know when we can remove the original file
             counter[f['fileinfo']['hash']] -= 1
 
