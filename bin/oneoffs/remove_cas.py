@@ -8,7 +8,6 @@ import uuid
 from collections import Counter
 
 from api import config
-from api import files
 from api import util
 
 
@@ -51,7 +50,7 @@ def remove_cas():
         cursor = config.db.get_collection(collection).find({})
         for document in cursor:
             for f in get_files_by_prefix(document, prefix):
-                u = f.get('uuid', '')
+                u = f.get('_id', '')
                 if u:
                     continue
 
@@ -71,13 +70,13 @@ def remove_cas():
         for f in _files:
             f_uuid = str(uuid.uuid4())
             f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-            f['uuid'] = f_uuid
+            f['_id'] = f_uuid
             log.info('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
             copy_file(f_path, os.path.join(base, util.path_from_uuid(f_uuid)))
 
             update_set = {
                 f['prefix'] + '.$.modified': datetime.datetime.utcnow(),
-                f['prefix'] + '.$.uuid': f_uuid
+                f['prefix'] + '.$._id': f_uuid
             }
             log.info('update file in mongo: %s' % update_set)
             # Update the file with the newly generated UUID
@@ -96,9 +95,9 @@ def remove_cas():
         log.info('Rollback...')
         base = config.get_item('persistent', 'data_path')
         for f in _files:
-            if f.get('uuid', ''):
+            if f.get('_id', ''):
                 hash_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-                uuid_path = util.path_from_uuid(f['uuid'])
+                uuid_path = util.path_from_uuid(f['_id'])
                 if os.path.exists(hash_path) and os.path.exists(uuid_path):
                     os.remove(uuid_path)
                 elif os.path.exists(uuid_path):
@@ -106,7 +105,7 @@ def remove_cas():
                     os.remove(uuid_path)
                 config.db[f['collection']].find_one_and_update(
                     {'_id': f['_id'], f['prefix'] + '.name': f['fileinfo']['name']},
-                    {'$unset': {f['prefix'] + '.$.uuid': ''}}
+                    {'$unset': {f['prefix'] + '.$._id': ''}}
                 )
 
     # Cleanup the empty folders
