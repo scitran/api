@@ -445,7 +445,7 @@ class FileListHandler(ListHandler):
         if hash_ and hash_ != fileinfo['hash']:
             self.abort(409, 'file exists, hash mismatch')
         data_path = config.get_item('persistent', 'data_path')
-        filepath = os.path.join(data_path, util.path_from_uuid(fileinfo.get('_id', '')))
+        filepath = os.path.join(data_path, 'v1', util.path_from_uuid(fileinfo.get('_id', '')))
         if not util.file_exists(filepath):
             filepath = os.path.join(data_path, util.path_from_hash(fileinfo['hash']))
 

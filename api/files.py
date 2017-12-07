@@ -28,7 +28,7 @@ def move_form_file_field_into_storage(file_field):
         raise Exception("Field is not a file field with uuid and path")
 
     base = config.get_item('persistent', 'data_path')
-    move_file(file_field.path, os.path.join(base, util.path_from_uuid(file_field.uuid)))
+    move_file(file_field.path, os.path.join(base, 'v1', util.path_from_uuid(file_field.uuid)))
 
 
 def hash_file_formatted(path, hash_alg=None, buffer_size=65536):

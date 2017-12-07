@@ -46,7 +46,7 @@ class Download(base.RequestHandler):
                         break
                 if filtered:
                     continue
-            filepath = os.path.join(data_path, util.path_from_uuid(f.get('_id', '')))
+            filepath = os.path.join(data_path, 'v1', util.path_from_uuid(f.get('_id', '')))
             if not util.file_exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
             if util.file_exists(filepath): # silently skip missing files
@@ -98,7 +98,7 @@ class Download(base.RequestHandler):
                 continue
 
             file_id = file_obj.get('_id', '')
-            filepath = os.path.join(data_path, util.path_from_uuid(file_id)) if file_id else ''
+            filepath = os.path.join(data_path, 'v1', util.path_from_uuid(file_id)) if file_id else ''
             if not file_id or not os.path.exists(filepath):
                 filepath = os.path.join(data_path, util.path_from_hash(file_obj['hash']))
             if os.path.exists(filepath): # silently skip missing files

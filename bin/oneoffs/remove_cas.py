@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
+import argparse
 import datetime
 import logging
 import os
@@ -10,14 +11,11 @@ from collections import Counter
 from api import config
 from api import util
 
-
-logging.basicConfig(
-    format='%(asctime)s %(name)16.16s %(filename)24.24s %(lineno)5d:%(levelname)4.4s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.DEBUG,
-)
 log = logging.getLogger('remove_cas')
+log.setLevel(logging.INFO)
 
+class MigrationError(Exception):
+    pass
 
 def get_files_by_prefix(document, prefix):
     for key in prefix.split('.'):
@@ -41,7 +39,8 @@ def remove_cas():
                             ('acquisitions', 'files'),
                             ('analyses', 'files'),
                             ('sessions', 'files'),
-                            ('sessions', 'subject.files')]
+                            ('sessions', 'subject.files'),
+                            ('collections', 'files')]
 
     _hashes = []
     _files = []
@@ -56,7 +55,7 @@ def remove_cas():
 
                 _hashes.append(f.get('hash', ''))
                 f_dict = {
-                    '_id': document.get('_id'),
+                    'collection_id': document.get('_id'),
                     'collection': collection,
                     'fileinfo': f,
                     'prefix': prefix
@@ -67,46 +66,59 @@ def remove_cas():
 
     try:
         base = config.get_item('persistent', 'data_path')
-        for f in _files:
-            f_uuid = str(uuid.uuid4())
-            f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-            log.info('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
-            copy_file(f_path, os.path.join(base, util.path_from_uuid(f_uuid)))
+        for i, f in enumerate(_files):
+            try:
+                f_uuid = str(uuid.uuid4())
+                f['_id'] = f_uuid
+                f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
+                log.debug('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
+                copy_file(f_path, os.path.join(base, 'v1', util.path_from_uuid(f_uuid)))
 
-            update_set = {
-                f['prefix'] + '.$.modified': datetime.datetime.utcnow(),
-                f['prefix'] + '.$._id': f_uuid
-            }
-            log.info('update file in mongo: %s' % update_set)
-            # Update the file with the newly generated UUID
-            config.db[f['collection']].find_one_and_update(
-                {'_id': f['_id'], f['prefix'] + '.name': f['fileinfo']['name']},
-                {'$set': update_set}
-            )
+                update_set = {
+                    f['prefix'] + '.$.modified': datetime.datetime.utcnow(),
+                    f['prefix'] + '.$._id': f_uuid
+                }
+                log.debug('update file in mongo: %s' % update_set)
+                # Update the file with the newly generated UUID
+                config.db[f['collection']].find_one_and_update(
+                    {'_id': f['collection_id'], f['prefix'] + '.name': f['fileinfo']['name']},
+                    {'$set': update_set}
+                )
 
-            # Decrease the count of the current hash, so we will know when we can remove the original file
-            counter[f['fileinfo']['hash']] -= 1
+                # Decrease the count of the current hash, so we will know when we can remove the original file
+                counter[f['fileinfo']['hash']] -= 1
 
-            if counter[f['fileinfo']['hash']] == 0:
-                log.info('remove old file: %s' % f_path)
-                os.remove(f_path)
-    except Exception as e:
+                if counter[f['fileinfo']['hash']] == 0:
+                    log.debug('remove old file: %s' % f_path)
+                    os.remove(f_path)
+
+                # Show progress
+                if i % (len(_files) / 10) == 0:
+                    log.info('Processed %s files of total %s files ...' % (i, len(_files)))
+
+            except Exception as e:
+                log.exception(e)
+                raise MigrationError('Wasn\'t able to migrate the \'%s\' '
+                                     'file in the \'%s\' collection (collection id: %s)' %
+                                     (f['fileinfo']['name'], f['collection'], str(f['collection_id'])), e)
+    except MigrationError as e:
         log.exception(e)
         log.info('Rollback...')
         base = config.get_item('persistent', 'data_path')
         for f in _files:
             if f.get('_id', ''):
                 hash_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-                uuid_path = util.path_from_uuid(f['_id'])
+                uuid_path = os.path.join(base, 'v1', util.path_from_uuid(f['_id']))
                 if os.path.exists(hash_path) and os.path.exists(uuid_path):
                     os.remove(uuid_path)
                 elif os.path.exists(uuid_path):
                     copy_file(uuid_path, hash_path)
                     os.remove(uuid_path)
                 config.db[f['collection']].find_one_and_update(
-                    {'_id': f['_id'], f['prefix'] + '.name': f['fileinfo']['name']},
+                    {'_id': f['collection_id'], f['prefix'] + '.name': f['fileinfo']['name']},
                     {'$unset': {f['prefix'] + '.$._id': ''}}
                 )
+        exit(1)
 
     # Cleanup the empty folders
     log.info('Cleanup empty folders')

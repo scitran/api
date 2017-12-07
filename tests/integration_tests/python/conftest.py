@@ -228,8 +228,9 @@ def legacy_cas_file(as_admin, api_db, data_builder, randstr, file_form):
     file_hash = 'v0-sha384-03a9df0a5e6e21f5d25aacbce76d8a5d9f8de14f6654c31ab2daed961cfbfb236b1708063350856f752a5a094fb64321'
     file_path = os.path.join(data_path, util.path_from_hash(file_hash))
     target_dir = os.path.dirname(file_path)
-    os.makedirs(target_dir)
-    shutil.move(os.path.join(data_path, util.path_from_uuid(file_id)), file_path)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    shutil.move(os.path.join(data_path, 'v1', util.path_from_uuid(file_id)), file_path)
 
     yield (project, file_name)
 
