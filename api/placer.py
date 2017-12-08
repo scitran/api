@@ -8,11 +8,8 @@ import shutil
 import uuid
 import zipfile
 
-from . import config
-from . import files
+from . import config, files, util, validators
 from . import tempdir as tempfile
-from . import util
-from . import validators
 from .dao.containerstorage import SessionStorage, AcquisitionStorage
 from .dao import containerutil, hierarchy
 from .jobs import rules
@@ -704,7 +701,8 @@ class GearPlacer(Placer):
             proper_hash = file_attrs.get('hash')[3:].replace('-', ':')
             self.metadata.update({'exchange': {'rootfs-hash': proper_hash,
                                                'git-commit': 'local',
-                                               'rootfs-url': 'INVALID'}})
+                                               'rootfs-url': 'INVALID',
+                                               'rootfs-id': file_attrs['_id']}})
         # self.metadata['hash'] = file_attrs.get('hash')
         self.save_file(field)
         self.saved.append(file_attrs)

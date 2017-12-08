@@ -12,7 +12,7 @@ import pymongo
 import pytest
 import requests
 
-from api import util
+from api import files, util
 
 # load required envvars w/ the same name
 SCITRAN_CORE_DRONE_SECRET = os.environ['SCITRAN_CORE_DRONE_SECRET']
@@ -230,7 +230,7 @@ def legacy_cas_file(as_admin, api_db, data_builder, randstr, file_form):
     target_dir = os.path.dirname(file_path)
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
-    shutil.move(os.path.join(data_path, 'v1', util.path_from_uuid(file_id)), file_path)
+    shutil.move(files.get_file_abs_path(file_id), file_path)
 
     yield (project, file_name)
 

@@ -1,3 +1,4 @@
+import os
 import bson
 import pytz
 import os.path
@@ -7,11 +8,9 @@ import cStringIO
 
 from .web import base
 from .web.request import AccessType
-from . import config
-from . import util
-from . import validators
-import os
+from . import config, files, util, validators
 from .dao.containerutil import pluralize
+
 log = config.log
 
 BYTES_IN_MEGABYTE = float(1<<20)
@@ -46,14 +45,14 @@ class Download(base.RequestHandler):
                         break
                 if filtered:
                     continue
-            filepath = os.path.join(data_path, 'v1', util.path_from_uuid(f.get('_id', '')))
-            if not util.file_exists(filepath):
-                filepath = os.path.join(data_path, util.path_from_hash(f['hash']))
-            if util.file_exists(filepath): # silently skip missing files
+            file_path = files.get_file_abs_path(f.get('_id', ''))
+            if not util.file_exists(file_path):
+                file_path = os.path.join(data_path, util.path_from_hash(f['hash']))
+            if util.file_exists(file_path):  # silently skip missing files
                 if cont_name == 'analyses':
-                    targets.append((filepath, prefix + '/' + ('input' if f.get('input') else 'output') + '/' + f['name'], cont_name, str(container.get('_id')),f['size']))
+                    targets.append((file_path, prefix + '/' + ('input' if f.get('input') else 'output') + '/' + f['name'], cont_name, str(container.get('_id')), f['size']))
                 else:
-                    targets.append((filepath, prefix + '/' + f['name'], cont_name, str(container.get('_id')),f['size']))
+                    targets.append((file_path, prefix + '/' + f['name'], cont_name, str(container.get('_id')), f['size']))
                 total_size += f['size']
                 total_cnt += 1
             else:
@@ -98,11 +97,11 @@ class Download(base.RequestHandler):
                 continue
 
             file_id = file_obj.get('_id', '')
-            filepath = os.path.join(data_path, 'v1', util.path_from_uuid(file_id)) if file_id else ''
-            if not file_id or not os.path.exists(filepath):
-                filepath = os.path.join(data_path, util.path_from_hash(file_obj['hash']))
-            if os.path.exists(filepath): # silently skip missing files
-                targets.append((filepath, cont_name+'/'+cont_id+'/'+file_obj['name'], cont_name, cont_id, file_obj['size']))
+            file_path = files.get_file_abs_path(file_id) if file_id else ''
+            if not file_id or not os.path.exists(file_path):
+                file_path = os.path.join(data_path, util.path_from_hash(file_obj['hash']))
+            if os.path.exists(file_path):  # silently skip missing files
+                targets.append((file_path, cont_name+'/'+cont_id+'/'+file_obj['name'], cont_name, cont_id, file_obj['size']))
                 total_size += file_obj['size']
                 file_cnt += 1
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import argparse
 import datetime
 import logging
 import os
@@ -8,8 +7,7 @@ import uuid
 
 from collections import Counter
 
-from api import config
-from api import util
+from api import config, files, util
 
 log = logging.getLogger('remove_cas')
 log.setLevel(logging.INFO)
@@ -72,7 +70,7 @@ def remove_cas():
                 f['_id'] = f_uuid
                 f_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
                 log.debug('copy file %s to %s' % (f_path, util.path_from_uuid(f_uuid)))
-                copy_file(f_path, os.path.join(base, 'v1', util.path_from_uuid(f_uuid)))
+                copy_file(f_path, files.get_file_abs_path(f_uuid))
 
                 update_set = {
                     f['prefix'] + '.$.modified': datetime.datetime.utcnow(),
@@ -108,7 +106,7 @@ def remove_cas():
         for f in _files:
             if f.get('_id', ''):
                 hash_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
-                uuid_path = os.path.join(base, 'v1', util.path_from_uuid(f['_id']))
+                uuid_path = files.get_file_abs_path(f['_id'])
                 if os.path.exists(hash_path) and os.path.exists(uuid_path):
                     os.remove(uuid_path)
                 elif os.path.exists(uuid_path):
