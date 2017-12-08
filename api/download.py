@@ -56,7 +56,7 @@ class Download(base.RequestHandler):
                 total_size += f['size']
                 total_cnt += 1
             else:
-                log.warn("Expected {} to exist but it is missing. File will be skipped in download.".format(filepath))
+                log.warn("Expected {} to exist but it is missing. File will be skipped in download.".format(file_path))
         return total_size, total_cnt
 
     def _bulk_preflight_archivestream(self, file_refs):
