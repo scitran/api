@@ -28,6 +28,14 @@ def copy_file(path, target_path):
     shutil.copy(path, target_path)
 
 
+def cleanup_empty_folders():
+    # Cleanup the empty folders
+    log.info('Cleanup empty folders')
+    for _dirpath, _, _ in os.walk(config.get_item('persistent', 'data_path'), topdown=False):
+        if not (os.listdir(_dirpath) or config.get_item('persistent', 'data_path') == _dirpath):
+            os.rmdir(_dirpath)
+
+
 def remove_cas():
     """
     Remove CAS logic, generate UUID for the files and rename them on the filesystem, make a copy of the file if more
@@ -103,7 +111,7 @@ def remove_cas():
         log.exception(e)
         log.info('Rollback...')
         base = config.get_item('persistent', 'data_path')
-        for f in _files:
+        for i, f in enumerate(_files):
             if f.get('_id', ''):
                 hash_path = os.path.join(base, util.path_from_hash(f['fileinfo']['hash']))
                 uuid_path = files.get_file_abs_path(f['_id'])
@@ -116,13 +124,13 @@ def remove_cas():
                     {'_id': f['collection_id'], f['prefix'] + '.name': f['fileinfo']['name']},
                     {'$unset': {f['prefix'] + '.$._id': ''}}
                 )
+            # Show progress
+            if i % (len(_files) / 10) == 0:
+                log.info('Processed %s files of total %s files ...' % (i, len(_files)))
+        cleanup_empty_folders()
         exit(1)
 
-    # Cleanup the empty folders
-    log.info('Cleanup empty folders')
-    for _dirpath, _, _ in os.walk(config.get_item('persistent', 'data_path'), topdown=False):
-        if not (os.listdir(_dirpath) or config.get_item('persistent', 'data_path') == _dirpath):
-            os.rmdir(_dirpath)
+    cleanup_empty_folders()
 
 
 if __name__ == '__main__':

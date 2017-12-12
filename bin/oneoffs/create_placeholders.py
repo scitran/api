@@ -23,7 +23,8 @@ def create_placeholders():
                             ('acquisitions', 'files'),
                             ('analyses', 'files'),
                             ('sessions', 'files'),
-                            ('sessions', 'subject.files')]
+                            ('sessions', 'subject.files'),
+                            ('collections', 'files')]
 
     _files = []
 
