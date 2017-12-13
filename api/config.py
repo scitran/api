@@ -64,16 +64,29 @@ __last_update = datetime.datetime.utcfromtimestamp(0)
 
 for outer_key, scoped_config in __config.iteritems():
     for inner_key in scoped_config:
-        key = 'SCITRAN_' + outer_key.upper() + '_' + inner_key.upper()
-        if key in os.environ:
-            value = os.environ[key]
-            if value.lower() == 'true':
-                value = True
-            elif value.lower() == 'false':
-                value = False
-            elif value.lower() == 'none':
-                value = None
-            __config[outer_key][inner_key] = value
+        if type(scoped_config[inner_key]) is dict:
+            for inner_key_field, inner_key_value in scoped_config[inner_key].iteritems():
+                key = 'SCITRAN_' + outer_key.upper() + '_' + inner_key.upper() + '_' + inner_key_field.upper()
+                if key in os.environ:
+                    value = os.environ[key]
+                    if value.lower() == 'true':
+                        value = True
+                    elif value.lower() == 'false':
+                        value = False
+                    elif value.lower() == 'none':
+                        value = None
+                    __config[outer_key][inner_key][inner_key_field] = value
+        else:    
+            key = 'SCITRAN_' + outer_key.upper() + '_' + inner_key.upper()
+            if key in os.environ:
+                value = os.environ[key]
+                if value.lower() == 'true':
+                    value = True
+                elif value.lower() == 'false':
+                    value = False
+                elif value.lower() == 'none':
+                    value = None
+                __config[outer_key][inner_key] = value
 
 if not os.path.exists(__config['persistent']['data_path']):
     os.makedirs(__config['persistent']['data_path'])
