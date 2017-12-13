@@ -3,7 +3,6 @@ API request handlers for the jobs module
 """
 import bson
 import copy
-import os
 import StringIO
 from jsonschema import ValidationError
 from urlparse import urlparse
