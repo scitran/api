@@ -134,7 +134,7 @@ if args.secret:
 # TODO: extend this to support oauth tokens
 
 try:
-    users(args.json, args.url, http_headers, args.insecure)
+    users(args.json, args.url.strip('/')+ '/api', http_headers, args.insecure)
 except requests.HTTPError as ex:
     log.error(ex)
     log.error("request_body={0}".format(ex.response.request.body))
