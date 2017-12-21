@@ -19,11 +19,12 @@ from .. import validators
 from ..auth import containerauth, always_ok, check_phi
 from ..dao import containerstorage, noop
 from ..dao.basecontainerstorage import ContainerStorage
-from ..dao.containerutil import singularize
+from ..dao.containerutil import pluralize, singularize
 from ..web import base
 from ..web.errors import APIStorageException
 from ..web.request import log_access, AccessType
 from .listhandler import FileListHandler
+from .projectsettings import get_phi_fields, check_phi_enabled
 
 
 log = config.log
@@ -63,13 +64,12 @@ class AnalysesHandler(RefererHandler):
     payload_schema_file = 'analysis.json'
     update_payload_schema_file = 'analysis-update.json'
 
-    # Hard-coded PHI fields, will be changed to user set PHI fields
-    PHI_FIELDS = {'info': 0, 'tags': 0, 'files.info':0}
 
     def __init__(self, request=None, response=None):
         super(AnalysesHandler, self).__init__(request, response)
         self.phi = False
 
+    # @phi_payload(method="Analysis POST")
     def post(self, cont_name, cid):
         """
         Default behavior:
@@ -110,6 +110,7 @@ class AnalysesHandler(RefererHandler):
         else:
             self.abort(500, 'Analysis not added for container {} {}'.format(cont_name, cid))
 
+    # @phi_payload(method="PUT")
     @validators.verify_payload_exists
     def put(self, cont_name, **kwargs):
         cid = kwargs.pop('cid')
@@ -136,8 +137,12 @@ class AnalysesHandler(RefererHandler):
         _id = kwargs.get('_id')
         analysis = self.storage.get_container(_id)
         parent = self.storage.get_parent(analysis['parent']['type'], analysis['parent']['id'])
-        projection = self.PHI_FIELDS.copy()
-        if check_phi(self.uid, parent)or self.superuser_request:
+        projection = get_phi_fields(pluralize(analysis['parent']['type']), analysis['parent']['id'])
+        self.phi = False
+        if not check_phi_enabled(pluralize(analysis['parent']['type']), analysis['parent']['id']):
+            self.phi = False
+            projection = None
+        elif check_phi(self.uid, parent) or self.superuser_request:
             self.phi = True
             projection = None
         permchecker = self.get_permchecker(parent)
@@ -147,6 +152,8 @@ class AnalysesHandler(RefererHandler):
         if self.is_true('inflate_job'):
             self.storage.inflate_job_info(analysis)
 
+        if not check_phi_enabled(pluralize(analysis['parent']['type']), analysis['parent']['id']):
+            self.phi = True
         self.log_user_access(AccessType.view_container, cont_name=analysis['parent']['type'], cont_id=analysis['parent']['id'])
         return analysis
 

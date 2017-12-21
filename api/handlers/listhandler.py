@@ -17,8 +17,11 @@ from ..dao import noop
 from ..dao import liststorage
 from ..dao import containerutil
 from ..web.errors import APIStorageException
+from ..dao.containerstorage import ProjectStorage
+from ..handlers.projectsettings import get_project_id, check_phi_enabled
 from ..web.request import log_access, AccessType
 
+log = config.log
 
 def initialize_list_configurations():
     """
@@ -67,7 +70,7 @@ def initialize_list_configurations():
                 'use_object_id': False,
                 'get_full_container': True,
                 'storage_schema_file': 'permission.json',
-                'input_schema_file': 'permission.json'
+                'input_schema_file': 'group-permission.json'
             },
             'tags': {
                 'storage': liststorage.StringListStorage,
@@ -121,8 +124,15 @@ class ListHandler(base.RequestHandler):
     def get(self, cont_name, list_name, **kwargs):
         _id = kwargs.pop('cid')
         permchecker, storage, _, _, keycheck = self._initialize_request(cont_name, list_name, _id, query_params=kwargs)
+        project_storage = ProjectStorage()
         try:
-            result = keycheck(permchecker(storage.exec_op))('GET', _id, query_params=kwargs)
+            # Check to see if list_name in phi lists of site level or project
+            if list_name in ["tags", "notes"]:
+                phi = list_name in (project_storage.get_phi_fields("site")["fields"] + project_storage.get_phi_fields(get_project_id(cont_name,_id))["fields"]) and check_phi_enabled(cont_name, _id)
+                log.debug("Phi: {}".format(phi))
+                result = keycheck(permchecker(storage.exec_op))('GET', _id, query_params=kwargs, phi=phi)
+            else:
+                result = keycheck(permchecker(storage.exec_op))('GET', _id, query_params=kwargs)
         except APIStorageException as e:
             self.abort(400, e.message)
 
@@ -188,7 +198,7 @@ class ListHandler(base.RequestHandler):
             query_params = None
         container = storage.get_container(_id, query_params)
         if container is not None:
-            if self.superuser_request or self.user_is_admin:
+            if self.superuser_request:
                 permchecker = always_ok
             elif self.public_request:
                 permchecker = listauth.public_request(self, container)
@@ -213,6 +223,8 @@ class PermissionsListHandler(ListHandler):
         _id = kwargs.get('cid')
         result = super(PermissionsListHandler, self).post(cont_name, list_name, **kwargs)
         payload = self.request.json_body
+        if cont_name == "groups" and not payload.get("phi-access"):
+            payload["phi-access"] = True
 
         if cont_name == 'groups' and self.request.params.get('propagate') =='true':
             self._propagate_permissions(cont_name, _id, query={'permissions._id' : payload['_id']}, update={'$set': {'permissions.$.access': payload['access'], 'permissions.$.phi-access': payload['phi-access']}})
@@ -319,7 +331,6 @@ class TagsListHandler(ListHandler):
     TagsListHandler overrides put, delete methods of ListHandler to propagate changes to group tags
     If a tag is renamed or deleted at the group level, project, session and acquisition tags will also be renamed/deleted
     """
-
     def put(self, cont_name, list_name, **kwargs):
         _id = kwargs.get('cid')
         result = super(TagsListHandler, self).put(cont_name, list_name, **kwargs)

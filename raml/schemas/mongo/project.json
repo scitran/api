@@ -16,6 +16,7 @@
         "tags": {},
         "info": {},
         "description": {},
+        "phi": {},
 
         "group": {"type": "string"}
     },

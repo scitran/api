@@ -118,6 +118,10 @@ def test_collections_phi(data_builder, as_admin, as_user, log_db, as_root,file_f
     session = data_builder.create_session()
     acquisition = data_builder.create_acquisition()
 
+    # Set sitewide phi fields
+    r = as_admin.post("/projects/site/phi", json={"fields":["files.info"]})
+    assert r.ok
+
     # create collection
     r = as_admin.post('/collections', json={
         'label': 'SciTran/Testing',
@@ -207,4 +211,7 @@ def test_collections_phi(data_builder, as_admin, as_user, log_db, as_root,file_f
 
 
     r = as_admin.delete('/collections/'+ collection)
+    assert r.ok
+    # Unset sitewide phi fields
+    r = as_admin.put("/projects/site/phi", json={"fields":[]})
     assert r.ok

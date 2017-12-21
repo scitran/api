@@ -9,13 +9,14 @@ from .handlers.dataexplorerhandler  import DataExplorerHandler
 from .handlers.devicehandler        import DeviceHandler
 from .handlers.grouphandler         import GroupHandler
 from .handlers.listhandler          import FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
+from .handlers.projectsettings      import ProjectSettings, RulesHandler, RuleHandler
 from .handlers.refererhandler       import AnalysesHandler
 from .handlers.reporthandler        import ReportHandler
 from .handlers.resolvehandler       import ResolveHandler
 from .handlers.roothandler          import RootHandler
 from .handlers.schemahandler        import SchemaHandler
 from .handlers.userhandler          import UserHandler
-from .jobs.handlers                 import BatchHandler, JobsHandler, JobHandler, GearsHandler, GearHandler, RulesHandler, RuleHandler
+from .jobs.handlers                 import BatchHandler, JobsHandler, JobHandler, GearsHandler, GearHandler
 from .upload                        import Upload
 from .web.base                      import RequestHandler
 from . import config
@@ -201,8 +202,10 @@ endpoints = [
         prefix('/projects', [
             route('/groups',               ContainerHandler, h='get_groups_with_project',      m=['GET']),
             route('/recalc',               ContainerHandler, h='calculate_project_compliance', m=['POST']),
-            route('/<cid:{cid}>/template', ContainerHandler, h='set_project_template',         m=['POST']),
-            route('/<cid:{cid}>/template', ContainerHandler, h='delete_project_template',      m=['DELETE']),
+            route('/<cid:{cid}|site>/phi',     ProjectSettings,  h='get_phi',                      m=['GET']),
+            route('/<cid:{cid}|site>/phi',     ProjectSettings,  h='update_phi',                   m=['POST', 'PUT']),
+            route('/<cid:{cid}>/template', ProjectSettings,  h='set_project_template',         m=['POST']),
+            route('/<cid:{cid}>/template', ProjectSettings,  h='delete_project_template',      m=['DELETE']),
             route('/<cid:{cid}>/recalc',   ContainerHandler, h='calculate_project_compliance', m=['POST']),
             route('/<cid:{cid}>/rules',    RulesHandler,                                       m=['GET', 'POST']),
             route('/<cid:{cid}>/rules/<rid:{cid}>',  RuleHandler,                              m=['GET', 'PUT', 'DELETE']),

@@ -15,6 +15,7 @@ from ..types import Origin
 from ..web import base
 from ..web.errors import APIStorageException
 from ..web.request import log_access, AccessType
+from .projectsettings import phi_payload, get_phi_fields, check_phi_enabled
 
 log = config.log
 
@@ -42,10 +43,6 @@ class ContainerHandler(base.RequestHandler):
         'sessions': True,
         'acquisitions': True
     }
-
-    # Hard-coded PHI fields, will be changed to user set PHI fields
-    PHI_FIELDS = {'info': 0, 'subject.firstname':0, 'subject.lastname': 0, 'subject.sex': 0,
-                  'subject.age': 0, 'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0, 'tags': 0, 'files.info':0}
 
     # This configurations are used by the ContainerHandler class to load the storage,
     # the permissions checker and the json schema validators used to handle a request.
@@ -92,14 +89,16 @@ class ContainerHandler(base.RequestHandler):
     @log_access(AccessType.view_container)
     def get(self, cont_name, **kwargs):
         _id = kwargs.get('cid')
-        projection = self.PHI_FIELDS.copy()
-        log.debug(self.PHI_FIELDS)
-        log.debug(projection)
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
+        projection = get_phi_fields(cont_name, _id)
         container = self._get_container(_id)
         log.debug(container)
-        if check_phi(self.uid, container) or self.superuser_request:
+        self.phi = False
+        if not check_phi_enabled(cont_name, _id):
+            self.phi = False
+            projection = None
+        elif check_phi(self.uid, container) or self.superuser_request:
             log.debug("PHI")
             log.debug(self.superuser_request)
             self.phi = True
@@ -111,6 +110,8 @@ class ContainerHandler(base.RequestHandler):
             result = permchecker(self.storage.exec_op)('GET', _id, projection=projection, phi=self.phi)
         except APIStorageException as e:
             self.abort(400, e.message)
+        if not check_phi_enabled(cont_name, _id):
+            self.phi = True
         if result is None:
             self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, _id))
         if not self.superuser_request and not self.is_true('join_avatars'):
@@ -123,7 +124,7 @@ class ContainerHandler(base.RequestHandler):
                 fileinfo['path'] = util.path_from_hash(fileinfo['hash'])
 
         inflate_job_info = cont_name == 'sessions'
-        result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info, self.PHI_FIELDS.copy())
+        result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info, projection)
         return self.handle_origin(result)
 
     def handle_origin(self, result):
@@ -328,9 +329,9 @@ class ContainerHandler(base.RequestHandler):
         else:
             phi = False
             if projection == None:
-                projection = self.PHI_FIELDS.copy()
+                projection = get_phi_fields(cont_name, "site")
             else:
-                projection.update(self.PHI_FIELDS)
+                projection.update(get_phi_fields(cont_name, "site"))
         # select which permission filter will be applied to the list of results.
         if self.superuser_request:
             permchecker = always_ok
@@ -408,8 +409,7 @@ class ContainerHandler(base.RequestHandler):
         if self.is_true('phi'):
             phi = True
         else:
-            projection = self.PHI_FIELDS.copy()
-            
+            projection = get_phi_fields(cont_name, "site")
         # select which permission filter will be applied to the list of results.
         if self.superuser_request or self.user_is_admin:
             permchecker = always_ok
@@ -433,6 +433,7 @@ class ContainerHandler(base.RequestHandler):
         self._filter_all_permissions(results, uid)
         return results
 
+    @phi_payload(method="POST")
     def post(self, cont_name):
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
@@ -472,6 +473,7 @@ class ContainerHandler(base.RequestHandler):
         else:
             self.abort(404, 'Element not added in container {}'.format(self.storage.cont_name))
 
+    @phi_payload(method="PUT")
     @validators.verify_payload_exists
     def put(self, cont_name, **kwargs):
         _id = kwargs.pop('cid')
@@ -585,35 +587,6 @@ class ContainerHandler(base.RequestHandler):
         group_ids = list(set((p['group'] for p in self.get_all('projects'))))
         return list(config.db.groups.find({'_id': {'$in': group_ids}}, ['label']))
 
-    def set_project_template(self, **kwargs):
-        project_id = kwargs.pop('cid')
-        self.config = self.container_handler_configurations['projects']
-        self.storage = self.config['storage']
-        container = self._get_container(project_id)
-
-        template = self.request.json_body
-        validators.validate_data(template, 'project-template.json', 'input', 'POST')
-        payload = {'template': template}
-        payload['modified'] = datetime.datetime.utcnow()
-
-        permchecker = self._get_permchecker(container)
-        result = permchecker(self.storage.exec_op)('PUT', _id=project_id, payload=payload)
-        return {'modified': result.modified_count}
-
-    def delete_project_template(self, **kwargs):
-        project_id = kwargs.pop('cid')
-        self.config = self.container_handler_configurations['projects']
-        self.storage = self.config['storage']
-        container = self._get_container(project_id)
-
-        payload = {'modified': datetime.datetime.utcnow()}
-        unset_payload = {'template': ''}
-
-        permchecker = self._get_permchecker(container)
-        result = permchecker(self.storage.exec_op)('PUT', _id=project_id, payload=payload, unset_payload=unset_payload)
-        return {'modified': result.modified_count}
-
-
     def calculate_project_compliance(self, **kwargs):
         project_id = kwargs.pop('cid', None)
         log.debug("project_id is {}".format(project_id))
@@ -659,6 +632,7 @@ class ContainerHandler(base.RequestHandler):
 
     def _get_container(self, _id, projection=None, get_children=False):
         try:
+            log.debug(self.storage)
             container = self.storage.get_container(_id, projection=projection, get_children=get_children)
         except APIStorageException as e:
             self.abort(400, e.message)

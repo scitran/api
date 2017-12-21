@@ -1,0 +1,6 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Custom-PHI",
+    "type": "object",
+    "allOf": [{"$ref": "../definitions/custom-phi.json#/definitions"}]
+}

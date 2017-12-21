@@ -6,7 +6,7 @@ Purpose of this module is to define all the permissions checker decorators for t
 import sys
 
 from .. import config
-from . import _get_access, INTEGER_PERMISSIONS
+from . import _get_access, check_phi, INTEGER_PERMISSIONS
 
 log = config.log
 
@@ -19,7 +19,8 @@ def default_sublist(handler, container):
     """
     access = _get_access(handler.uid, container)
     def g(exec_op):
-        def f(method, _id, query_params=None, payload=None, exclude_params=None):
+        def f(method, _id, query_params=None, payload=None, exclude_params=None, phi=False):
+            log.debug(method)
             if method == 'GET' and container.get('public', False):
                 min_access = -1
             elif method == 'GET':
@@ -28,7 +29,10 @@ def default_sublist(handler, container):
                 min_access = INTEGER_PERMISSIONS['rw']
             else:
                 min_access = sys.maxint
-
+            if method == 'GET':
+                log.debug(container)
+                if (not check_phi(handler.uid, container)) and phi:
+                    handler.abort(403, "User not authorized to view PHI fields on the container.")
             if access >= min_access:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             else:
@@ -58,7 +62,11 @@ def group_tags_sublist(handler, container):
     """
     access = _get_access(handler.uid, container)
     def g(exec_op):
-        def f(method, _id, query_params = None, payload = None, exclude_params=None):
+        def f(method, _id, query_params = None, payload = None, exclude_params=None, phi=False):
+            if method == 'GET':
+                log.debug(container)
+                if (not check_phi(handler.uid, container)) and phi:
+                    handler.abort(403, "User not authorized to view PHI fields on the container.")
             if method == 'GET'  and access >= INTEGER_PERMISSIONS['ro']:
                 return exec_op(method, _id, query_params, payload, exclude_params)
             elif access >= INTEGER_PERMISSIONS['rw']:
@@ -90,17 +98,24 @@ def notes_sublist(handler, container):
     """
     access = _get_access(handler.uid, container)
     def g(exec_op):
-        def f(method, _id, query_params = None, payload = None, exclude_params=None):
+        def f(method, _id, query_params = None, payload = None, exclude_params=None, phi=False):
             if access >= INTEGER_PERMISSIONS['admin']:
                 pass
             elif method == 'POST' and access >= INTEGER_PERMISSIONS['rw'] and payload['user'] == handler.uid:
                 pass
             elif method == 'GET' and (access >= INTEGER_PERMISSIONS['ro'] or container.get('public')):
-                pass
+                if not check_phi(handler.uid, container) and phi:
+                    handler.abort(403, "User not authorized to view PHI fields on the container.")
             elif method in ['GET', 'DELETE', 'PUT'] and container['notes'][0]['user'] == handler.uid:
                 pass
             else:
                 handler.abort(403, 'user not authorized to perform a {} operation on the list'.format(method))
+
+            # Check phi access if GET and notes is considered phi by the project or site
+            if method == 'GET':
+                log.debug(container)
+                if (not check_phi(handler.uid, container)) and phi:
+                    handler.abort(403, "User not authorized to view PHI fields on the container.")
             return exec_op(method, _id, query_params, payload, exclude_params)
         return f
     return g

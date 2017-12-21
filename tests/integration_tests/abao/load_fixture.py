@@ -347,7 +347,8 @@ def main():
     r = as_root.post('/projects', json={
         'group': 'test-group',
         'label': 'Project with template',
-        'public': False
+        'public': False,
+        'phi': True
     })
     assert r.ok
     st_project = r.json()

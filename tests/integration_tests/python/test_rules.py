@@ -176,7 +176,8 @@ def test_site_rules_copied_to_new_projects(randstr, data_builder, file_form, as_
     group = data_builder.create_group()
     r = as_admin.post('/projects', json={
         'group': group,
-        'label': 'project_1'
+        'label': 'project_1',
+        'phi' : True
     })
     assert r.ok
     project_id = r.json()['_id']

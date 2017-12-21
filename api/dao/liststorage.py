@@ -46,7 +46,7 @@ class ListStorage(object):
             projection = {self.list_name + '.$': 1, 'permissions': 1, 'public': 1}
         return self.dbc.find_one(query, projection)
 
-    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None):
+    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None, phi=False): # pylint: disable=unused-argument
         """
         Generic method to exec an operation.
         The request is dispatched to the corresponding private methods.
@@ -220,7 +220,7 @@ class StringListStorage(ListStorage):
         projection = {self.list_name : 1, 'permissions': 1, 'public': 1}
         return self.dbc.find_one(query, projection)
 
-    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None):
+    def exec_op(self, action, _id=None, query_params=None, payload=None, exclude_params=None, phi=False): # pylint: disable=unused-argument
         """
         This method "flattens" the query parameter and the payload to handle string lists
         """

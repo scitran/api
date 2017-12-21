@@ -213,7 +213,7 @@ def test_add_and_remove_user_group_permission(data_builder, as_admin):
     assert r.ok
 
     # Add project without default group perms
-    r = as_admin.post('/projects', params={'inherit': 'false'}, json={'label': 'project2', 'group': group})
+    r = as_admin.post('/projects', params={'inherit': 'false'}, json={'label': 'project2', 'group': group, 'phi' : True})
     assert r.ok
     project2 = r.json()['_id']
 

@@ -288,7 +288,7 @@ def test_usage_report(data_builder, file_form, as_user, as_admin):
 
     # Test if empty project breaks Usage report
     group = data_builder.create_group()
-    r = as_admin.post('/projects', params={'inherit': 'false'}, json={'label': 'project2', 'group': group})
+    r = as_admin.post('/projects', params={'inherit': 'false'}, json={'label': 'project2', 'group': group, 'phi' : True})
     assert r.ok
     project = r.json()['_id']
 

@@ -42,6 +42,7 @@ ACCESS_LOG_FIELDS = [
     "context.analysis.label",
     "context.collection.id",
     "context.collection.label",
+    "context.new_phi_list",
     "context.ticket_id",
     "request_method",
     "request_path"
@@ -879,7 +880,7 @@ class UsageReport(Report):
             # For the project and each session and acquisition, create a list of analysis ids
             parent_ids = session_ids + acquisition_ids + [p['_id']]
             analysis_ids = [an['_id'] for an in config.db.analyses.find({'parent.id': {'$in': parent_ids}})]
-            
+
             report_obj['session_count'] = len(session_ids)
 
             # for each type of container below it will have a slightly modified match query

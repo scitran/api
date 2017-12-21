@@ -14,7 +14,8 @@ AccessType = util.Enum('AccessType', {
     'delete_file':      'delete_file',
     'delete_analysis':  'delete_analysis',
     'user_login':       'user_login',
-    'user_logout':      'user_logout'
+    'user_logout':      'user_logout',
+    'modify_phi_list':  'modify_phi_list',
 })
 AccessTypeList = [type_name for type_name, member in AccessType.__members__.items()]
 

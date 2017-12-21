@@ -395,7 +395,7 @@ class RequestHandler(webapp2.RequestHandler):
             'timestamp':        datetime.datetime.utcnow()
         }
 
-        if access_type not in [AccessType.user_login, AccessType.user_logout]:
+        if access_type not in [AccessType.user_login, AccessType.user_logout, AccessType.modify_phi_list]:
 
             if cont_name is None or cont_id is None:
                 raise Exception('Container information not available.')
@@ -413,6 +413,8 @@ class RequestHandler(webapp2.RequestHandler):
                     if k == 'subject':
                         context[k]['label'] = v.get('code')
             log_map['context'] = context
+        elif access_type == AccessType.modify_phi_list:
+            log_map['context'] = {'project': {"id" : cont_id}, 'new_phi_list': self.request.json_body["fields"]}
 
         if access_type is AccessType.download_file and self.get_param('ticket') and not multifile:
             # If this is a ticket download, log only once per ticket

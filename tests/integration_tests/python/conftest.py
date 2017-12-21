@@ -103,7 +103,7 @@ def default_payload():
     return attrdict.AttrDict({
         'user': {'firstname': 'test', 'lastname': 'user'},
         'group': {},
-        'project': {'public': True},
+        'project': {'public': True, 'phi':True},
         'session': {'public': True},
         'acquisition': {'public': True},
         'collection': {},
@@ -256,7 +256,7 @@ class DataBuilder(object):
 
         # add missing label fields using randstr
         # such fields are: [project.label, session.label, acquisition.label, group.label]
-        if resource in ['project', 'group', 'groups', 'session', 'acquisition'] and 'label' not in payload:
+        if resource in ['project', 'group', 'session', 'acquisition'] and 'label' not in payload:
             payload['label'] = self.randstr()
 
         # add missing parent container when creating child container

@@ -96,6 +96,16 @@ class ProjectStorage(ContainerStorage):
                         changed_sessions.append(s['_id'])
         return changed_sessions
 
+    def get_phi_fields(self, cid, projection=None):
+        log.debug(cid)
+        phi = config.db.project_phi.find_one({"project_id": str(cid)}, projection=projection)
+        if phi == None:
+            return {"fields":[]}
+        else:
+            return phi
+
+    def add_phi_fields(self, cid, update):
+        return config.db.project_phi.update({"project_id": cid}, {"$set": update}, upsert=True)
 
 class SessionStorage(ContainerStorage):
 

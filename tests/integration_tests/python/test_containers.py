@@ -262,11 +262,35 @@ def test_get_all_for_user(as_admin, as_public):
     r = as_admin.get('/users/' + user_id + '/sessions')
     assert r.ok
 
-def test_phi_access(as_user, as_admin, as_root, data_builder, log_db):
+def test_phi_access_get(as_user, as_admin, as_root, data_builder, log_db):
     group = data_builder.create_group()
-    project = data_builder.create_project()
+    project = data_builder.create_project(phi=True)
     session = data_builder.create_session()
-    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName", "code":"Subject_Code"}}, params={'replace_metadata':True})
+
+    project_2 = data_builder.create_project(phi=False)
+    age = 4
+    session_no_phi = data_builder.create_session(project=project_2, info={"age": age}, subject={"firstname":"FirstName", "code":"Subject_Code", "lastname": "LastName"})
+    r = as_root.get('/sessions/'+ session_no_phi)
+    assert r.ok
+    assert r.json()["info"]["age"]
+
+    # Set site wide phi fields
+    r = as_admin.post('/projects/site/phi', json={'fields': [ 'info', 'subject.firstname', 'subject.lastname', 'subject.sex',
+                                                              'subject.age', 'subject.race', 'subject.ethnicity', 'subject.info',
+                                                              'tags', 'files.info']})
+    r = as_admin.get('/projects/site/phi')
+    assert r.ok
+    assert r.json()["fields"] == [ 'info', 'subject.firstname', 'subject.lastname', 'subject.sex',
+                                   'subject.age', 'subject.race', 'subject.ethnicity', 'subject.info',
+                                   'tags', 'files.info']
+
+    r = as_admin.put('/projects/site/phi', json={'fields': ['info', 'subject.firstname', 'subject.lastname', 'subject.sex',
+                                                'subject.age', 'subject.race', 'subject.ethnicity', 'subject.info']})
+    assert r.ok
+    r = as_admin.post('/projects/' + project + '/phi', json={"fields": ['tags', 'files.info']})
+    assert r.ok
+
+    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName", "code":"Subject_Code", "lastname": "LastName"}}, params={'replace_metadata':True})
     assert r.ok
 
     # Test phi access for list returns with phi access level
@@ -295,10 +319,12 @@ def test_phi_access(as_user, as_admin, as_root, data_builder, log_db):
     assert r.json().get('subject').get('code') == 'Subject_Code'
     assert pre_log == log_db.access_log.count({}) - 2
 
-    # Set no-phi flag to true
+    # Set phi-access to false
     r = as_admin.put('/projects/' + project + '/permissions/admin@user.com', json={'phi-access': False})
     assert r.ok
     r = as_admin.post('/projects/' + project + '/permissions', json={'access': 'ro', 'phi-access': False, '_id': 'user@user.com'})
+    assert r.ok
+    r = as_admin.post('/projects/' + project_2 + '/permissions', json={'access': 'ro', 'phi-access': False, '_id': 'user@user.com'})
     assert r.ok
 
     # Test phi access for list returns without phi access level
@@ -306,8 +332,8 @@ def test_phi_access(as_user, as_admin, as_root, data_builder, log_db):
     r = as_admin.get('/sessions')
     assert r.ok
     for session_ in r.json():
-        assert session_.get('subject').get('firstname') == None
-        assert session_.get('subject').get('code') == 'Subject_Code'
+        assert session_.get('subject').get('firstname') == None  # Phi at site level
+        assert session_.get('subject').get('code') == 'Subject_Code'  # Not considered phi at any level
     assert pre_log == log_db.access_log.count({})
     r = as_admin.get('/sessions', params={'phi':True})
     assert r.status_code == 403
@@ -328,16 +354,139 @@ def test_phi_access(as_user, as_admin, as_root, data_builder, log_db):
     pre_log = log_db.access_log.count({})
     r = as_user.get('/sessions/' + session)
     assert r.ok
-    assert r.json().get('subject').get('firstname') == None
-    assert r.json().get('subject').get('code') == 'Subject_Code'
+    assert r.json().get('subject').get('firstname') == None  # Phi at site level
+    assert r.json().get('subject').get('code') == 'Subject_Code'  # Not considered phi at any level
     assert pre_log == log_db.access_log.count({})
 
     r = as_user.get('/sessions/' + session, params={'phi':True})
     assert r.status_code == 200
 
+    # Change the site level and project level phi fields
+    r = as_admin.put('/projects/site/phi', json={'fields': ['info', 'tags', 'notes', 'subject.lastname']})
+    assert r.ok
+    r = as_admin.put('/projects/' + project + '/phi', json={'fields': ['info', 'subject.firstname', 'subject.lastname', 'subject.sex',
+                                                            'subject.age', 'subject.race', 'subject.ethnicity', 'subject.info']})
+    assert r.ok
+
+    # Check that get all on sessions is only affected by the site level custom phi list
+    r = as_admin.get('/sessions')
+    assert r.ok
+
+    for session_ in r.json():
+        assert session_.get('subject').get('firstname') == 'FirstName'  # Only considered phi for the project
+        assert session_.get('subject').get('code') == 'Subject_Code'  # Not considered phi
+        assert session_.get('subject').get('lastname') == None  # Considered phi at site level
+
+
+    # Test that project with phi disabled, user without phi can access site level phi fields
+    pre_log = log_db.access_log.count({})
+    r = as_user.get('/sessions/'+ session_no_phi)
+    assert r.ok
+    assert r.json()["info"]["age"] == age
+    assert pre_log == log_db.access_log.count({}) - 1
+
     r = as_admin.delete('/sessions/' + session)
     assert r.ok
 
+    r = as_admin.put('/projects/site/phi', json={"fields":[]})
+    assert r.ok
+
+# Test both POST and PUT containers and on the project phi lists
+def test_phi_access_post_put(data_builder, as_user, as_admin, as_root, log_db):
+    group = data_builder.create_group()
+    project = data_builder.create_project()
+    project_phi_disabled = data_builder.create_project(phi=False)
+
+    r = as_admin.post('/projects/' + project + '/permissions', json={'access': 'admin', 'phi-access': False, '_id': 'user@user.com'})
+    assert r.ok
+
+    # Test that user cannot post custom list to project_phi_disabled
+    r = as_admin.post('/projects/' + project_phi_disabled + '/phi', json={"fields": []})
+    assert r.status_code == 400
+
+    pre_log = log_db.access_log.count({})
+    # Try setting a field that is not a PHI candidate as phi
+    r = as_admin.post('/projects/site/phi', json={"fields": ["label"]})
+    assert r.status_code == 400
+    assert pre_log == log_db.access_log.count({})
+
+    pre_log = log_db.access_log.count({})
+    # Set a valid field as phi at site level
+    r = as_admin.post('/projects/site/phi', json={"fields": ["info.age", "info"]})
+    assert r.ok
+    assert pre_log == log_db.access_log.count({}) - 1
+
+    # Post a session writing to phi field with phi-access
+    r = as_admin.post('/sessions', json={"timestamp": "2017-11-08T21:20:00.000Z", "label": "s1", "subject": {"code": "ex1"}, "project": project, "info": {"phi":"possible"}})
+    assert r.ok
+    session_2 = r.json()["_id"]
+    # Post a session writing to phi field without phi-access
+    r = as_user.post('/sessions', json={"timestamp": "2017-11-08T21:20:00.000Z", "label": "s1", "subject": {"code": "ex1"}, "project": project, "info": {"phi":"possible"}})
+    assert r.status_code == 403
+
+    # Post a session writing to info field when only a different info field is phi
+    r = as_admin.post('/projects/site/phi', json={"fields": ["info.age"]})
+    assert r.ok
+    r = as_user.post('/sessions', json={"timestamp": "2017-11-08T21:20:00.000Z", "label": "s1", "subject": {"code": "ex1"}, "project": project, "info": {"phi":"possible"}})
+    assert r.ok
+    session_3 = r.json()['_id']
+
+    r = as_admin.post('/projects/site/phi', json={"fields": ["tags", "notes"]})
+    assert r.ok
+
+    # Test posting and viewing tags
+    r = as_admin.post('/groups/' + group + '/tags', json={'value': "TagName"})
+    assert r.ok
+
+    # Test that user can post tags even if it is a phi field
+    r = as_user.post('/projects/' + project + '/tags', json={'value': "TagName"})
+    assert r.ok
+
+    # Test that user w/o phi-access cannot see tags
+    r = as_user.get('/projects/' + project + '/tags/TagName')
+    assert r.status_code == 403
+
+    # Test that user w/ phi-access can see tags
+    r = as_admin.put('/projects/' + project + '/permissions/user@user.com', json={'phi-access': True})
+    assert r.ok
+    r = as_user.get('/projects/' + project + '/tags/TagName')
+    assert r.ok
+    r = as_admin.put('/projects/' + project + '/permissions/user@user.com', json={'phi-access': False})
+    assert r.ok
+
+    # Test that user w/o phi-access can delete tags
+    r = as_user.delete('/projects/' + project + '/tags/TagName')
+    assert r.ok
+
+    # Test that user w/o phi can add notes
+    r = as_user.post('/projects/' + project + '/notes', json={'text': "Note"})
+    assert r.ok
+
+    # Test that user cannot see any notes (ideally user would be able to see only notes that they created)
+    r = as_admin.get("/projects/" + project)
+    assert r.ok
+    note = r.json()['notes'][0]["_id"]
+    r = as_user.get('/projects/' + project + '/notes/' + note)
+    assert r.status_code == 403
+
+    # Test that user with phi-access can see the notes
+    r = as_admin.put('/projects/' + project + '/permissions/user@user.com', json={'phi-access': True})
+    assert r.ok
+    r = as_user.get('/projects/' + project + '/notes/' + note)
+    assert r.ok
+    r = as_admin.put('/projects/' + project + '/permissions/user@user.com', json={'phi-access': False})
+    assert r.ok
+
+    # Test that user w/o phi-access can delete notes
+    r = as_user.delete('/projects/' + project + '/notes/' + note)
+    assert r.ok
+
+    r = as_admin.post('/projects/site/phi', json={"fields": []})
+    assert r.ok
+    r = as_admin.delete('/sessions/' + session_2)
+    assert r.ok
+    r = as_admin.delete('/sessions/' + session_3)
+    assert r.ok
 
 def test_get_container(data_builder, default_payload, file_form, as_drone, as_admin, as_public, api_db):
     project = data_builder.create_project()
@@ -467,7 +616,8 @@ def test_post_container(data_builder, as_admin, as_user):
     # create project w/ param inherit=true
     r = as_admin.post('/projects', params={'inherit': 'true'}, json={
         'group': group,
-        'label': 'test-inheritance-project'
+        'label': 'test-inheritance-project',
+        'phi' : True
     })
     assert r.ok
     project = r.json()['_id']
@@ -487,7 +637,8 @@ def test_post_container(data_builder, as_admin, as_user):
     # try to add project without admin on group
     r = as_user.post('/projects', json={
         'group': group,
-        'label': 'test project post'
+        'label': 'test project post',
+        'phi' : True
     })
     assert r.status_code == 403
 

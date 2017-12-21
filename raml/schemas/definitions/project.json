@@ -2,6 +2,7 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "definitions":{
         "description":  {"type": "string"},
+        "phi": {"type": "boolean"},
         "project-input":{
             "type": "object",
             "properties": {
@@ -10,7 +11,8 @@
                 "info": {"$ref": "../definitions/container.json#/definitions/info"},
                 "description":  {"$ref": "../definitions/project.json#/definitions/description"},
                 "group":{"$ref":"../definitions/group.json#/definitions/_id"},
-                "archived":     {"$ref":"../definitions/container.json#/definitions/archived"}
+                "archived":     {"$ref":"../definitions/container.json#/definitions/archived"},
+                "phi": {"$ref": "../definitions/project.json#/definitions/phi"}
             },
             "additionalProperties": false
         },
@@ -30,6 +32,7 @@
                     "type":"array",
                     "items":{"$ref":"../definitions/permission.json#/definitions/permission-output-default-required"}
                 },
+                "phi": {"$ref": "../definitions/project.json#/definitions/phi"},
                 "files":{
                     "type":"array",
                     "items":{

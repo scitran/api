@@ -3,5 +3,5 @@
     "title": "Project",
     "type": "object",
     "allOf": [{"$ref": "../definitions/project.json#/definitions/project-input"}],
-    "required": ["label", "group"]
+    "required": ["label", "group", "phi"]
 }
