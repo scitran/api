@@ -6,6 +6,7 @@ from ..auth import containerauth, always_ok
 from ..dao import containerstorage, containerutil, noop
 from ..web.errors import APIStorageException
 from ..validators import verify_payload_exists
+from ..web.request import AccessType
 
 from .containerhandler import ContainerHandler
 
@@ -31,7 +32,7 @@ class CollectionsHandler(ContainerHandler):
         self.storage = self.container_handler_configurations['collections']['storage']
 
     def get(self, **kwargs):
-        return super(CollectionsHandler, self).get('collections', **kwargs)
+        return super(CollectionsHandler, self).get(cont_name='collections', **kwargs)
 
     def post(self):
         mongo_validator, payload_validator = self._get_validators()
@@ -40,7 +41,8 @@ class CollectionsHandler(ContainerHandler):
         payload_validator(payload, 'POST')
         payload['permissions'] = [{
             '_id': self.uid,
-            'access': 'admin'
+            'access': 'admin',
+            'phi-access': True
         }]
         payload['curator'] = self.uid
         payload['created'] = payload['modified'] = datetime.datetime.utcnow()
@@ -101,7 +103,7 @@ class CollectionsHandler(ContainerHandler):
         config.db.acquisitions.update_many({'collections': bson.ObjectId(_id)}, {'$pull': {'collections': bson.ObjectId(_id)}})
 
     def get_all(self):
-        projection = self.container_handler_configurations['collections']['list_projection']
+        projection = None
         if self.superuser_request:
             permchecker = always_ok
         elif self.public_request:
@@ -109,7 +111,14 @@ class CollectionsHandler(ContainerHandler):
         else:
             permchecker = containerauth.list_permission_checker(self)
         query = {}
-        results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection)
+        if self.is_true('phi'):
+            projection = None
+            phi = True
+        else:
+            phi = False
+            projection = {'info': 0, 'tags': 0, 'files.info':0}
+        results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection, phi=phi)
+        log.debug(results)
         if not self.superuser_request and not self.is_true('join_avatars'):
             self._filter_all_permissions(results, self.uid)
         if self.is_true('join_avatars'):
@@ -117,6 +126,8 @@ class CollectionsHandler(ContainerHandler):
         for result in results:
             if self.is_true('stats'):
                 result = containerutil.get_stats(result, 'collections')
+            if phi:
+                self.log_user_access(AccessType.view_container, cont_name='collections', cont_id=result.get('_id'))
         return results
 
     def curators(self):
@@ -148,13 +159,23 @@ class CollectionsHandler(ContainerHandler):
 
         if not self.is_true('archived'):
             query['archived'] = {'$ne': True}
-        if not self.superuser_request:
-            query['permissions._id'] = self.uid
 
-        projection = self.container_handler_configurations['sessions']['list_projection']
+        if self.superuser_request:
+            permchecker = always_ok
+        elif self.public_request:
+            permchecker = containerauth.list_public_request
+        else:
+            permchecker = containerauth.list_permission_checker(self)
 
-        sessions = list(containerstorage.SessionStorage().get_all_el(query, None, projection))
+        projection = self.PHI_FIELDS.copy()
+        if self.is_true('phi'):
+            projection = None
+            phi = True
+        else:
+            phi = False
 
+        sessions = permchecker(containerstorage.SessionStorage().exec_op)('GET', query=query, public=self.public_request, projection=projection, phi=phi)
+        log.debug(sessions)
         self._filter_all_permissions(sessions, self.uid)
         if self.is_true('measurements'):
             self._add_session_measurements(sessions)
@@ -183,11 +204,21 @@ class CollectionsHandler(ContainerHandler):
 
         if not self.superuser_request:
             query['permissions._id'] = self.uid
+        if self.superuser_request:
+            permchecker = always_ok
+        elif self.public_request:
+            permchecker = containerauth.list_public_request
+        else:
+            permchecker = containerauth.list_permission_checker(self)
 
-        projection = self.container_handler_configurations['acquisitions']['list_projection']
+        projection = self.PHI_FIELDS.copy()
+        if self.is_true('phi'):
+            projection = None
+            phi = True
+        else:
+            phi = False
 
-        acquisitions = list(containerstorage.AcquisitionStorage().get_all_el(query, None, projection))
-
+        acquisitions = permchecker(containerstorage.AcquisitionStorage().exec_op)('GET', query=query, public=self.public_request, projection=projection, phi=phi)
         self._filter_all_permissions(acquisitions, self.uid)
 
         for acquisition in acquisitions:

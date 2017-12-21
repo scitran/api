@@ -183,7 +183,8 @@ def test_jobs(data_builder, default_payload, as_public, as_user, as_admin, as_ro
 
     r = as_admin.post('/projects/' + project + '/permissions', json={
         '_id': uid,
-        'access': 'ro'
+        'access': 'ro',
+        'phi-access': True
     })
     assert r.ok
 

@@ -4,15 +4,18 @@
       "permissions": [
         {
           "access": "admin",
-          "_id": "group_admin@fakeuser.com"
+          "_id": "group_admin@fakeuser.com",
+          "phi-access": true
         },
         {
           "access": "rw",
-          "_id": "group_member_read-write@fakeuser.com"
+          "_id": "group_member_read-write@fakeuser.com",
+          "phi-access": true
         },
         {
           "access": "ro",
-          "_id": "group_member_read-only@fakeuser.com"
+          "_id": "group_member_read-only@fakeuser.com",
+          "phi-access": true
         }
       ],
       "created": "2016-08-19T11:41:15.360000+00:00",

@@ -95,7 +95,8 @@ def test_users(data_builder, as_root, as_admin, as_user, as_public):
     project = data_builder.create_project()
     r = as_admin.post('/projects/' + project + '/permissions', json={
         '_id': new_user_id_admin,
-        'access': 'ro'
+        'access': 'ro',
+        'phi-access': True
     })
     assert r.ok
 

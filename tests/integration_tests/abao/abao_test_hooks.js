@@ -218,7 +218,8 @@ hooks.before("POST /groups/{GroupId}/permissions -> 200", function(test, done) {
     };
     test.request.body = {
         _id: "test@user.com",
-        access: "ro"
+        access: "ro",
+        "phi-access": true
     }
     done();
 });
@@ -246,7 +247,8 @@ hooks.before("PUT /groups/{GroupId}/permissions/{UserId} -> 200", function(test,
     };
     test.request.body = {
         _id: "test@user.com",
-        access: "admin"
+        access: "admin",
+        "phi-access": true
     };
     done();
 });
@@ -259,6 +261,7 @@ hooks.before("PUT /groups/{GroupId}/permissions/{UserId} -> 400", function(test,
     test.request.body = {
         _id: "test@user.com",
         access: "rw",
+        "phi-access": true,
         not_a_real_property: "foo"
     };
     done();
@@ -341,11 +344,18 @@ hooks.before("GET /groups/{GroupId}/projects -> 200", function(test, done) {
 });
 
 
+hooks.before("GET /collections -> 200", function(test, done) {
+    test.request.query = {
+        "phi": true
+    };
+    done();
+});
 // set initial test_collection_1
 hooks.after("GET /collections -> 200", function(test, done) {
     test_collection_1 = test.response.body[0];
     collection_id = test.response.body[0]._id;
     delete_collection_id = test.response.body[1]._id;
+    assert.equal(test_collection_1.label, "test-collection-1");
     done();
 });
 
@@ -459,7 +469,8 @@ hooks.before("POST /collections/{CollectionId}/permissions -> 200", function(tes
     };
     test.request.body = {
         "_id":"test@user.com",
-        "access":"ro"
+        "access":"ro",
+        "phi-access": true
     };
     done();
 });
@@ -489,7 +500,8 @@ hooks.before("PUT /collections/{CollectionId}/permissions/{UserId} -> 200", func
     };
     test.request.body = {
         "access":"rw",
-        "_id":"test@user.com"
+        "_id":"test@user.com",
+        "phi-access": true
     };
     done();
 });
@@ -1259,7 +1271,8 @@ hooks.before("POST /projects/{ProjectId}/permissions -> 200", function(test, don
     };
     test.request.body = {
         "_id":"test@user.com",
-        "access":"ro"
+        "access":"ro",
+        "phi-access": true
     };
     done();
 });
@@ -1289,7 +1302,8 @@ hooks.before("PUT /projects/{ProjectId}/permissions/{UserId} -> 200", function(t
     };
     test.request.body = {
         "access":"rw",
-        "_id":"test@user.com"
+        "_id":"test@user.com",
+        "phi-access": true
     };
     done();
 });

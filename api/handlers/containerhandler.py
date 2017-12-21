@@ -5,7 +5,7 @@ import dateutil
 from .. import config
 from .. import util
 from .. import validators
-from ..auth import containerauth, always_ok
+from ..auth import containerauth, always_ok, check_phi
 from ..dao import containerstorage, containerutil, noop
 from ..dao.containerstorage import AnalysisStorage
 from ..jobs.gears import get_gear
@@ -42,7 +42,10 @@ class ContainerHandler(base.RequestHandler):
         'sessions': True,
         'acquisitions': True
     }
-    default_list_projection = ['files', 'notes', 'timestamp', 'timezone', 'public']
+
+    # Hard-coded PHI fields, will be changed to user set PHI fields
+    PHI_FIELDS = {'info': 0, 'subject.firstname':0, 'subject.lastname': 0, 'subject.sex': 0,
+                  'subject.age': 0, 'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0, 'tags': 0, 'files.info':0}
 
     # This configurations are used by the ContainerHandler class to load the storage,
     # the permissions checker and the json schema validators used to handle a request.
@@ -57,7 +60,6 @@ class ContainerHandler(base.RequestHandler):
             'parent_storage': containerstorage.GroupStorage(),
             'storage_schema_file': 'project.json',
             'payload_schema_file': 'project.json',
-            'list_projection': {'info': 0},
             'propagated_properties': ['archived', 'public'],
             'children_cont': 'sessions'
         },
@@ -68,10 +70,6 @@ class ContainerHandler(base.RequestHandler):
             'storage_schema_file': 'session.json',
             'payload_schema_file': 'session.json',
             # Remove subject first/last from list view to better log access to this information
-            'list_projection': {'info': 0, 'analyses': 0, 'subject.firstname': 0,
-                                'subject.lastname': 0, 'subject.sex': 0, 'subject.age': 0,
-                                'subject.race': 0, 'subject.ethnicity': 0, 'subject.info': 0,
-                                'files.info': 0, 'tags': 0},
             'propagated_properties': ['archived'],
             'children_cont': 'acquisitions'
         },
@@ -80,27 +78,37 @@ class ContainerHandler(base.RequestHandler):
             'permchecker': containerauth.default_container,
             'parent_storage': containerstorage.SessionStorage(),
             'storage_schema_file': 'acquisition.json',
-            'payload_schema_file': 'acquisition.json',
-            'list_projection': {'info': 0, 'collections': 0, 'files.info': 0, 'tags': 0}
+            'payload_schema_file': 'acquisition.json'
         }
     }
+
 
     def __init__(self, request=None, response=None):
         super(ContainerHandler, self).__init__(request, response)
         self.storage = None
         self.config = None
+        self.phi = False
 
     @log_access(AccessType.view_container)
     def get(self, cont_name, **kwargs):
         _id = kwargs.get('cid')
+        projection = self.PHI_FIELDS.copy()
+        log.debug(self.PHI_FIELDS)
+        log.debug(projection)
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
         container = self._get_container(_id)
+        log.debug(container)
+        if check_phi(self.uid, container) or self.superuser_request:
+            log.debug("PHI")
+            log.debug(self.superuser_request)
+            self.phi = True
+            projection = None
 
         permchecker = self._get_permchecker(container)
         try:
             # This line exec the actual get checking permissions using the decorator permchecker
-            result = permchecker(self.storage.exec_op)('GET', _id)
+            result = permchecker(self.storage.exec_op)('GET', _id, projection=projection, phi=self.phi)
         except APIStorageException as e:
             self.abort(400, e.message)
         if result is None:
@@ -115,7 +123,7 @@ class ContainerHandler(base.RequestHandler):
                 fileinfo['path'] = util.path_from_hash(fileinfo['hash'])
 
         inflate_job_info = cont_name == 'sessions'
-        result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)
+        result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info, self.PHI_FIELDS.copy())
         return self.handle_origin(result)
 
     def handle_origin(self, result):
@@ -311,14 +319,18 @@ class ContainerHandler(base.RequestHandler):
     def get_all(self, cont_name, par_cont_name=None, par_id=None):
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
-
-        projection = self.config['list_projection'].copy()
-        if self.is_true('info'):
-            projection.pop('info')
+        projection = None
         if self.is_true('permissions'):
             if not projection:
                 projection = None
-
+        if self.is_true('phi'):
+            phi = True
+        else:
+            phi = False
+            if projection == None:
+                projection = self.PHI_FIELDS.copy()
+            else:
+                projection.update(self.PHI_FIELDS)
         # select which permission filter will be applied to the list of results.
         if self.superuser_request:
             permchecker = always_ok
@@ -340,8 +352,9 @@ class ContainerHandler(base.RequestHandler):
             query = {}
         if not self.is_true('archived'):
             query['archived'] = {'$ne': True}
+
         # this request executes the actual reqeust filtering containers based on the user permissions
-        results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection)
+        results = permchecker(self.storage.exec_op)('GET', query=query, public=self.public_request, projection=projection, phi=phi)
         if results is None:
             self.abort(404, 'No elements found in container {}'.format(self.storage.cont_name))
         # return only permissions of the current user unless superuser or getting avatars
@@ -361,6 +374,8 @@ class ContainerHandler(base.RequestHandler):
                 result = containerutil.get_stats(result, cont_name)
             result = self.handle_origin(result)
             modified_results.append(result)
+            if phi:
+                self.log_user_access(AccessType.view_container, cont_name, result.get('_id'))
 
         if self.is_true('join_avatars'):
             modified_results = self.join_user_info(modified_results)
@@ -388,7 +403,13 @@ class ContainerHandler(base.RequestHandler):
     def get_all_for_user(self, cont_name, uid):
         self.config = self.container_handler_configurations[cont_name]
         self.storage = self.config['storage']
-        projection = self.config['list_projection']
+        projection = None
+        phi = False
+        if self.is_true('phi'):
+            phi = True
+        else:
+            projection = self.PHI_FIELDS.copy()
+            
         # select which permission filter will be applied to the list of results.
         if self.superuser_request or self.user_is_admin:
             permchecker = always_ok
@@ -401,11 +422,14 @@ class ContainerHandler(base.RequestHandler):
             '_id': uid
         }
         try:
-            results = permchecker(self.storage.exec_op)('GET', query=query, user=user, projection=projection)
+            results = permchecker(self.storage.exec_op)('GET', query=query, user=user, projection=projection, phi=phi)
         except APIStorageException as e:
             self.abort(400, e.message)
         if results is None:
             self.abort(404, 'Element not found in container {} {}'.format(self.storage.cont_name, uid))
+        if phi:
+            for result in results:
+                self.log_user_access(AccessType.view_container, cont_name, result.get('_id'))
         self._filter_all_permissions(results, uid)
         return results
 
@@ -432,7 +456,7 @@ class ContainerHandler(base.RequestHandler):
         if self.is_true('inherit') and cont_name == 'projects':
             payload['permissions'] = parent_container.get('permissions')
         elif cont_name =='projects':
-            payload['permissions'] = [{'_id': self.uid, 'access': 'admin'}] if self.uid else []
+            payload['permissions'] = [{'_id': self.uid, 'access': 'admin', 'phi-access':True}] if self.uid else []
         else:
             payload['permissions'] = parent_container.get('permissions', [])
         # Created and modified timestamps are added here to the payload

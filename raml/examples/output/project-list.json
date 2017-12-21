@@ -7,7 +7,8 @@
 	"public": false,
 	"permissions": [{
 		"access": "admin",
-		"_id": "coltonlw@flywheel.io"
+		"_id": "coltonlw@flywheel.io",
+      	"phi-access": true
 	}]
 }, {
 	"group": "scitran",
@@ -18,7 +19,8 @@
 	"public": false,
 	"permissions": [{
 		"access": "admin",
-		"_id": "coltonlw@flywheel.io"
+		"_id": "coltonlw@flywheel.io",
+      	"phi-access": true
 	}]
 }, {
 	"group": "scitran",
@@ -29,7 +31,8 @@
 	"public": false,
 	"permissions": [{
 		"access": "admin",
-		"_id": "coltonlw@flywheel.io"
+		"_id": "coltonlw@flywheel.io",
+      	"phi-access": true
 	}]
 }, {
 	"group": "test-group",
@@ -41,7 +44,8 @@
 	"public": false,
 	"permissions": [{
 		"access": "admin",
-		"_id": "coltonlw@flywheel.io"
+		"_id": "coltonlw@flywheel.io",
+      	"phi-access": true
 	}]
 }, {
 	"group": "scitran",
@@ -52,6 +56,7 @@
 	"_id": "57ed6312466d8e01c91ee427",
 	"permissions": [{
 		"access": "admin",
-		"_id": "coltonlw@flywheel.io"
+		"_id": "coltonlw@flywheel.io",
+      	"phi-access": true
 	}]
 }]

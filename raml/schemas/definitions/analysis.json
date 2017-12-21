@@ -59,6 +59,7 @@
 			                "measurements": {"$ref":"../definitions/file.json#/definitions/measurements"},
 			                "tags": {"$ref":"../definitions/file.json#/definitions/tags"},
 			                "info": {"$ref":"../definitions/file.json#/definitions/info"},
+			                "info_exists":{"type":"boolean"},
 			                "origin":{"$ref":"../definitions/file.json#/definitions/origin"},
 			                "hash":{"$ref":"../definitions/file.json#/definitions/hash"},
 							"created":{"$ref":"../definitions/created-modified.json#/definitions/created"},
@@ -78,6 +79,13 @@
 				},
 				"notes":{"$ref":"#/definitions/notes"},
 				"description":{"$ref":"#/definitions/description"},
+				"parent":{
+                    "type": "object",
+                    "properties": {
+                        "type": "string",
+                        "id":   {"$ref":"../definitions/objectid.json#"}
+                    }
+                },
 				"label":{"$ref":"#/definitions/label"},
 				"user":{"$ref":"#/definitions/user"},
 				"created":{"$ref":"../definitions/created-modified.json#/definitions/created"},

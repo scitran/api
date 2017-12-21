@@ -262,6 +262,82 @@ def test_get_all_for_user(as_admin, as_public):
     r = as_admin.get('/users/' + user_id + '/sessions')
     assert r.ok
 
+def test_phi_access(as_user, as_admin, as_root, data_builder, log_db):
+    group = data_builder.create_group()
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    r = as_admin.put('/sessions/' + session, json={"subject":{"firstname":"FirstName", "code":"Subject_Code"}}, params={'replace_metadata':True})
+    assert r.ok
+
+    # Test phi access for list returns with phi access level
+    pre_log = log_db.access_log.count({})
+    r = as_admin.get('/sessions')
+    assert r.ok
+    for session_ in r.json():
+        assert session_.get('subject').get('firstname') == None
+    assert pre_log == log_db.access_log.count({})
+    r = as_admin.get('/sessions', params={'phi':True})
+    assert r.ok
+    for session_ in r.json():
+        assert session_.get('subject').get('firstname') == "FirstName"
+    assert pre_log == log_db.access_log.count({}) - len(r.json())
+
+    # Test phi access for individual elements with phi access level
+    pre_log = log_db.access_log.count({})
+    r = as_admin.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == 'FirstName'
+    assert pre_log == log_db.access_log.count({}) - 1
+
+    r = as_admin.get('/sessions/' + session, params={'phi':True})
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == 'FirstName'
+    assert r.json().get('subject').get('code') == 'Subject_Code'
+    assert pre_log == log_db.access_log.count({}) - 2
+
+    # Set no-phi flag to true
+    r = as_admin.put('/projects/' + project + '/permissions/admin@user.com', json={'phi-access': False})
+    assert r.ok
+    r = as_admin.post('/projects/' + project + '/permissions', json={'access': 'ro', 'phi-access': False, '_id': 'user@user.com'})
+    assert r.ok
+
+    # Test phi access for list returns without phi access level
+    pre_log = log_db.access_log.count({})
+    r = as_admin.get('/sessions')
+    assert r.ok
+    for session_ in r.json():
+        assert session_.get('subject').get('firstname') == None
+        assert session_.get('subject').get('code') == 'Subject_Code'
+    assert pre_log == log_db.access_log.count({})
+    r = as_admin.get('/sessions', params={'phi':True})
+    assert r.status_code == 403
+
+    # Test phi access for individual elements without phi access level but with super_user
+    pre_log = log_db.access_log.count({})
+    r = as_root.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == "FirstName"
+    assert r.json().get('subject').get('code') == 'Subject_Code'
+    assert pre_log == log_db.access_log.count({}) - 1
+
+    r = as_admin.get('/sessions/' + session, params={'phi':True})
+    assert r.status_code == 200
+
+    # Test phi access for individual elements without phi access level and w/o super_user
+    as_admin
+    pre_log = log_db.access_log.count({})
+    r = as_user.get('/sessions/' + session)
+    assert r.ok
+    assert r.json().get('subject').get('firstname') == None
+    assert r.json().get('subject').get('code') == 'Subject_Code'
+    assert pre_log == log_db.access_log.count({})
+
+    r = as_user.get('/sessions/' + session, params={'phi':True})
+    assert r.status_code == 200
+
+    r = as_admin.delete('/sessions/' + session)
+    assert r.ok
+
 
 def test_get_container(data_builder, default_payload, file_form, as_drone, as_admin, as_public, api_db):
     project = data_builder.create_project()
@@ -403,7 +479,8 @@ def test_post_container(data_builder, as_admin, as_user):
 
     r = as_admin.post('/groups/' + group + '/permissions', json={
         '_id': uid,
-        'access': 'rw'
+        'access': 'rw',
+        'phi-access': True
     })
     assert r.ok
 
@@ -421,7 +498,8 @@ def test_post_container(data_builder, as_admin, as_user):
 
     r = as_admin.post('/projects/' + project + '/permissions', json={
         '_id': uid,
-        'access': 'rw'
+        'access': 'rw',
+        'phi-access': True
     })
     assert r.ok
 

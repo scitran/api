@@ -265,7 +265,7 @@ def test_rules(randstr, data_builder, file_form, as_root, as_admin, with_user, a
 
     # add read-only perms for user
     r = as_admin.post('/projects/' + project + '/permissions', json={
-        '_id': with_user.user, 'access': 'ro'})
+        '_id': with_user.user, 'access': 'ro', 'phi-access': True})
     assert r.ok
 
     # try to add rule w/ read-only project perms

@@ -14,7 +14,8 @@ def test_permissions(data_builder, as_admin):
     # Add permissions for user 1
     r = as_admin.post(permissions_path, json={
         '_id': user_1,
-        'access': 'ro'
+        'access': 'ro',
+        'phi-access': True
     })
     assert r.ok
 
@@ -32,7 +33,8 @@ def test_permissions(data_builder, as_admin):
     # Add user 2 to have ro access
     r = as_admin.post(permissions_path, json={
         '_id': user_2,
-        'access': 'ro'
+        'access': 'ro',
+        'phi-access': True
     })
     assert r.ok
 
@@ -66,7 +68,7 @@ def test_group_permissions(data_builder, as_admin, as_public):
     assert r.status_code == 404
 
     # Create permission for user
-    r = as_admin.post(permissions_path, json={'_id': user, 'access': 'rw'})
+    r = as_admin.post(permissions_path, json={'_id': user, 'access': 'rw', 'phi-access': True})
     assert r.ok
 
     # Verify new user permission

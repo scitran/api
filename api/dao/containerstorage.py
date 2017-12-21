@@ -315,10 +315,10 @@ class AnalysisStorage(ContainerStorage):
         return parent_storage.get_container(parent_id)
 
 
-    def get_analyses(self, parent_type, parent_id, inflate_job_info=False):
+    def get_analyses(self, parent_type, parent_id, inflate_job_info=False, projection=None):
         parent_type = containerutil.singularize(parent_type)
         parent_id = bson.ObjectId(parent_id)
-        analyses = self.get_all_el({'parent.type': parent_type, 'parent.id': parent_id}, None, None)
+        analyses = self.get_all_el({'parent.type': parent_type, 'parent.id': parent_id}, None, projection)
         if inflate_job_info:
             for analysis in analyses:
                 self.inflate_job_info(analysis)

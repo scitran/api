@@ -219,6 +219,7 @@ class DataBuilder(object):
         'session':     'project',
         'acquisition': 'session',
     }
+
     parent_to_child = {parent: child for child, parent in child_to_parent.items()}
 
     def __init__(self, session, randstr=lambda: binascii.hexlify(os.urandom(10))):
@@ -254,8 +255,8 @@ class DataBuilder(object):
             payload['gear']['name'] = self.randstr()
 
         # add missing label fields using randstr
-        # such fields are: [project.label, session.label, acquisition.label]
-        if resource in self.child_to_parent and 'label' not in payload:
+        # such fields are: [project.label, session.label, acquisition.label, group.label]
+        if resource in ['project', 'group', 'groups', 'session', 'acquisition'] and 'label' not in payload:
             payload['label'] = self.randstr()
 
         # add missing parent container when creating child container

@@ -4,11 +4,13 @@
   "definitions": {
     "_id":            { "type": "string" },
     "access":         { "enum": ["ro", "rw", "admin"] },
+    "phi-access":     {"type": "boolean"},
     "permission":{
       "type":"object",
       "properties":{
         "_id":{"$ref":"#/definitions/_id"},
-        "access":{"$ref":"#/definitions/access"}
+        "access":{"$ref":"#/definitions/access"},
+        "phi-access":{"$ref":"#/definitions/phi-access"}
       },
       "additionalProperties": false
     },

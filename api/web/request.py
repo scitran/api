@@ -61,7 +61,7 @@ def log_access(access_type, cont_kwarg='cont_name', cont_id_kwarg='cid'):
                 cont_id = kwargs.get(cont_id_kwarg)
 
                 # Only log view_container events when the container is a session
-                if access_type is AccessType.view_container and cont_name not in ['sessions', 'session']:
+                if access_type is AccessType.view_container and not self.phi:
                     return result
 
             self.log_user_access(access_type, cont_name, cont_id)

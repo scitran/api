@@ -265,8 +265,8 @@ def test_access_log_fails(data_builder, as_admin, log_db):
     r = as_admin.delete('/projects/' + project + '/files/' + file_name)
     assert r.status_code == 500
 
+    log_db.command('collMod', 'access_log', validator={}, validationLevel='strict')
+
     r = as_admin.get('/projects/' + project)
     assert r.ok
     assert r.json()['files']
-
-    log_db.command('collMod', 'access_log', validator={}, validationLevel='strict')

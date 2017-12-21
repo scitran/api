@@ -127,7 +127,7 @@ def test_add_and_remove_user_for_project_permissions(data_builder, as_admin):
     user_id = 'propagation@user.com'
 
     # Add user to project permissions
-    payload = {'_id': user_id, 'access': 'admin'}
+    payload = {'_id': user_id, 'access': 'admin', 'phi-access': True}
     r = as_admin.post('/projects/' + project + '/permissions', json=payload)
     assert r.ok
 
@@ -147,7 +147,7 @@ def test_add_and_remove_user_for_project_permissions(data_builder, as_admin):
     assert r.ok and user
 
     # Modify user permissions
-    payload = {'access': 'rw', '_id': user_id}
+    payload = {'access': 'rw', '_id': user_id, 'phi-access': True}
     r = as_admin.put('/projects/' + project + '/permissions/' + user_id, json=payload)
     assert r.ok
 
@@ -208,7 +208,7 @@ def test_add_and_remove_user_group_permission(data_builder, as_admin):
     user_id = 'propagation@user.com'
 
     # Add user to group permissions
-    payload = {'_id': user_id, 'access': 'admin'}
+    payload = {'_id': user_id, 'access': 'admin', 'phi-access': True}
     r = as_admin.post('/groups/' + group + '/permissions', json=payload, params={'propagate': 'true'})
     assert r.ok
 
@@ -240,7 +240,7 @@ def test_add_and_remove_user_group_permission(data_builder, as_admin):
     assert r.ok and user
 
     # Modify user permissions
-    payload = {'access': 'rw', '_id': user_id}
+    payload = {'access': 'rw', '_id': user_id, 'phi-access':True}
     r = as_admin.put('/groups/' + group + '/permissions/' + user_id, json=payload, params={'propagate': 'true'})
     assert r.ok
 

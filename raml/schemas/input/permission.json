@@ -3,5 +3,5 @@
   "type": "object",
   "allOf":[{"$ref":"../definitions/permission.json#/definitions/permission"}],
   "key_fields": ["_id"],
-  "required": ["_id", "access"]
+  "required": ["_id", "access", "phi-access"]
 }

@@ -1219,6 +1219,22 @@ def upgrade_to_37():
         cursor = config.db[coll].find({'permissions.site': {'$exists': True}})
         process_cursor(cursor, upgrade_to_32_closure, context = coll)
 
+def upgrade_to_38_closure(coll_item, coll):
+    permissions = coll_item.get('permissions', [])
+    for permission_ in permissions:
+        permission_['phi-access'] = True
+    result = config.db[coll].update_one({'_id': coll_item['_id']}, {'$set': {'permissions' : permissions}})
+    if result.modified_count == 0:
+        return "Failed to add phi access to permissions in {} container {}".format(coll_item.get("_id"), coll)
+    return True
+
+def upgrade_to_38():
+    """
+    permissions now have a mandatory phi-access field
+    """
+    for coll in ['acquisitions', 'groups', 'projects', 'sessions', 'analyses']:
+        cursor = config.db[coll].find({'permissions.site': {'$exists': True}})
+        process_cursor(cursor, upgrade_to_38_closure, context = coll)
 
 def upgrade_to_38_closure(user):
 

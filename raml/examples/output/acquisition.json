@@ -33,7 +33,8 @@
   "permissions": [
     {
       "access": "admin",
-      "_id": "coltonlw@flywheel.io"
+      "_id": "coltonlw@flywheel.io",
+      "phi-access": true
     }
   ]
 }

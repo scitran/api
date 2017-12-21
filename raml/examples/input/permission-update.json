@@ -1,4 +1,5 @@
 {
-	"access": "ro", 
-	"_id": "coltonlw@flywheel.io"
+	"access": "ro",
+	"_id": "coltonlw@flywheel.io",
+	"phi-access": true
 }

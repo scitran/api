@@ -129,11 +129,10 @@ class ContainerStorage(object):
 
     def exec_op(self, action, _id=None, payload=None, query=None, user=None,
                 public=False, projection=None, recursive=False, r_payload=None,  # pylint: disable=unused-argument
-                replace_metadata=False, unset_payload=None):
+                replace_metadata=False, unset_payload=None, phi=False): # pylint: disable=unused-argument
         """
         Generic method to exec a CRUD operation from a REST verb.
         """
-
         check = consistencychecker.get_container_storage_checker(action, self.cont_name)
         data_op = payload or {'_id': _id}
         check(data_op)
