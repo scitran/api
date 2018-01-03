@@ -25,5 +25,52 @@
       "_id": "local",
       "type": "engine"
     }
+  ],
+  "filetypes": [
+    { "_id": "BVAL",            "regex": "\\.(bval|bvals)$" },
+    { "_id": "BVEC",            "regex": "\\.(bvec|bvecs)$" },
+    { "_id": "DICOM",           "regex": "\\.(dcm|dcm\\.zip|dicom\\.zip)$" },
+    { "_id": "EFile",           "regex": "^E.*P.*\\.7$" },
+    { "_id": "GE Physio",       "regex": "\\.gephysio\\.zip$" },
+    { "_id": "MGH Data",        "regex": "\\.(mgh|mgz|mgh\\.gz)$" },
+    { "_id": "NIfTI",           "regex": "\\.(nii\\.gz|nii)$" },
+    { "_id": "PAR/REC",         "regex": "\\.(parrec\\.zip|par-rec\\.zip)$" },
+    { "_id": "PFile Header",    "regex": "\\.(7\\.hdr)$" },
+    { "_id": "PFile",           "regex": "\\.(7\\.gz|7|7\\.zip)$" },
+
+    { "_id": "EEG",             "regex": "\\.eeg\\.zip$" },
+
+    { "_id": "QC",              "regex": "\\.(q[ac]\\.png|q[ac]\\.json|q[ac]\\.html)$" },
+
+    { "_id": "MATLAB Data",     "regex": "\\.mat$" },
+    { "_id": "PsychoPy Data",   "regex": "\\.psydat$" },
+
+    { "_id": "C/C++",           "regex": "\\.(c|cpp)$" },
+    { "_id": "CSS",             "regex": "\\.css$" },
+    { "_id": "HDF5",            "regex": "\\.(h5|hdf5)$" },
+    { "_id": "HTML",            "regex": "\\.(html|htm)$" },
+    { "_id": "JSON",            "regex": "\\.json$" },
+    { "_id": "Java",            "regex": "\\.java$" },
+    { "_id": "JavaScript",      "regex": "\\.js$" },
+    { "_id": "Jupyter",         "regex": "\\.ipynb$" },
+    { "_id": "MATLAB",          "regex": "\\.(m|mex|mlx)$" },
+    { "_id": "Markdown",        "regex": "\\.(md|markdown)$" },
+    { "_id": "PHP",             "regex": "\\.php$" },
+    { "_id": "Plain Text",      "regex": "\\.txt$" },
+    { "_id": "Python",          "regex": "\\.py$" },
+    { "_id": "TOML",            "regex": "\\.toml$" },
+    { "_id": "XML",             "regex": "\\.xml$" },
+    { "_id": "YAML",            "regex": "\\.(yaml|yml)$" },
+
+    { "_id": "Archive",         "regex": "\\.(zip|tbz2|tar\\.gz|tbz|tar\\.bz2|tgz|tar|txz|tar\\.xz)$" },
+    { "_id": "Audio",           "regex": "\\.(mp3|wav|wave)$" },
+    { "_id": "Document",        "regex": "\\.(docx|doc)$" },
+    { "_id": "Image",           "regex": "\\.(jpg|tif|jpeg|gif|bmp|png|tiff)$" },
+    { "_id": "Log",             "regex": "\\.log$" },
+    { "_id": "PDF",             "regex": "\\.pdf$" },
+    { "_id": "Presentation",    "regex": "\\.(ppt|pptx)$" },
+    { "_id": "Spreadsheet",     "regex": "\\.(xls|xlsx)$" },
+    { "_id": "Tabular Data",    "regex": "\\.([ct]sv\\.gz|[ct]sv)$" },
+    { "_id": "Video",           "regex": "\\.(mpeg|mpg|mov|mp4|m4v|mts)$" }
   ]
 }

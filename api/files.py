@@ -1,9 +1,9 @@
-import os
 import cgi
-import json
-import shutil
-import hashlib
 import collections
+import hashlib
+import os
+import re
+import shutil
 
 from . import util
 from . import config
@@ -150,18 +150,15 @@ def getHashingFieldStorage(upload_dir, hash_alg):
 
 # File extension --> scitran file type detection hueristics.
 # Listed in precendence order.
-with open(os.path.join(os.path.dirname(__file__), 'filetypes.json')) as fd:
-    TYPE_MAP = json.load(fd)
-
-KNOWN_FILETYPES = {ext: filetype for filetype, extensions in TYPE_MAP.iteritems() for ext in extensions}
 
 def guess_type_from_filename(filename):
-    particles = filename.split('.')[1:]
-    extentions = ['.' + '.'.join(particles[i:]) for i in range(len(particles))]
-    for ext in extentions:
-        filetype = KNOWN_FILETYPES.get(ext.lower())
-        if filetype:
-            break
-    else:
-        filetype = None
+    filetype = None
+    m_length = 0
+    cursor = config.db.filetypes.find({})
+
+    for document in cursor:
+        m = re.search(document['regex'], filename)
+        if m and m_length < len(m.group(0)):
+            filetype = document['_id']
+
     return filetype

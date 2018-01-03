@@ -56,6 +56,12 @@ def main():
     r = as_root.post('/groups', json={'_id': 'test-group'})
     assert r.ok
 
+    # create file types
+    r = as_root.post('/filetype', json={'_id': 'dicom', 'regex': '\.(dcm|dcm\.zip|dicom\.zip)$'})
+    assert r.ok
+    r = as_root.post('/filetype', json={'_id': 'text', 'regex': '\.txt$'})
+    assert r.ok
+
     # upload file to test-project-1/test-session-1/test-acquisition-1
     # depends on 'create test-group'
     r = as_root.post('/upload/label', files={

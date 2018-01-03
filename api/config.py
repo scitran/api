@@ -8,7 +8,7 @@ import datetime
 import elasticsearch
 
 from . import util
-from .dao.dbutil import try_replace_one
+from .dao.dbutil import try_replace_one, try_update_one
 
 logging.basicConfig(
     format='%(asctime)s %(name)16.16s %(filename)24.24s %(lineno)5d:%(levelname)4.4s %(message)s',
@@ -160,6 +160,7 @@ expected_input_schemas = set([
     'container.json',
     'device.json',
     'file.json',
+    'filetype.json',
     'file-update.json',
     'group-new.json',
     'group-update.json',
@@ -225,6 +226,7 @@ def create_or_recreate_ttl_index(coll_name, index_name, ttl):
 
 def initialize_db():
     log.info('Initializing database, creating indexes')
+
     # TODO review all indexes
     db.users.create_index('api_key.key')
     db.projects.create_index([('gid', 1), ('name', 1)])
@@ -251,7 +253,12 @@ def initialize_db():
     create_or_recreate_ttl_index('job_tickets', 'timestamp', 300)
 
     now = datetime.datetime.utcnow()
-    db.groups.update_one({'_id': 'unknown'}, {'$setOnInsert': { 'created': now, 'modified': now, 'label': 'Unknown', 'permissions': []}}, upsert=True)
+    try_update_one(db,
+                   'groups', {'_id': 'unknown'},
+                   {'$setOnInsert': {'created': now, 'modified': now, 'label': 'Unknown', 'permissions': []}},
+                   upsert=True)
+
+    log.info('Initializing database, creating indexes ....DONE')
 
 def get_config():
     global __last_update, __config, __config_persisted #pylint: disable=global-statement

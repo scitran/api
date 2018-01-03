@@ -15,6 +15,7 @@ import time
 
 from api import config
 from api import util
+from api import files as files_module
 from api.dao import containerutil
 from api.dao.containerstorage import ProjectStorage
 from api.jobs.jobs import Job
@@ -22,7 +23,7 @@ from api.jobs import gears
 from api.types import Origin
 from api.jobs import batch
 
-CURRENT_DATABASE_VERSION = 40 # An int that is bumped when a new schema change is made
+CURRENT_DATABASE_VERSION = 41 # An int that is bumped when a new schema change is made
 
 def get_db_version():
 
@@ -1300,6 +1301,100 @@ def upgrade_to_40():
     """
     cursor = config.db.acquisitions.find({'timestamp':{'$type':'string'}})
     process_cursor(cursor, upgrade_to_40_closure)
+
+
+def upgrade_to_41_closure(cont, context):
+    """
+    Re-type files based on new filetypes stored in mongo collection
+    """
+
+    # passing filetypes rather than using util function to speed upgrade and skip db lookup
+    filetypes = context['filetypes']
+    cont_name = context['cont_name']
+
+    files = cont.get('files', [])
+
+    for f in files:
+
+        new_type = None
+        m_length = 0
+
+        for document in filetypes:
+            m = re.search(document['regex'], f['name'])
+            if m and m_length < len(m.group(0)):
+                new_type = document['_id']
+        if new_type is not None:
+            f['type'] = new_type
+
+    config.db['cont_name'].update_one({'_id': cont['_id']}, {'$set': {'files': files}})
+
+    return True
+
+
+def upgrade_to_41():
+    """
+    Load initial filetypes into mongo, retype existing files
+    """
+
+    # It was decided an initial load of filetypes here for existing users was
+    # easiest way to move those users forward. Future changes a site's
+    # filetypes will happen through the API endpoints as expected
+    filetypes = [
+        { "_id": "BVAL",            "regex": "\\.(bval|bvals)$" },
+        { "_id": "BVEC",            "regex": "\\.(bvec|bvecs)$" },
+        { "_id": "DICOM",           "regex": "\\.(dcm|dcm\\.zip|dicom\\.zip)$" },
+        { "_id": "EFile",           "regex": "^E.*P.*\\.7$" },
+        { "_id": "GE Physio",       "regex": "\\.gephysio\\.zip$" },
+        { "_id": "MGH Data",        "regex": "\\.(mgh|mgz|mgh\\.gz)$" },
+        { "_id": "NIfTI",           "regex": "\\.(nii\\.gz|nii)$" },
+        { "_id": "PAR/REC",         "regex": "\\.(parrec\\.zip|par-rec\\.zip)$" },
+        { "_id": "PFile Header",    "regex": "\\.(7\\.hdr)$" },
+        { "_id": "PFile",           "regex": "\\.(7\\.gz|7|7\\.zip)$" },
+
+        { "_id": "EEG",             "regex": "\\.eeg\\.zip$" },
+
+        { "_id": "QC",              "regex": "\\.(q[ac]\\.png|q[ac]\\.json|q[ac]\\.html)$" },
+
+        { "_id": "MATLAB Data",     "regex": "\\.mat$" },
+        { "_id": "PsychoPy Data",   "regex": "\\.psydat$" },
+
+        { "_id": "C/C++",           "regex": "\\.(c|cpp)$" },
+        { "_id": "CSS",             "regex": "\\.css$" },
+        { "_id": "HDF5",            "regex": "\\.(h5|hdf5)$" },
+        { "_id": "HTML",            "regex": "\\.(html|htm)$" },
+        { "_id": "JSON",            "regex": "\\.json$" },
+        { "_id": "Java",            "regex": "\\.java$" },
+        { "_id": "JavaScript",      "regex": "\\.js$" },
+        { "_id": "Jupyter",         "regex": "\\.ipynb$" },
+        { "_id": "MATLAB",          "regex": "\\.(m|mex|mlx)$" },
+        { "_id": "Markdown",        "regex": "\\.(md|markdown)$" },
+        { "_id": "PHP",             "regex": "\\.php$" },
+        { "_id": "Plain Text",      "regex": "\\.txt$" },
+        { "_id": "Python",          "regex": "\\.py$" },
+        { "_id": "TOML",            "regex": "\\.toml$" },
+        { "_id": "XML",             "regex": "\\.xml$" },
+        { "_id": "YAML",            "regex": "\\.(yaml|yml)$" },
+
+        { "_id": "Archive",         "regex": "\\.(zip|tbz2|tar\\.gz|tbz|tar\\.bz2|tgz|tar|txz|tar\\.xz)$" },
+        { "_id": "Audio",           "regex": "\\.(mp3|wav|wave)$" },
+        { "_id": "Document",        "regex": "\\.(docx|doc)$" },
+        { "_id": "Image",           "regex": "\\.(jpg|tif|jpeg|gif|bmp|png|tiff)$" },
+        { "_id": "Log",             "regex": "\\.log$" },
+        { "_id": "PDF",             "regex": "\\.pdf$" },
+        { "_id": "Presentation",    "regex": "\\.(ppt|pptx)$" },
+        { "_id": "Spreadsheet",     "regex": "\\.(xls|xlsx)$" },
+        { "_id": "Tabular Data",    "regex": "\\.([ct]sv\\.gz|[ct]sv)$" },
+        { "_id": "Video",           "regex": "\\.(mpeg|mpg|mov|mp4|m4v|mts)$" }
+    ]
+
+    for ft in filetypes:
+        config.db.filetypes.replace_one({'_id': ft['_id']}, ft, upsert=True)
+
+    for cont_name in ['projects', 'sessions', 'acquisitions', 'analyses', 'collections']:
+
+        # Find all containers that have at least one file
+        cursor = config.db[cont_name].find({'files': { '$gt': [] }})
+        process_cursor(cursor, upgrade_to_41_closure, context={'filetypes': filetypes, 'cont_name': cont_name})
 
 ###
 ### BEGIN RESERVED UPGRADE SECTION

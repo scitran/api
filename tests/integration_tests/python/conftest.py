@@ -32,6 +32,13 @@ def bootstrap_users(as_drone):
     return data_builder
 
 
+@pytest.fixture(scope='session', autouse=True)
+def bootstrap_filetypes(as_admin):
+    """Create file types"""
+    as_admin.post('/filetype', json={'_id': 'tabular data', 'regex': '\.(csv\.gz|csv)$'})
+    as_admin.post('/filetype', json={'_id': 'text', 'regex': '\.txt$'})
+
+
 @pytest.fixture(scope='session')
 def as_drone():
     """Return requests session with drone access"""

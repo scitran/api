@@ -44,7 +44,7 @@ preserving their contents across container instances.
      --rm \
      -v /dev/bali.prod/docker/uwsgi/bootstrap-dev.json:/accounts.json \
      scitran-core \
-       /var/scitran/code/api/docker/bootstrap-accounts.sh \
+       /var/scitran/code/api/docker/bootstrap-defaults.sh \
        /accounts.json
 
 

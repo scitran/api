@@ -7,6 +7,7 @@ from .handlers.confighandler        import Config, Version
 from .handlers.containerhandler     import ContainerHandler
 from .handlers.dataexplorerhandler  import DataExplorerHandler
 from .handlers.devicehandler        import DeviceHandler
+from .handlers.filetypehandler      import FileType
 from .handlers.grouphandler         import GroupHandler
 from .handlers.listhandler          import FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
 from .handlers.refererhandler       import AnalysesHandler
@@ -43,6 +44,9 @@ routing_regexes = {
     # Filename
     'fname': '[^/]+',
 
+    # File type name
+    'ftypename': '[^/]+',
+
     # Note ID
     'nid': '[0-9a-f]{24}',
 
@@ -77,9 +81,11 @@ endpoints = [
 
         # System configuration
 
-        route('/config',           Config,              m=['GET']),
-        route('/config.js',        Config,  h='get_js', m=['GET']),
-        route('/version',          Version,             m=['GET']),
+        route('/config',                        Config,              m=['GET']),
+        route('/config.js',                     Config,  h='get_js', m=['GET']),
+        route('/version',                       Version,             m=['GET']),
+        route('/filetype',                      FileType,            m=['GET', 'POST']),
+        route('/filetype/<_id:{ftypename}>',    FileType,            m=['DELETE']),
 
 
         # General-purpose upload & download

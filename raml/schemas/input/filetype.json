@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "File type",
+  "type": "object",
+  "properties": {
+    "_id":              {
+                          "title": "ID",
+                          "type": "string"
+                        },
+    "regex":        {
+                          "title": "Regular Expression",
+                          "type": "string"
+                        }
+  },
+  "additionalProperties": false,
+  "required":["_id", "regex"]
+}

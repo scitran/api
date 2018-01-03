@@ -62,9 +62,9 @@ def _upsert_permission(request_session, api_url, permission_doc, group_id):
     full_permission_url = "{0}/{1}".format(base_permission_url, permission_doc['_id'])
     return request_session.put(full_permission_url, json=permission_doc)
 
-def users(filepath, api_url, http_headers, insecure):
+def bootstrap(filepath, api_url, http_headers, insecure):
     """
-    Upserts the users/groups/permissions defined in filepath parameter.
+    Upserts the users/groups/permissions/file types defined in filepath parameter.
 
     Raises:
         requests.HTTPError: Upsert failed.
@@ -95,7 +95,7 @@ def users(filepath, api_url, http_headers, insecure):
 
         log.info('bootstrapping projects...')
         for p in input_data.get('projects', []):
-            r = rs.post(api_url + '/projects?inherit=true' , json=p)
+            r = rs.post(api_url + '/projects?inherit=true', json=p)
             r.raise_for_status()
 
             project_id = r.json()['_id']
@@ -110,6 +110,11 @@ def users(filepath, api_url, http_headers, insecure):
                     log.info('Adding rule...')
                     r = rs.post(api_url + '/projects/' +  project_id + '/rules', json=rule)
                     r.raise_for_status()
+
+        log.info('bootstrapping file types...')
+        for f in input_data.get('filetypes', []):
+            r = rs.post(api_url + '/filetype', json=f)
+            r.raise_for_status()
 
     log.info('bootstrapping complete')
 
@@ -134,7 +139,7 @@ if args.secret:
 # TODO: extend this to support oauth tokens
 
 try:
-    users(args.json, args.url, http_headers, args.insecure)
+    bootstrap(args.json, args.url, http_headers, args.insecure)
 except requests.HTTPError as ex:
     log.error(ex)
     log.error("request_body={0}".format(ex.response.request.body))
