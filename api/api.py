@@ -13,6 +13,7 @@ from .handlers.refererhandler       import AnalysesHandler
 from .handlers.reporthandler        import ReportHandler
 from .handlers.resolvehandler       import ResolveHandler
 from .handlers.roothandler          import RootHandler
+from .handlers.savesearchhandler   import SaveSearchHandler
 from .handlers.schemahandler        import SchemaHandler
 from .handlers.userhandler          import UserHandler
 from .jobs.handlers                 import BatchHandler, JobsHandler, JobHandler, GearsHandler, GearHandler, RulesHandler, RuleHandler
@@ -108,6 +109,12 @@ endpoints = [
         route('/dataexplorer/search/fields/aggregate',  DataExplorerHandler,   h='aggregate_field_values', m=['POST']),
         route('/dataexplorer/search/nodes',             DataExplorerHandler,   h='get_nodes',              m=['POST']),
         route('/dataexplorer/index/fields',             DataExplorerHandler,   h='index_field_names',      m=['POST']),
+
+        # Search Saving
+        route('/savesearches',                            SaveSearchHandler,                                m=['POST']),
+        route('/savesearches',                            SaveSearchHandler,     h='get_all',               m=['GET']),
+        route('/savesearches/<sid:{cid}>',                SaveSearchHandler,                                m=['GET','DELETE']),
+        route('/savesearches/<sid:{cid}>',                SaveSearchHandler,     h='replace_search',        m=['POST']),
 
         # Users
 
@@ -233,7 +240,7 @@ endpoints = [
 
         # Collections / Projects
 
-        prefix('/<cont_name:collections|projects>', [
+        prefix('/<cont_name:collections|projects|savesearches>', [
             prefix('/<cid:{cid}>', [
                 route('/<list_name:permissions>',                          PermissionsListHandler, m=['POST']),
                 route('/<list_name:permissions>/<_id:{uid}>',              PermissionsListHandler, m=['GET', 'PUT', 'DELETE']),

@@ -1,0 +1,46 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions":{
+        "filter" : {
+          "type" :  "object"
+          
+        },
+        "search" : {
+          "type": "object",
+          "properties": {
+            "filters": {
+                "type" :      "array",
+                "items" :     {"$ref": "#/definitions/filter"}
+            },
+            "search_string":  {"type" : "string"},
+            "all_data":       {"type": "boolean"},
+            "return_type":    {"enum": ["session", "acquisition", "analysis", "file"]}
+          },
+          "additionalProperties": false,
+          "required": ["return_type"]
+        },
+        "search-input":{
+          "type":       "object",
+          "properties": {
+            "label": {"$ref": "../definitions/container.json#/definitions/label"},
+            "search": {"$ref": "#/definitions/search"}
+          },
+          "additionalProperties": false
+        },
+        "search-output":{
+          "type":         "object",
+          "properties": {
+            "_id":          {"$ref":"../definitions/objectid.json#"},
+            "label":        {"$ref": "../definitions/container.json#/definitions/label"},
+            "creator":          {"$ref":"../definitions/container.json#/definitions/uid"},
+            "created":      {"$ref":"../definitions/created-modified.json#/definitions/created"},
+            "modified":     {"$ref":"../definitions/created-modified.json#/definitions/modified"},
+            "permissions":  {
+                "type":"array",
+                "items":{"$ref":"../definitions/permission.json#/definitions/permission-output-default-required"}
+            },
+            "search":       {"$ref":"#/definitions/search"}    
+          }
+        }
+    }
+}

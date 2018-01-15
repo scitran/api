@@ -21,8 +21,11 @@ var example_acquisition_id = '';
 var test_project_1 = null;
 var test_project_tag = 'test-project-tag';
 var delete_project_id = '';
-var device_id = 'bootstrapper_Bootstrapper'
-var injected_api_key = 'XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK'
+var device_id = 'bootstrapper_Bootstrapper';
+var injected_api_key = 'XZpXI40Uk85eozjQkU1zHJ6yZHpix+j0mo1TMeGZ4dPzIqVPVGPmyfeK';
+var search_id = '';
+var delete_search_id = '';
+var user_id = 'user@user.com'
 
 // Tests we're skipping, fix these
 
@@ -1461,3 +1464,128 @@ hooks.before("GET /devices/{DeviceId} -> 404", function(test, done) {
     test.request.params.DeviceId = 'bad_device_id';
     done();
 });
+
+// Save Search Tests
+hooks.before("POST /savesearches -> 200", function(test, done) {
+    test.request.body = {
+        "label": "Lable",
+        "search": {
+            "return_type": "session"
+        }
+    };
+    done();
+})
+hooks.after("POST /savesearches -> 200", function(test, done) {
+    delete_search_id = test.response.body['_id'];
+    done();
+})
+
+hooks.before("POST /savesearches -> 400", function(test, done) {
+    test.request.body = {
+        "not-label": "Label"
+    };
+    done();
+})
+
+hooks.after("GET /savesearches -> 200", function(test, done) {
+    search_id = test.response.body[0]._id;
+    done();
+})
+
+hooks.before("GET /savesearches/{SearchId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id
+    };
+    done();
+})
+
+hooks.before("POST /savesearches/{SearchId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id
+    };
+    test.request.body = {
+        "label": "New Label",
+        "search": {
+            "return_type": "session"
+        },
+        "_id": search_id
+    };
+    done();
+})
+
+hooks.before("POST /savesearches/{SearchId} -> 400", function(test, done) {
+    test.request.params = {
+        SearchId: search_id
+    };
+    test.request.body = {
+        "not-label": "Label2"
+    };
+    done();
+})
+
+hooks.before("POST /savesearches/{SearchId}/permissions -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id
+    };
+    test.request.body = {
+        "access" : "admin",
+        "_id": user_id
+    };
+    done();
+})
+
+hooks.before("POST /savesearches/{SearchId}/permissions -> 400", function(test, done) {
+    test.request.params = {
+        SearchId: search_id
+    };
+    test.request.body = {
+        "not-access" : "admin",
+        "not_id": user_id
+    };
+    done();
+})
+
+hooks.before("GET /savesearches/{SearchId}/permissions/{UserId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id,
+        UserId: user_id
+    };
+    done();
+})
+
+hooks.before("PUT /savesearches/{SearchId}/permissions/{UserId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id,
+        UserId: user_id
+    };
+    test.request.body = {
+        "access" : "ro"
+    };
+    done();
+})
+
+hooks.before("PUT /savesearches/{SearchId}/permissions/{UserId} -> 400", function(test, done) {
+    test.request.params = {
+        SearchId: search_id,
+        UserId: user_id
+    };
+    test.request.body = {
+        "access" : "not_an_access_level"
+    };
+    done();
+})
+
+hooks.before("DELETE /savesearches/{SearchId}/permissions/{UserId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: search_id,
+        UserId: user_id
+    };
+    done();
+})
+
+hooks.before("DELETE /savesearches/{SearchId} -> 200", function(test, done) {
+    test.request.params = {
+        SearchId: delete_search_id
+    };
+    done();
+})

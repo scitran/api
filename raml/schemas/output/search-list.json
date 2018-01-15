@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type":"array",
+    "items":{
+        "type":"object",
+        "allOf":[{"$ref":"../definitions/search.json#/definitions/search-output"}],
+        "required":[
+            "_id", "label"
+        ]
+    }
+}

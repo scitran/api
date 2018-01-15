@@ -81,6 +81,19 @@ def main():
     })
     assert r.ok
 
+    # create a saved search
+    r = as_root.post('/savesearches', json={
+            "label": "Test Search",
+            "search": {
+                "return_type": "file",
+                "filters": [{"terms": {"file.type":["nifti"]}}]
+            },
+        })
+    assert r.ok
+    r = as_root.get('/savesearches')
+    assert r.ok
+    assert r.json()[0]['label'] == 'Test Search'
+
     # list projects
     # depends on 'upload file to test-project-1/test-session-1/test-acquisition-1'
     r = as_root.get('/projects')

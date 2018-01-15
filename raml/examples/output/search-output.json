@@ -1,0 +1,10 @@
+{
+	"label": "Test Search",
+	"_id": "57e452791cff88b85f9f9c23",
+	"search": {
+		"return_type": "file",
+		"filters": [{"terms": {"file.type":["nifti"]}}]
+	},
+	"permissions": [{"access": "admin", "_id": "harshakethineni@invenshure.com"}],
+	"creator": "harshakethineni@invenshure.com"
+}
