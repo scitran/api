@@ -3,6 +3,7 @@ import datetime
 import json
 import os.path
 import shutil
+import uuid
 
 from .web import base
 from .web.errors import FileStoreException, FileFormException
@@ -113,19 +114,21 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
                 tempdir_exists,
                 tempdir_exists and os.listdir(tempdir.name),
             ))
-        field.size	 = os.path.getsize(field.path)
-        field.hash	 = field.file.get_formatted_hash()
+        field.size = os.path.getsize(field.path)
+        field.hash = files.hash_file_formatted(field.path)
+        field.uuid = str(uuid.uuid4())
         field.mimetype = util.guess_mimetype(field.filename) # TODO: does not honor metadata's mime type if any
         field.modified = timestamp
 
         # create a file-attribute map commonly used elsewhere in the codebase.
         # Stands in for a dedicated object... for now.
         file_attrs = {
+            '_id': field.uuid,
             'name':	 field.filename,
             'modified': field.modified, #
             'size':	 field.size,
             'mimetype': field.mimetype,
-            'hash':	 field.hash,
+            'hash': field.hash,
             'origin': origin,
 
             'type': None,

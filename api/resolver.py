@@ -1,4 +1,4 @@
-"""
+"""1
 Resolve an ambiguous path through the data hierarchy.
 """
 

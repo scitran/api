@@ -8,10 +8,7 @@ import uuid
 import zipfile
 
 from ..web import base
-from .. import config
-from .. import upload
-from .. import util
-from .. import validators
+from .. import config, files, upload, util, validators
 from ..auth import listauth, always_ok
 from ..dao import noop
 from ..dao import liststorage
@@ -444,7 +441,10 @@ class FileListHandler(ListHandler):
         hash_ = self.get_param('hash')
         if hash_ and hash_ != fileinfo['hash']:
             self.abort(409, 'file exists, hash mismatch')
-        filepath = os.path.join(config.get_item('persistent', 'data_path'), util.path_from_hash(fileinfo['hash']))
+        data_path = config.get_item('persistent', 'data_path')
+        file_path = files.get_file_abs_path(fileinfo.get('_id', ''))
+        if not util.file_exists(file_path):
+            file_path = os.path.join(data_path, util.path_from_hash(fileinfo['hash']))
 
         # Request for download ticket
         if self.get_param('ticket') == '':
@@ -454,7 +454,7 @@ class FileListHandler(ListHandler):
         # Request for info about zipfile
         elif self.is_true('info'):
             try:
-                info = self.build_zip_info(filepath)
+                info = self.build_zip_info(file_path)
             except zipfile.BadZipfile:
                 self.abort(400, 'not a zip file')
             return info
@@ -463,7 +463,7 @@ class FileListHandler(ListHandler):
         elif self.get_param('member') is not None:
             zip_member = self.get_param('member')
             try:
-                with zipfile.ZipFile(filepath) as zf:
+                with zipfile.ZipFile(file_path) as zf:
                     self.response.headers['Content-Type'] = util.guess_mimetype(zip_member)
                     self.response.write(zf.open(zip_member).read())
             except zipfile.BadZipfile:
@@ -480,7 +480,7 @@ class FileListHandler(ListHandler):
 
         # Authenticated or ticketed download request
         else:
-            self.response.app_iter = open(filepath, 'rb')
+            self.response.app_iter = open(file_path, 'rb')
             self.response.headers['Content-Length'] = str(fileinfo['size']) # must be set after setting app_iter
             if self.is_true('view'):
                 self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))

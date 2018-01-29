@@ -3,13 +3,12 @@ API request handlers for the jobs module
 """
 import bson
 import copy
-import os
 import StringIO
 from jsonschema import ValidationError
 from urlparse import urlparse
 
 from .. import upload
-from .. import util
+from .. import files
 from ..auth import require_drone, require_login, has_access
 from ..dao import hierarchy
 from ..dao.containerstorage import ProjectStorage, SessionStorage, AcquisitionStorage
@@ -108,9 +107,9 @@ class GearHandler(base.RequestHandler):
         """Download gear tarball file"""
         dl_id = kwargs.pop('cid')
         gear = get_gear(dl_id)
-        hash_ = gear['exchange']['rootfs-hash']
-        filepath = os.path.join(config.get_item('persistent', 'data_path'), util.path_from_hash('v0-' + hash_.replace(':', '-')))
-        self.response.app_iter = open(filepath, 'rb')
+        file_id = gear['exchange']['rootfs-id']
+        file_path = files.get_file_abs_path(file_id)
+        self.response.app_iter = open(file_path, 'rb')
         # self.response.headers['Content-Length'] = str(gear['size']) # must be set after setting app_iter
         self.response.headers['Content-Type'] = 'application/octet-stream'
         self.response.headers['Content-Disposition'] = 'attachment; filename="gear.tar"'

@@ -74,6 +74,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     project_file = 'project_file'
     r = as_admin.post('/projects/' + project + '/files', files=file_form(project_file))
     assert r.ok
+    project_file_id = r.json()[0]['_id']  # save the file id for later usage
     r = as_admin.post('/resolve', json={'path': [group, project_label]})
     result = r.json()
     assert r.ok
@@ -95,7 +96,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     r = as_admin.post('/resolve', json={'path': [group, project_label, project_file]})
     result = r.json()
     assert r.ok
-    assert path_in_result([group, project, project_file], result)
+    assert path_in_result([group, project, project_file_id], result)
     assert result['children'] == []
 
     # try to resolve non-existent root/group/project/child
@@ -115,6 +116,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     session_file = 'session_file'
     r = as_admin.post('/sessions/' + session + '/files', files=file_form(session_file))
     assert r.ok
+    session_file_id = r.json()[0]['_id']
     r = as_admin.post('/resolve', json={'path': [group, project_label, session_label]})
     result = r.json()
     assert r.ok
@@ -136,7 +138,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     r = as_admin.post('/resolve', json={'path': [group, project_label, session_label, session_file]})
     result = r.json()
     assert r.ok
-    assert path_in_result([group, project, session, session_file], result)
+    assert path_in_result([group, project, session, session_file_id], result)
     assert result['children'] == []
 
     # try to resolve non-existent root/group/project/session/child
@@ -156,6 +158,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     acquisition_file = 'acquisition_file'
     r = as_admin.post('/acquisitions/' + acquisition + '/files', files=file_form(acquisition_file))
     assert r.ok
+    acquisition_file_id = r.json()[0]['_id']
     r = as_admin.post('/resolve', json={'path': [group, project_label, session_label, acquisition_label]})
     result = r.json()
     assert r.ok
@@ -167,7 +170,7 @@ def test_resolver(data_builder, as_admin, as_user, as_public, file_form):
     r = as_admin.post('/resolve', json={'path': [group, project_label, session_label, acquisition_label, acquisition_file]})
     result = r.json()
     assert r.ok
-    assert path_in_result([group, project, session, acquisition, acquisition_file], result)
+    assert path_in_result([group, project, session, acquisition, acquisition_file_id], result)
     assert result['children'] == []
 
     # try to resolve non-existent root/group/project/session/acquisition/child
