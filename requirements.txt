@@ -1,17 +1,15 @@
 django>=1.11.0,<1.12.0
 elasticsearch==5.3.0
-enum==0.4.6
+enum34==1.1.6
+git+https://github.com/flywheel-io/gears.git@v0.1.4#egg=gears
 jsonschema==2.6.0
-Markdown==2.6.5
+markdown==2.6.5
 pymongo==3.2
-pyOpenSSL >=17.1.0,<18.0
 python-dateutil==2.4.2
 pytz==2015.7
 requests==2.9.1
 rfc3987==1.3.4
 strict-rfc3339==0.7
 unicodecsv==0.9.0
-uwsgi==2.0.13.1
 webapp2==2.5.2
-WebOb==1.5.1
-git+https://github.com/flywheel-io/gears.git@v0.1.4#egg=gears
+webob==1.5.1

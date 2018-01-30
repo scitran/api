@@ -19,23 +19,6 @@ SciTran Core is a RESTful HTTP API, written in Python and backed by MongoDB. It 
 
 
 ### Usage
-**Currently Python 2 Only**
-
-#### OSX
 ```
-$ ./bin/run-dev-osx.sh --help
-```
-
-For the best experience, please upgrade to a recent version of bash.
-```
-brew install bash bash-completion
-sudo dscl . -create /Users/$(whoami) UserShell /usr/local/bin/bash
-```
-
-#### Ubuntu
-```
-mkvirtualenv scitran-core
-./bin/install-ubuntu.sh
-uwsgi --http :8080 --master --wsgi-file bin/api.wsgi -H $VIRTUAL_ENV \
-    --env SCITRAN_PERSISTENT_DB_URI="mongodb://localhost:27017/scitran-core"
+docker run -p 80:80 -e SCITRAN_CORE_DRONE_SECRET=secret scitran/core
 ```

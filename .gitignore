@@ -2,12 +2,6 @@
 .*sw[op]
 *.py[co]
 *.egg-info
-/persistent
-/runtime
-bootstrap.json
-.cache
+
 /.coverage*
-coverage.xml
 /htmlcov
-node_modules/
-/bin/accesslog.csv

@@ -1,26 +1,40 @@
-sudo: required
 dist: trusty
+sudo: required
 
 services:
-  - mongodb
-env:
-  global:
-    secure: HELJx6WPr+W2S0FV47KkRdlS9NCqlMcdRMK8xWgRqqrEPv24KEvNnHxCy0tRbzITqadYtyvI1MtqtmpG04uty8Gpkc7w6L6LMJ/OuLG0gVX7AnaUovYTlY04m1/L9oyzOrTDXk5J/BKbcyiz7uJtkTc/A8MMZAFfZh7hmhLID78= # BUILD_TRIGGER_URL
+    - docker
 
-install:
-  - bin/install-ubuntu.sh
-  - tests/bin/setup-integration-tests-ubuntu.sh
+env:
+    global:
+        - DOCKER_DIR="$HOME/.cache/docker"
+        - secure: "HhT1TdJcpqys8juVMw/DIZeK7oD4595TEKH5KlowH7MvwwFAUyQFb5W63F8dgk7elvRG+3fmga/m1JfXO+Iu7PVD912eiNDagW9aB3CEl3Z8zg+JUL8IjpMCkyKQDyJMnfOkrzdxdaqfOK+WmF+13f2qBu9Kc7wdXuzgHQrg4+0=" # CI_REGISTRY_USER
+        - secure: "hh7VDZnkxgl/vqHtS4IpXfIAckKpVQvoCzNW7fstr5Mcu8KNiCWIPgObBRm+m13aqpcFTMWQ6lT2kzORz2wWRbDeVhI1eGWOJswGNHPHZLO0Jaei6yfY2nY2mpxZbl+vdg00jkN64mi1ab3e++QgeLFruW0gyNefXX7E5L/mHTs=" # CI_REGISTRY_PASS
+
+cache:
+    directories:
+        - $DOCKER_DIR
+
+before_install:
+    - sudo apt-get update
+    - sudo apt-get -y install docker-ce realpath
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASS
+
+install: true
 
 script:
-  - SCITRAN_PERSISTENT_DB_PORT=27017 tests/bin/run-tests-ubuntu.sh
+    - test -f "$DOCKER_DIR/image.tar" && docker load -i "$DOCKER_DIR/image.tar" || true
+    - docker build -t core:build --target build .
+    - docker build -t core:dist --target dist --build-arg VCS_BRANCH="$TRAVIS_BRANCH" --build-arg VCS_COMMIT="$TRAVIS_COMMIT" .
+    - docker build -t core:dev --target dev .
+    - docker save -o "$DOCKER_DIR/image.tar" $(docker history -q core:build | grep -v '<missing>') $(docker history -q core:dist | grep -v '<missing>')
+    - ./tests/bin/docker-tests.sh --image core:dev
 
 after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" -o  "$TRAVIS_EVENT_TYPE" == "pull_request" ]; then
-        bash <(curl -s https://codecov.io/bash) -cF python;
-    fi
-  - if [ "$TRAVIS_TAG" ]; then
-        ./docker/build-trigger.sh Tag "$TRAVIS_TAG" "$BUILD_TRIGGER_URL";
-    fi
-  - if [ "$TRAVIS_EVENT_TYPE" == "push" -a "$TRAVIS_BRANCH" == "master" ]; then
-        ./docker/build-trigger.sh Branch "$TRAVIS_BRANCH" "$BUILD_TRIGGER_URL";
-    fi
+    - if [ "$TRAVIS_TAG" ]; then
+          docker tag core:dist scitran/core:$TRAVIS_TAG;
+          docker push scitran/core:$TRAVIS_TAG;
+      fi
+    - if [ "$TRAVIS_EVENT_TYPE" == "push" -a "$TRAVIS_BRANCH" == "nginx-unit" ]; then
+          docker tag core:dev scitran/core:nginx-unit;
+          docker push scitran/core:nginx-unit;
+      fi

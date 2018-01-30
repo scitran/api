@@ -1,0 +1,17 @@
+{
+    "listeners": {
+        "*:80": {
+            "application": "scitran-core"
+        }
+    },
+
+    "applications": {
+        "scitran-core": {
+            "type": "python",
+            "workers": 2,
+            "user": "nobody",
+            "path": "/src/core",
+            "module": "api.app"
+        }
+    }
+}
