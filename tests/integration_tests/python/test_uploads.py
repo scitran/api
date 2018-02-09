@@ -504,7 +504,7 @@ def test_label_upload(data_builder, file_form, as_admin):
 
     # label-upload files
     r = as_admin.post('/upload/label', files=file_form(
-        'project.csv', 'subject.csv', 'session.csv', 'acquisition.csv', 'unused.csv',
+        'project.csv', 'subject.csv', 'session.csv', 'b\acquisition.csv', 'unused.csv',
         meta={
             'group': {'_id': group},
             'project': {
@@ -521,11 +521,13 @@ def test_label_upload(data_builder, file_form, as_admin):
             },
             'acquisition': {
                 'label': 'test_acquisition_label',
-                'files': [{'name': 'acquisition.csv'}]
+                'files': [{'name': 'b\acquisition.csv'}]
             }
         })
     )
     assert r.ok
+    assert len(r.json()) == 4
+    assert r.json()[3].get('name') == "b\acquisition.csv"
 
     # delete group and children recursively (created by upload)
     data_builder.delete_group(group, recursive=True)
@@ -686,7 +688,7 @@ def test_acquisition_engine_upload(data_builder, file_form, as_root):
                     'info': {'test': 'f0'}
                 },
                 {
-                    'name': 'two.csv',
+                    'name': 'b\two.csv',
                     'type': 'engine type 1',
                     'info': {'test': 'f1'}
                 }
@@ -697,14 +699,14 @@ def test_acquisition_engine_upload(data_builder, file_form, as_root):
     # try engine upload w/ non-existent job_id
     r = as_root.post('/engine',
         params={'level': 'acquisition', 'id': acquisition, 'job': '000000000000000000000000'},
-        files=file_form('one.csv', 'two.csv', meta=metadata)
+        files=file_form('one.csv', 'b\two.csv', meta=metadata)
     )
     assert r.status_code == 404
 
     # engine upload
     r = as_root.post('/engine',
         params={'level': 'acquisition', 'id': acquisition, 'job': job},
-        files=file_form('one.csv', 'two.csv', meta=metadata)
+        files=file_form('one.csv', 'b\two.csv', meta=metadata)
     )
     assert r.ok
 
