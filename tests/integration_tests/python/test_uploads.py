@@ -1,9 +1,12 @@
 import copy
+import cStringIO
 import datetime
 import json
 
 import dateutil.parser
+import os
 import pytest
+import tarfile
 
 
 # TODO switch to upload_file_form in all uid(-match)/label/reaper upload tests
@@ -1069,7 +1072,7 @@ def test_packfile_upload(data_builder, file_form, as_admin, as_root, api_db):
 
     # upload to packfile
     r = as_admin.post('/projects/' + project + '/packfile',
-        params={'token': token}, files=file_form('one.csv'))
+        params={'token': token}, files=file_form('a/one.csv'))
     assert r.ok
 
     metadata_json = json.dumps({
@@ -1130,6 +1133,36 @@ def test_packfile_upload(data_builder, file_form, as_admin, as_root, api_db):
 
     acquisition = api_db.acquisitions.find_one({'label':'test-packfile-timestamp', 'timestamp':{'$type':'date'}})
     assert acquisition.get('label') == 'test-packfile-timestamp'
+
+    # Download packfile to unzip and check that file has forward slash
+
+    r = as_admin.post('/download', json={
+        'optional': False,
+        'nodes': [
+            {'level': 'acquisition', '_id': str(acquisition.get('_id'))},
+        ]
+    })
+    assert r.ok
+    ticket = r.json()['ticket']
+
+    # Perform the download
+    r = as_admin.get('/download', params={'ticket': ticket})
+    assert r.ok
+
+    tar_file = cStringIO.StringIO(r.content)
+    tar = tarfile.open(mode="r", fileobj=tar_file)
+
+    # Verify a single file in tar with correct file name
+    for tarinfo in tar:
+
+        tar_packfile = cStringIO.StringIO(r.content)
+        tar_pack = tarfile.open(mode="r", fileobj=tar_file)
+
+        for pack_info in tar_pack:
+            assert os.path.basename(tarinfo.name) == 'a/one.csv'
+        tar_pack.close()
+
+    tar.close()
 
 
     # Test that acquisition timestamp is used to differenciate acquisitions and session code for sessions
