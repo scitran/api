@@ -31,6 +31,28 @@
         # schema:
           # $ref: schemas/output/batch-insert.json
 
+/batch/job:
+  post:
+    summary: Create a batch job proposal from preconstructed jobs and insert it as 'pending'.
+    operationId: create_batch_job_from_jobs
+    tags:
+    - batch
+    parameters:
+      - name: body
+        in: body
+        description: ''
+        schema:
+          type: array
+          # Schema file does not exist
+          # $ref: schemas/input/batch-insert.json
+    responses:
+      '200':
+        description: ''
+        # Schema file does not exist
+        # schema:
+          # $ref: schemas/output/batch-insert.json
+
+
 /batch/{BatchId}:
   parameters:
     - in: path
@@ -94,5 +116,5 @@
       '200':
         description: ''
         examples:
-          response: 
+          response:
             canceled_jobs: 4

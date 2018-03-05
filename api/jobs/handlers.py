@@ -241,6 +241,8 @@ class JobsHandler(base.RequestHandler):
             uid = self.uid
 
         job = Queue.enqueue_job(payload, self.origin, perm_check_uid=uid)
+        job.insert()
+
         return { '_id': job.id_ }
 
     @require_admin
@@ -627,6 +629,37 @@ class BatchHandler(base.RequestHandler):
         batch_proposal['ambiguous'] = results.get('ambiguous', [])
         batch_proposal['matched'] = matched
         batch_proposal['improper_permissions'] = improper_permissions
+
+        return batch_proposal
+
+    @require_login
+    def post_with_jobs(self):
+        """
+        Creates a batch from preconstructed jobs
+        """
+        payload = self.request.json
+        jobs_ = payload.get('jobs', [])
+
+        uid = None
+        if not self.superuser_request:
+            uid = self.uid
+
+        for job_number, job_ in enumerate(jobs_):
+            try:
+                Queue.enqueue_job(job_, self.origin, perm_check_uid=uid)
+            except InputValidationException as e:
+                raise InputValidationException("Job {}: {}".format(job_number, str(e)))
+
+        batch_proposal = {
+            'proposal': {
+                'preconstructed_jobs': jobs_
+            },
+            'origin': self.origin,
+            'state': 'pending',
+            '_id': bson.ObjectId()
+        }
+        batch.insert(batch_proposal)
+        batch_proposal['preconstructed_jobs'] = batch_proposal.pop('proposal')
 
         return batch_proposal
 

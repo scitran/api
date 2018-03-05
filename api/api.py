@@ -157,12 +157,13 @@ endpoints = [
 
         # Batch jobs
 
-        route('/batch',                 BatchHandler,   h='get_all',    m=['GET']),
-        route('/batch',                 BatchHandler,                   m=['POST']),
+        route('/batch',                 BatchHandler,   h='get_all',        m=['GET']),
+        route('/batch',                 BatchHandler,                       m=['POST']),
         prefix('/batch', [
-            route('/<:[^/]+>',          BatchHandler,   h='get',        m=['GET']),
-            route('/<:[^/]+>/run',      BatchHandler,   h='run',        m=['POST']),
-            route('/<:[^/]+>/cancel',   BatchHandler,   h='cancel',     m=['POST']),
+            route('/jobs',              BatchHandler,   h='post_with_jobs', m=['POST']),
+            route('/<:[^/]+>',          BatchHandler,   h='get',            m=['GET']),
+            route('/<:[^/]+>/run',      BatchHandler,   h='run',            m=['POST']),
+            route('/<:[^/]+>/cancel',   BatchHandler,   h='cancel',         m=['POST']),
         ]),
 
 

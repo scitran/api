@@ -372,6 +372,7 @@ class AnalysisStorage(ContainerStorage):
         try:
 
             job = Queue.enqueue_job(job, origin, perm_check_uid=uid)
+            job.insert()
         except Exception as e:
             # NOTE #775 remove unusable analysis - until jobs have a 'hold' state
             self.delete_el(analysis['_id'])

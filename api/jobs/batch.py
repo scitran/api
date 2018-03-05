@@ -126,14 +126,21 @@ def update(batch_id, payload):
     if result.modified_count != 1:
         raise Exception('Batch job not updated')
 
-def run(batch_job):
+def run_preconstructed_jobs(origin, preconstructed_jobs):
     """
-    Creates jobs from proposed inputs, returns jobs enqueued.
+    Enqueues jobs and returns list of created jobs
     """
+    jobs = []
 
-    proposal = batch_job.get('proposal')
-    if not proposal:
-        raise APIStorageException('The batch job is not formatted correctly.')
+    for preconstructed_job in preconstructed_jobs:
+        job = Queue.enqueue_job(preconstructed_job, origin)
+        job.insert()
+        jobs.append(job)
+
+    return jobs
+
+def run_container_jobs(batch_job, proposal):
+    # Create jobs from the containers and gear id provided in the proposal
     proposed_inputs = proposal.get('inputs', [])
     proposed_destinations = proposal.get('destinations', [])
 
@@ -184,6 +191,7 @@ def run(batch_job):
         else:
 
             job = Queue.enqueue_job(job_map, origin)
+            job.insert()
             job_id = job.id_
 
 
@@ -207,11 +215,32 @@ def run(batch_job):
         else:
 
             job = Queue.enqueue_job(job_map, origin)
+            job.insert()
             job_id = job.id_
 
 
         jobs.append(job)
         job_ids.append(job_id)
+
+    return jobs, job_ids
+
+def run(batch_job):
+    """
+    Creates jobs from proposed inputs, returns jobs enqueued.
+    """
+
+    proposal = batch_job.get('proposal')
+    if not proposal:
+        raise APIStorageException('The batch job is not formatted correctly.')
+    preconstructed_jobs = proposal.get('preconstructed_jobs')
+
+    # If Running a batch from already-constructed jobs
+    if preconstructed_jobs:
+        origin = batch_job.get('origin')
+        jobs = run_preconstructed_jobs(origin, preconstructed_jobs)
+        job_ids = [job.id_ for job in jobs]
+    else:
+        jobs, job_ids = run_container_jobs(batch_job, proposal)
 
     update(batch_job['_id'], {'state': 'running', 'jobs': job_ids})
     return jobs

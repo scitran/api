@@ -246,7 +246,8 @@ def create_jobs(db, container_before, container_after, container_type):
 
     for pj in potential_jobs:
         job_map = pj['job'].map()
-        Queue.enqueue_job(job_map, origin)
+        job = Queue.enqueue_job(job_map, origin)
+        job.insert()
 
         spawned_jobs.append(pj['rule']['alg'])
 

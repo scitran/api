@@ -253,7 +253,6 @@ class Queue(object):
             tags.append(gear_name)
 
         job = Job(str(gear['_id']), inputs, destination=destination, tags=tags, config_=config_, now=now_flag, attempt=attempt_n, previous_job_id=previous_job_id, origin=origin, batch=batch)
-        job.insert()
         return job
 
     @staticmethod
