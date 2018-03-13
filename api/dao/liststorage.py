@@ -1,13 +1,14 @@
 import bson.errors
 import bson.objectid
+import copy
 import datetime
-import pymongo
 
 from ..web.errors import APIStorageException, APIConflictException, APINotFoundException
 from . import consistencychecker
 from .. import config
 from .. import util
 from ..jobs import rules
+from ..handlers.modalityhandler import check_and_format_classification
 from .containerstorage import SessionStorage, AcquisitionStorage
 
 log = config.log
@@ -115,12 +116,23 @@ class ListStorage(object):
         if result and result.get(self.list_name):
             return result.get(self.list_name)[0]
 
+    def _update_session_compliance(self, _id):
+        if self.cont_name in ['sessions', 'acquisitions']:
+            if self.cont_name == 'sessions':
+                session_id = _id
+            else:
+                session_id = AcquisitionStorage().get_container(_id).get('session')
+            SessionStorage().recalc_session_compliance(session_id)
+
 
 class FileStorage(ListStorage):
 
     def __init__(self, cont_name):
         super(FileStorage,self).__init__(cont_name, 'files', use_object_id=True)
 
+    def _create_jobs(self, container_before):
+        container_after = self.get_container(container_before['_id'])
+        return rules.create_jobs(config.db, container_before, container_after, self.cont_name)
 
     def _update_el(self, _id, query_params, payload, exclude_params):
         container_before = self.get_container(_id)
@@ -145,11 +157,9 @@ class FileStorage(ListStorage):
             '$set': mod_elem
         }
 
-        container_after = self.dbc.find_one_and_update(query, update, return_document=pymongo.collection.ReturnDocument.AFTER)
-        if not container_after:
-            raise APINotFoundException('Could not find and modify {} {}. file not updated'.format(_id, self.cont_name))
-
-        jobs_spawned = rules.create_jobs(config.db, container_before, container_after, self.cont_name)
+        self.dbc.find_one_and_update(query, update)
+        self._update_session_compliance(_id)
+        jobs_spawned = self._create_jobs(container_before)
 
         return {
             'modified': 1,
@@ -162,12 +172,7 @@ class FileStorage(ListStorage):
             if f['name'] == query_params['name']:
                 f['deleted'] = datetime.datetime.utcnow()
         result = self.dbc.update_one({'_id': _id}, {'$set': {'files': files, 'modified': datetime.datetime.utcnow()}})
-        if self.cont_name in ['sessions', 'acquisitions']:
-            if self.cont_name == 'sessions':
-                session_id = _id
-            else:
-                session_id = AcquisitionStorage().get_container(_id).get('session')
-            SessionStorage().recalc_session_compliance(session_id)
+        self._update_session_compliance(_id)
         return result
 
     def _get_el(self, _id, query_params):
@@ -215,7 +220,61 @@ class FileStorage(ListStorage):
         else:
             update['$set']['modified'] = datetime.datetime.utcnow()
 
-        return self.dbc.update_one(query, update)
+        result = self.dbc.update_one(query, update)
+        self._update_session_compliance(_id)
+        return result
+
+
+    def modify_classification(self, _id, query_params, payload):
+        container_before = self.get_container(_id)
+        update = {'$set': {'modified': datetime.datetime.utcnow()}}
+
+        if self.use_object_id:
+            _id = bson.objectid.ObjectId(_id)
+        query = {'_id': _id }
+        query[self.list_name] = {'$elemMatch': query_params}
+
+        modality = self.get_container(_id)['files'][0].get('modality') #TODO: make this more reliable if the file isn't there
+        add_payload = payload.get('add')
+        delete_payload = payload.get('delete')
+        replace_payload = payload.get('replace')
+
+        if (add_payload or delete_payload) and replace_payload is not None:
+            raise APIStorageException('Cannot add or delete AND replace classification fields.')
+
+        if replace_payload is not None:
+            replace_payload = check_and_format_classification(modality, replace_payload)
+
+            r_update = copy.deepcopy(update)
+            r_update['$set'][self.list_name + '.$.classification'] = util.mongo_sanitize_fields(replace_payload)
+
+            self.dbc.update_one(query, r_update)
+
+        else:
+            if add_payload:
+                add_payload = check_and_format_classification(modality, add_payload)
+
+                a_update = copy.deepcopy(update)
+                a_update['$addToSet'] = {}
+                for k,v in add_payload.iteritems():
+                    a_update['$addToSet'][self.list_name + '.$.classification.' + k] = {'$each': v}
+
+                self.dbc.update_one(query, a_update)
+
+            if delete_payload:
+                delete_payload = check_and_format_classification(modality, delete_payload)
+
+                # TODO: Test to make sure $pull succeeds when key does not exist
+                d_update = copy.deepcopy(update)
+                d_update['$pullAll'] = {}
+                for k,v in delete_payload.iteritems():
+                    d_update['$pullAll'][self.list_name + '.$.classification.' + k] = v
+
+                self.dbc.update_one(query, d_update)
+
+        self._update_session_compliance(_id)
+        self._create_jobs(container_before)
+
 
 
 class StringListStorage(ListStorage):

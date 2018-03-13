@@ -195,7 +195,7 @@ class ListHandler(base.RequestHandler):
             else:
                 permchecker = permchecker(self, container)
         else:
-            self.abort(404, 'Element {} not found in container {}'.format(_id, storage.cont_name))
+            self.abort(404, 'Element {} not found in {} {}'.format(query_params.values()[0], containerutil.singularize(storage.cont_name), _id))
 
         mongo_schema_uri = validators.schema_uri('mongo', conf.get('storage_schema_file'))
         mongo_validator = validators.decorator_from_schema_path(mongo_schema_uri)
@@ -539,8 +539,18 @@ class FileListHandler(ListHandler):
         # abort if the query of the update wasn't able to find any matching documents
         if result.matched_count == 0:
             self.abort(404, 'Element not updated in list {} of container {} {}'.format(storage.list_name, storage.cont_name, _id))
-        else:
-            return {'modified':result.modified_count}
+
+    def modify_classification(self, cont_name, list_name, **kwargs):
+        _id = kwargs.pop('cid')
+        permchecker, storage, _, _, _ = self._initialize_request(cont_name, list_name, _id, query_params=kwargs)
+
+        payload = self.request.json_body
+
+        validators.validate_data(payload, 'classification-update.json', 'input', 'POST')
+
+        permchecker(noop)('PUT', _id=_id, query_params=kwargs, payload=payload)
+        storage.modify_classification(_id, kwargs, payload)
+
 
     def post(self, cont_name, list_name, **kwargs):
         _id = kwargs.pop('cid')

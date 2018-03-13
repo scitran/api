@@ -5,11 +5,7 @@
         "file-type":      { "type": "string" },
         "mimetype":       { "type": "string" },
         "modality":       { "type": "string" },
-        "measurements": {
-          "items": { "type": "string"},
-          "type": "array",
-          "uniqueItems": true
-        },
+        "classification": { "type": "object" },
         "tags": {
           "items": { "type": "string"},
           "type": "array",
@@ -36,7 +32,7 @@
             "additionalProperties":false
         },
         "hash":{
-          "type":"string", 
+          "type":"string",
           "minLength":106,
           "maxLength":106
         },
@@ -53,40 +49,40 @@
                     {"type":"null"}
                 ]
             },
-            "measurements": {"$ref":"#/definitions/measurements"},
-            "tags":        {"$ref":"#/definitions/tags"},
-            "info":        {"$ref":"common.json#/definitions/info"},
-            "origin":      {"$ref":"#/definitions/file-origin"},
-            "hash":        {"$ref":"#/definitions/hash"},
-            "created":     {"$ref":"created-modified.json#/definitions/created"},
-            "modified":    {"$ref":"created-modified.json#/definitions/modified"},
-            "size":        {"$ref":"#/definitions/size"},
-            "info_exists": {"type": "boolean"},
-            "input":       {"type":"boolean"},
-            "output":      {"type":"boolean"}
+            "classification": {"$ref":"#/definitions/classification"},
+            "tags":           {"$ref":"#/definitions/tags"},
+            "info":           {"$ref":"common.json#/definitions/info"},
+            "origin":         {"$ref":"#/definitions/file-origin"},
+            "hash":           {"$ref":"#/definitions/hash"},
+            "created":        {"$ref":"created-modified.json#/definitions/created"},
+            "modified":       {"$ref":"created-modified.json#/definitions/modified"},
+            "size":           {"$ref":"#/definitions/size"},
+            "info_exists":    {"type": "boolean"},
+            "input":          {"type":"boolean"},
+            "output":         {"type":"boolean"}
           },
           "additionalProperties": false
         },
         "file-input":{
             "type": "object",
             "properties": {
-              "name":           {"$ref":"#/definitions/name"},
-              "type":           {"$ref":"#/definitions/file-type"},
-              "mimetype":       {"$ref":"#/definitions/mimetype"},
-              "modality":       {"$ref":"#/definitions/modality"},
-              "measurements":   {"$ref":"#/definitions/measurements"},
-              "tags":           {"$ref":"#/definitions/tags"},
-              "info":           {"$ref":"common.json#/definitions/info"}
+              "name":             {"$ref":"#/definitions/name"},
+              "type":             {"$ref":"#/definitions/file-type"},
+              "mimetype":         {"$ref":"#/definitions/mimetype"},
+              "modality":         {"$ref":"#/definitions/modality"},
+              "classification":   {"$ref":"#/definitions/classification"},
+              "tags":             {"$ref":"#/definitions/tags"},
+              "info":             {"$ref":"common.json#/definitions/info"}
           },
           "additionalProperties": false
         },
         "file-update":{
             "type": "object",
             "properties": {
-              "type":           {"$ref":"#/definitions/file-type"},
-              "modality":       {"$ref":"#/definitions/modality"},
-              "measurements":   {"$ref":"#/definitions/measurements"}
-          },
+              "type":             {"$ref":"#/definitions/file-type"},
+              "modality":         {"$ref":"#/definitions/modality"},
+              "classification":   {"$ref":"#/definitions/classification"}
+            },
           "additionalProperties": false
         },
         "file-output":{

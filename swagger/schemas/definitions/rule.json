@@ -11,9 +11,9 @@
                         "enum": [
                             "file.type",
                             "file.name",
-                            "file.measurements",
+                            "file.classification",
                             "container.has-type",
-                            "container.has-measurement"
+                            "container.has-classification"
                         ]
                     },
                     "value": { "type": "string" },

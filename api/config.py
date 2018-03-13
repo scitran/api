@@ -1,6 +1,5 @@
 import os
 import copy
-import glob
 import json
 import logging
 import pymongo
@@ -132,76 +131,6 @@ es = elasticsearch.Elasticsearch([__config['persistent']['elasticsearch_host']])
 # validate the lists of json schemas
 schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../swagger/schemas')
 
-expected_mongo_schemas = set([
-    'acquisition.json',
-    'analysis.json',
-    'collection.json',
-    'container.json',
-    'file.json',
-    'group.json',
-    'note.json',
-    'permission.json',
-    'project.json',
-    'session.json',
-    'subject.json',
-    'user.json',
-    'avatars.json',
-    'tag.json'
-])
-expected_input_schemas = set([
-    'acquisition.json',
-    'acquisition-update.json',
-    'analysis.json',
-    'analysis-job.json',
-    'analysis-update.json',
-    'avatars.json',
-    'collection.json',
-    'collection-update.json',
-    'device.json',
-    'file.json',
-    'file-update.json',
-    'group-new.json',
-    'group-update.json',
-    'info_update.json',
-    'note.json',
-    'packfile.json',
-    'permission.json',
-    'project.json',
-    'project-template.json',
-    'project-update.json',
-    'rule-new.json',
-    'rule-update.json',
-    'session.json',
-    'session-update.json',
-    'subject.json',
-    'user-new.json',
-    'user-update.json',
-    'download.json',
-    'tag.json',
-    'enginemetadata.json',
-    'labelupload.json',
-    'uidupload.json',
-    'uidmatchupload.json'
-])
-mongo_schemas = set()
-input_schemas = set()
-
-# check that the lists of schemas are correct
-for schema_filepath in glob.glob(schema_path + '/mongo/*.json'):
-    schema_file = os.path.basename(schema_filepath)
-    mongo_schemas.add(schema_file)
-    with open(schema_filepath, 'rU') as f:
-        pass
-
-assert mongo_schemas == expected_mongo_schemas, '{} is different from {}'.format(mongo_schemas, expected_mongo_schemas)
-
-for schema_filepath in glob.glob(schema_path + '/input/*.json'):
-    schema_file = os.path.basename(schema_filepath)
-    input_schemas.add(schema_file)
-    with open(schema_filepath, 'rU') as f:
-        pass
-
-assert input_schemas == expected_input_schemas, '{} is different from {}'.format(input_schemas, expected_input_schemas)
 
 def create_or_recreate_ttl_index(coll_name, index_name, ttl):
     if coll_name in db.collection_names():

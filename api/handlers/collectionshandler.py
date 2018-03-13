@@ -168,8 +168,7 @@ class CollectionsHandler(ContainerHandler):
         sessions = list(containerstorage.SessionStorage().get_all_el(query, None, projection))
 
         self._filter_all_permissions(sessions, self.uid)
-        if self.is_true('measurements'):
-            self._add_session_measurements(sessions)
+
         for sess in sessions:
             sess = self.handle_origin(sess)
         return sessions

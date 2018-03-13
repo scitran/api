@@ -1,0 +1,6 @@
+{
+    "replace": {
+        "Contrast": ["B0", "Diffusion"],
+        "Intent": ["Structural"]
+    }
+}

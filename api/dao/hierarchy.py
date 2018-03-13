@@ -144,7 +144,15 @@ def is_session_compliant(session, template):
         """
         Return True if container satisfies specific requirement.
         """
-        cont_v = cont.get(req_k)
+
+        # If looking at classification, translate to list rather than dictionary
+        if req_k == 'classification':
+            cont_v = []
+            for v in cont.get('classification', {}).itervalues():
+                cont_v.extend(v)
+        else:
+            cont_v = cont.get(req_k)
+
         if cont_v:
             if isinstance(req_v, dict):
                 for k,v in req_v.iteritems():

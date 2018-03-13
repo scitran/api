@@ -6,7 +6,7 @@
   "all": [
     {
       "regex": true,
-      "type": "file.measurements",
+      "type": "file.classification",
       "value": "^(?!non-image).+$"
     },
     {

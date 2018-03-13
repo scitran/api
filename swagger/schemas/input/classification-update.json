@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Helper endpoint for editing a file's classification key",
+    "type": "object",
+    "oneOf": [
+        {
+            "properties": {
+                "add":      {"$ref":"../definitions/file.json#/definitions/classification"},
+                "delete":   {"$ref":"../definitions/file.json#/definitions/classification"}
+            }, "additionalProperties": false
+        },
+        {
+            "properties": {
+                "replace":   {"$ref":"../definitions/file.json#/definitions/classification"}
+            }, "additionalProperties": false
+        }
+    ]
+}

@@ -231,8 +231,19 @@ class Queue(object):
                 cr = create_containerreference_from_filereference(inputs[x])
 
                 # Whitelist file fields passed to gear to those that are scientific-relevant
-                whitelisted_keys = ['info', 'tags', 'measurements', 'mimetype', 'type', 'modality', 'size']
+                whitelisted_keys = ['info', 'tags', 'classification', 'mimetype', 'type', 'modality', 'size']
                 obj_projection = { key: obj.get(key) for key in whitelisted_keys }
+
+                ###
+                # recreate `measurements` list on object
+                # Can be removed when `classification` key has been adopted everywhere
+
+                obj_projection['measurements'] = []
+                if obj_projection.get('classification'):
+                    for v in obj_projection['classification'].itervalues():
+                        obj_projection.extend(v)
+                #
+                ###
 
                 config_['inputs'][x] = {
                     'base': 'file',

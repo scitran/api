@@ -346,10 +346,6 @@ class ContainerHandler(base.RequestHandler):
         # the "count" flag add a count for each container returned
         if self.is_true('counts'):
             self._add_results_counts(results, cont_name)
-        # the "measurements" flag applies only to query for sessions
-        # and add a list of the measurements in the child acquisitions
-        if cont_name == 'sessions' and self.is_true('measurements'):
-            self._add_session_measurements(results)
 
         modified_results = []
         for result in results:
@@ -619,19 +615,6 @@ class ContainerHandler(base.RequestHandler):
         payload_schema_uri = validators.schema_uri('input', self.config.get('payload_schema_file'))
         payload_validator = validators.from_schema_path(payload_schema_uri)
         return mongo_validator, payload_validator
-
-    def _add_session_measurements(self, results):
-        session_measurements = config.db.acquisitions.aggregate([
-            {'$match': {'session': {'$in': [sess['_id'] for sess in results]}}},
-            {'$project': { '_id': '$session', 'files':1 }},
-            {'$unwind': '$files'},
-            {'$project': { '_id': '$_id', 'files.measurements': 1}},
-            {'$unwind': '$files.measurements'},
-            {'$group': {'_id': '$_id', 'measurements': {'$addToSet': '$files.measurements'}}}
-        ])
-        session_measurements = {sess['_id']: sess['measurements'] for sess in session_measurements}
-        for sess in results:
-            sess['measurements'] = session_measurements.get(sess['_id'], None)
 
     def _get_parent_container(self, payload):
         if not self.config.get('parent_storage'):

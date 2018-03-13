@@ -1,5 +1,6 @@
 import fnmatch
 import re
+import itertools
 
 from .. import config
 from ..types import Origin
@@ -33,7 +34,7 @@ log = config.log
 #             'value': '*.dcm'
 #         },
 #         {
-#             'type': 'file.measurements', # Match any of the file's measurements
+#             'type': 'file.classification', # Match any of the file's classification
 #             'value': 'diffusion'
 #         },
 #         {
@@ -41,7 +42,7 @@ log = config.log
 #             'value': 'bvec'
 #         },
 #         {
-#             'type': 'container.has-measurement', # Match the container having any file (including this one) with this measurement
+#             'type': 'container.has-classification', # Match the container having any file (including this one) with this classification
 #             'value': 'functional'
 #         }
 #     ]
@@ -86,10 +87,11 @@ def eval_match(match_type, match_param, file_, container, regex=False):
     elif match_type == 'file.name':
         return match(file_['name'])
 
-    # Match any of the file's measurements
-    elif match_type == 'file.measurements':
+    # Match any of the file's classification
+    elif match_type == 'file.classification':
         if match_param:
-            return any(match(value) for value in file_.get('measurements', []))
+            classification_values = list(itertools.chain.from_iterable(file_.get('classification', {}).itervalues()))
+            return any(match(value) for value in classification_values)
         else:
             return False
 
@@ -102,11 +104,12 @@ def eval_match(match_type, match_param, file_, container, regex=False):
 
         return False
 
-    # Match the container having any file (including this one) with this measurement
-    elif match_type == 'container.has-measurement':
+    # Match the container having any file (including this one) with this classification
+    elif match_type == 'container.has-classification':
         if match_param:
             for c_file in container['files']:
-                if any(match(value) for value in c_file.get('measurements', [])):
+                classification_values = list(itertools.chain.from_iterable(c_file.get('classification', {}).itervalues()))
+                if any(match(value) for value in classification_values):
                     return True
 
         return False

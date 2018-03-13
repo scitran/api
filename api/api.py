@@ -9,6 +9,7 @@ from .handlers.dataexplorerhandler  import DataExplorerHandler
 from .handlers.devicehandler        import DeviceHandler
 from .handlers.grouphandler         import GroupHandler
 from .handlers.listhandler          import FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
+from .handlers.modalityhandler      import ModalityHandler
 from .handlers.refererhandler       import AnalysesHandler
 from .handlers.reporthandler        import ReportHandler
 from .handlers.resolvehandler       import ResolveHandler
@@ -177,6 +178,15 @@ endpoints = [
         ]),
 
 
+        # Modalities
+
+        route( '/modalities',               ModalityHandler, h='get_all',    m=['GET']),
+        route( '/modalities',               ModalityHandler,                 m=['POST']),
+        prefix('/modalities', [
+            route('/<modality_name:[^/]+>', ModalityHandler,                 m=['GET', 'PUT', 'DELETE']),
+        ]),
+
+
         # Site
 
         route('/<cid:site>/rules',              RulesHandler,          m=['GET', 'POST']),
@@ -268,13 +278,14 @@ endpoints = [
                 route('/<list_name:tags>',               TagsListHandler, m=['POST']),
                 route('/<list_name:tags>/<value:{tag}>', TagsListHandler, m=['GET', 'PUT', 'DELETE']),
 
-                route('/packfile-start',                        FileListHandler, h='packfile_start', m=['POST']),
-                route('/packfile',                              FileListHandler, h='packfile',       m=['POST']),
-                route('/packfile-end',                          FileListHandler, h='packfile_end'),
-                route('/<list_name:files>',                     FileListHandler,                     m=['POST']),
-                route('/<list_name:files>/<name:{fname}>',      FileListHandler,                     m=['GET', 'PUT', 'DELETE']),
-                route('/<list_name:files>/<name:{fname}>/info', FileListHandler, h='get_info',       m=['GET']),
-                route('/<list_name:files>/<name:{fname}>/info', FileListHandler, h='modify_info',    m=['POST']),
+                route('/packfile-start',                                    FileListHandler, h='packfile_start', m=['POST']),
+                route('/packfile',                                          FileListHandler, h='packfile',       m=['POST']),
+                route('/packfile-end',                                      FileListHandler, h='packfile_end'),
+                route('/<list_name:files>',                                 FileListHandler,                     m=['POST']),
+                route('/<list_name:files>/<name:{fname}>',                  FileListHandler,                     m=['GET', 'PUT', 'DELETE']),
+                route('/<list_name:files>/<name:{fname}>/info',             FileListHandler, h='get_info',       m=['GET']),
+                route('/<list_name:files>/<name:{fname}>/info',             FileListHandler, h='modify_info',    m=['POST']),
+                route('/<list_name:files>/<name:{fname}>/classification',   FileListHandler, h='modify_classification', m=['POST']),
 
                 route( '/<sub_cont_name:{cname}|all>/analyses',         AnalysesHandler, h='get_all',       m=['GET']),
                 route( '/analyses',                                     AnalysesHandler, h='get_all',       m=['GET']),

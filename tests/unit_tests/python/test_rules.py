@@ -90,8 +90,8 @@ def test_eval_match_file_name_match_regex():
     result = rules.eval_match(*args)
     assert result == False
 
-def test_eval_match_file_measurements():
-    part = rulePart(match_type='file.measurements', file_={'measurements': ['a', 'diffusion', 'b'] })
+def test_eval_match_file_classification():
+    part = rulePart(match_type='file.classification', file_={'classification': {'intent': ['a', 'diffusion', 'b'] }})
 
     args = part.gen(match_param='diffusion')
     result = rules.eval_match(*args)
@@ -101,13 +101,13 @@ def test_eval_match_file_measurements():
     result = rules.eval_match(*args)
     assert result == False
 
-    # Check match returns false without raising when not given a file.measurement
+    # Check match returns false without raising when not given a file.classification
     args = part.gen(match_param='', file_={'a': 'b'}, container={'a': 'b'})
     result = rules.eval_match(*args)
     assert result == False
 
-def test_eval_match_file_measurements_regex():
-    part = rulePart(match_type='file.measurements', file_={'measurements': ['diffusion']}, regex=True)
+def test_eval_match_file_classification_regex():
+    part = rulePart(match_type='file.classification', file_={'classification': {'intent': ['diffusion']}}, regex=True)
 
     args = part.gen(match_param='test|diffusion')
     result = rules.eval_match(*args)

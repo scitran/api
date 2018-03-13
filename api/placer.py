@@ -263,27 +263,16 @@ class EnginePlacer(Placer):
             validators.validate_data(self.metadata, 'enginemetadata.json', 'input', 'POST', optional=True)
 
             ###
-            # Remove when switch to dmv2 is complete across all gears
-            c_metadata = self.metadata.get(self.container_type, {}) # pragma: no cover
-            if self.context.get('job_id') and c_metadata and not c_metadata.get('files', []): # pragma: no cover
-                job = Job.get(self.context.get('job_id'))
-                input_names = [{'name': v.name} for v in job.inputs.itervalues()]
+            # Shuttle `measurements` key into `classification` on files
+            ###
 
-                measurement = self.metadata.get(self.container_type, {}).pop('measurement', None)
-                info = self.metadata.get(self.container_type,{}).pop('metadata', None)
-                modality = self.metadata.get(self.container_type, {}).pop('instrument', None)
-                if measurement or info or modality:
-                    files_ = self.metadata[self.container_type].get('files', [])
-                    files_ += input_names
-                    for f in files_:
-                        if measurement:
-                            f['measurements'] = [measurement]
-                        if info:
-                            f['info'] = info
-                        if modality:
-                            f['modality'] = modality
+            if self.metadata.get(self.container_type, {}): # pragma: no cover
 
-                    self.metadata[self.container_type]['files'] = files_
+                for f in self.metadata[self.container_type].get('files', []):
+
+                    if 'measurements' in f:
+                        m = f.pop('measurements')
+                        f['classification'] = {'Custom': m}
             ###
 
     def process_file_field(self, field, file_attrs):
@@ -567,7 +556,7 @@ class PackfilePlacer(Placer):
 
             # OPPORTUNITY: packfile endpoint could be extended someday to take additional metadata.
             'modality': None,
-            'measurements': [],
+            'classification': {},
             'tags': [],
             'info': {},
 
