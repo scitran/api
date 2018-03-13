@@ -223,65 +223,101 @@ def is_session_compliant(session, template):
                 return False
     return True
 
-def upsert_fileinfo(cont_name, _id, fileinfo):
+def upsert_fileinfo(cont_name, _id, fileinfo, ignore_hash_replace=False):
 
     cont_name = containerutil.pluralize(cont_name)
     _id = bson.ObjectId(_id)
 
     container_before = config.db[cont_name].find_one({'_id': _id})
-    container_after, file_before = None, None
+    container_after = None
+    saved_state = 'saved'
 
+
+    # Look to see if file with the same name already exists in the container
     for f in container_before.get('files',[]):
-        # Fine file in result and set to file_after
+
+        # File already exists, respond accordingly
         if f['name'] == fileinfo['name']:
+
+            # If the existing file is deleted, always replace (But this is not considered a "replaced" saved state)
             if 'deleted' in f:
-                # Ugly hack: remove already existing file that has the 'deleted' tag
-                # This creates a gap in the delete functionality, ie. this file cannot be restored from this point on.
-                # Note that the previous file in storage will be unreferenced from the DB (unless CAS edge case...)
-                config.db[cont_name].find_one_and_update(
-                    {'_id': _id, 'files.name': fileinfo['name']},
-                    {'$pull': {'files': {'name': fileinfo['name']}}}
-                )
+                remove_file(cont_name, _id, fileinfo['name'])
+                container_after = add_file(cont_name, _id, fileinfo)
+                saved_state = 'saved'
+
+
+            # Files from a failed job should never replaced existing files that are "accepted" (unless they are deleted)
+            elif fileinfo.get('from_failed_job') and not f.get('from_failed_job'):
+                saved_state = 'ignored'
+
+            # The file object is the same as an existing file and the caller has chosen to ignore in this situation
+            elif f.get('hash') == fileinfo['hash'] and ignore_hash_replace:
+                saved_state = 'ignored'
+
+            # No special circumstances, proceed with a replace
             else:
-                file_before = f
+                container_after = replace_file(cont_name, _id, f, fileinfo)
+                saved_state = 'replaced'
+
             break
 
-    if file_before is None:
-        fileinfo['created'] = fileinfo['modified']
-        container_after = add_fileinfo(cont_name, _id, fileinfo)
+
     else:
-        container_after = update_fileinfo(cont_name, _id, fileinfo)
 
-    return container_before, container_after
+        # File was not already in container, add as normal
+        container_after = add_file(cont_name, _id, fileinfo)
 
-def update_fileinfo(cont_name, _id, fileinfo):
-    if fileinfo.get('size') is not None:
-        if type(fileinfo['size']) != int:
-            log.warn('Fileinfo passed with non-integer size')
-            fileinfo['size'] = int(fileinfo['size'])
+    return container_before, container_after, saved_state
 
-    update_set = {'files.$.modified': datetime.datetime.utcnow()}
-    # in this method, we are overriding an existing file.
-    # update_set allows to update all the fileinfo like size, hash, etc.
-    for k,v in fileinfo.iteritems():
-        update_set['files.$.' + k] = v
-    return config.db[cont_name].find_one_and_update(
-        {'_id': _id, 'files.name': fileinfo['name']},
-        {'$set': update_set},
-        return_document=pymongo.collection.ReturnDocument.AFTER
-    )
 
-def add_fileinfo(cont_name, _id, fileinfo):
-    if fileinfo.get('size') is not None:
-        if type(fileinfo['size']) != int:
-            log.warn('Fileinfo passed with non-integer size')
-            fileinfo['size'] = int(fileinfo['size'])
-
+def add_file(cont_name, _id, fileinfo):
     return config.db[cont_name].find_one_and_update(
         {'_id': _id},
         {'$push': {'files': fileinfo}},
         return_document=pymongo.collection.ReturnDocument.AFTER
     )
+
+def replace_file(cont_name, _id, existing_fileinfo, fileinfo):
+
+    while True:
+
+        # Update the version and add existing file to "other_versions" list
+        fileinfo['version'] = existing_fileinfo['version']+1
+        fileinfo['other_versions'] = existing_fileinfo.pop('other_versions', [])
+        fileinfo['other_versions'].append(existing_fileinfo)
+
+        # Only update if the existing file has not changed since last load
+        result = config.db[cont_name].replace_one(
+            {'_id': _id, 'files': {'$elemMatch': {
+                'name': fileinfo['name'],
+                'modified': existing_fileinfo['modified'],
+                'version': existing_fileinfo['version']}}},
+            fileinfo
+        )
+
+        if not result.modified_count:
+            # The existing file must have changed, grab update from db
+            c = config.db[cont_name].find_one({'_id': _id, 'files.name': fileinfo['name']})
+            for f in c.get('files'):
+                if f['name'] == fileinfo['name']:
+                    existing_fileinfo = f
+                    break
+            else:
+                # The file wasn't found, must have been removed
+                fileinfo['version'] = 1
+                return add_file(cont_name, _id, fileinfo)
+
+        return fileinfo
+
+
+
+def remove_file(cont_name, _id, filename):
+    return config.db[cont_name].find_one_and_update(
+        {'_id': _id, 'files.name': filename},
+        {'$pull': {'files': {'name': filename}}},
+        return_document=pymongo.collection.ReturnDocument.AFTER
+    )
+
 
 def _group_id_fuzzy_match(group_id, project_label):
     existing_group_ids = [g['_id'] for g in config.db.groups.find(None, ['_id'])]

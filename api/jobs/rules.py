@@ -208,17 +208,22 @@ def create_potential_jobs(db, container, container_type, file_):
 
     return potential_jobs
 
-def create_jobs(db, container_before, container_after, container_type):
+def create_jobs(db, container_before, container_after, container_type, replaced_files=None):
     """
     Given a before and after set of file attributes, enqueue a list of jobs that would only be possible
     after the changes.
     Returns the algorithm names that were queued.
     """
 
+    # A list of FileContainerReferences that have been completely replaced
+    # Jobs with these as inputs should get enqueue even if they are in the jobs_before list
+    if not replaced_files:
+        replaced_files = []
+
     jobs_before, jobs_after, potential_jobs = [], [], []
 
     files_before    = container_before.get('files', [])
-    files_after     = container_after['files'] # It should always have at least one file after
+    files_after     = container_after.get('files', [])
 
     for f in files_before:
         jobs_before.extend(create_potential_jobs(db, container_before, container_type, f))
@@ -229,13 +234,18 @@ def create_jobs(db, container_before, container_after, container_type):
     # Using a uniqueness constraint, create a list of the set difference of jobs_after \ jobs_before
     # (members of jobs_after that are not in jobs_before)
     for ja in jobs_after:
-        new_job = True
-        for jb in jobs_before:
-            if ja['job'].intention_equals(jb['job']):
-                new_job = False
-                break # this job matched in both before and after, ignore
-        if new_job:
+
+        if set(replaced_files).intersection(set(ja['job'].inputs.itervalues())):
+            # one of the replaced files is an input
             potential_jobs.append(ja)
+        else:
+            should_enqueue_job = True
+            for jb in jobs_before:
+                if ja['job'].intention_equals(jb['job']):
+                    should_enqueue_job = False
+                    break # this job matched in both before and after, ignore
+            if should_enqueue_job:
+                potential_jobs.append(ja)
 
 
     spawned_jobs = []

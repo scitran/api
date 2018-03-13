@@ -46,6 +46,9 @@ class Placer(object):
         # A list of files that have been saved via save_file() usually returned by finalize()
         self.saved          = []
 
+        # A list of files that have been ignored by save_file() because a file with the same name and hash already existed
+        self.ignored        = []
+
 
     def check(self):
         """
@@ -93,11 +96,24 @@ class Placer(object):
 
         # Update the DB
         if file_attrs is not None:
-            container_before, self.container = hierarchy.upsert_fileinfo(self.container_type, self.id_, file_attrs)
+            container_before, self.container, saved_state = hierarchy.upsert_fileinfo(self.container_type, self.id_, file_attrs)
 
-            # Queue any jobs as a result of this upload, uploading to a gear will not make jobs though
-            if self.container_type != 'gear':
-                rules.create_jobs(config.db, container_before, self.container, self.container_type)
+            # If this file was ignored because an existing file with the same name and hash existed on this project,
+            # add the file to the ignored list and move on
+            if saved_state == 'ignored':
+                self.ignored.append(file_attrs)
+
+            else:
+                self.saved.append(file_attrs)
+
+                # create_jobs handles files that have been replaced differently
+                replaced_files = []
+                if saved_state == 'replaced':
+                    replaced_files.append(containerutil.FileReference(self.container_type, self.id_, file_attrs['name']))
+
+                rules.create_jobs(config.db, container_before, self.container, self.container_type, replaced_files=replaced_files)
+
+
 
     def recalc_session_compliance(self):
         if self.container_type in ['session', 'acquisition'] and self.id_:
@@ -123,7 +139,7 @@ class TargetedPlacer(Placer):
         if self.metadata:
             file_attrs.update(self.metadata)
         self.save_file(field, file_attrs)
-        self.saved.append(file_attrs)
+
 
     def finalize(self):
         self.recalc_session_compliance()
@@ -183,21 +199,11 @@ class UIDPlacer(Placer):
         r_metadata  = target['metadata']
         file_attrs.update(r_metadata)
 
-        if container.level != 'subject':
-            self.container_type = container.level
-            self.id_            = container.id_
-            self.container      = container.container
-            self.save_file(field, file_attrs)
-        else:
-            if field is not None:
-                files.move_form_file_field_into_cas(field)
-            if file_attrs is not None:
-                container.upsert_file(file_attrs)
 
-                # # Queue any jobs as a result of this upload
-                # rules.create_jobs(config.db, self.container, self.container_type, info)
-
-        self.saved.append(file_attrs)
+        self.container_type = container.level
+        self.id_            = container.id_
+        self.container      = container.container
+        self.save_file(field, file_attrs)
 
     def finalize(self):
         # Check that there is at least one file being uploaded
@@ -302,7 +308,6 @@ class EnginePlacer(Placer):
                 file_attrs['from_failed_job'] = True
 
         self.save_file(field, file_attrs)
-        self.saved.append(file_attrs)
 
     def finalize(self):
         job = None
@@ -322,7 +327,6 @@ class EnginePlacer(Placer):
             for file_md in file_mds:
                 if file_md['name'] not in saved_file_names:
                     self.save_file(None, file_md) # save file_attrs update only
-                    self.saved.append(file_md)
 
             # Remove file metadata as it was already updated in process_file_field
             for k in self.metadata.keys():
@@ -691,7 +695,6 @@ class AnalysisPlacer(Placer):
 
     def process_file_field(self, field, file_attrs):
         self.save_file(field)
-        self.saved.append(file_attrs)
 
     def finalize(self):
         # we are going to merge the "hard" infos from the processed upload
@@ -733,7 +736,6 @@ class AnalysisJobPlacer(Placer):
         file_attrs['output'] = True
         file_attrs['created'] = file_attrs['modified']
         self.save_file(field)
-        self.saved.append(file_attrs)
 
     def finalize(self):
         # Search the sessions table for analysis, replace file field
@@ -764,9 +766,7 @@ class GearPlacer(Placer):
             self.metadata.update({'exchange': {'rootfs-hash': proper_hash,
                                                'git-commit': 'local',
                                                'rootfs-url': 'INVALID'}})
-        # self.metadata['hash'] = file_attrs.get('hash')
         self.save_file(field)
-        self.saved.append(file_attrs)
         self.saved.append(self.metadata)
 
     def finalize(self):

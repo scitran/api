@@ -119,11 +119,13 @@ def process_upload(request, strategy, container_type=None, id_=None, origin=None
         # Stands in for a dedicated object... for now.
         file_attrs = {
             'name':	 field.filename,
-            'modified': field.modified, #
+            'created': timestamp,
+            'modified': timestamp,
             'size':	 field.size,
             'mimetype': field.mimetype,
             'hash':	 field.hash,
             'origin': origin,
+            'version': 1,
 
             'type': None,
             'modality': None,

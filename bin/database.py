@@ -22,7 +22,7 @@ from api.jobs import gears
 from api.types import Origin
 from api.jobs import batch
 
-CURRENT_DATABASE_VERSION = 42 # An int that is bumped when a new schema change is made
+CURRENT_DATABASE_VERSION = 43 # An int that is bumped when a new schema change is made
 
 def get_db_version():
 
@@ -1358,6 +1358,27 @@ def upgrade_to_42():
     for cont_name in ['groups', 'projects', 'sessions', 'acquisitions']:
         cursor = config.db[cont_name].find({'archived': {'$exists': True}})
         process_cursor(cursor, upgrade_to_42_closure, context=cont_name)
+
+
+def upgrade_to_43_closure(cont, cont_name):
+    """
+    Update all files in a collection that do not have a version
+    """
+    files = cont.get('files', [])
+    for f in files:
+        if 'version' not in f:
+            f['version'] = 1
+    config.db[cont_name].update_one({'_id': cont['_id']}, {'$set': {'files': files}})
+    return True
+
+
+def upgrade_to_43():
+    """
+    Add initial file versioning to all files
+    """
+    for cont_name in ['projects', 'sessions', 'acquisitions', 'analyses', 'collections']:
+        cursor = config.db[cont_name].find({'files': { '$gt': [] }, 'files.version': {'$exists': False }})
+        process_cursor(cursor, upgrade_to_43_closure, context=cont_name)
 
 
 ###
