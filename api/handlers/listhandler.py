@@ -7,6 +7,8 @@ import json
 import uuid
 import zipfile
 
+import fs.path
+
 from ..web import base
 from .. import config, files, upload, util, validators
 from ..auth import listauth, always_ok
@@ -348,11 +350,38 @@ class FileListHandler(ListHandler):
     def __init__(self, request=None, response=None):
         super(FileListHandler, self).__init__(request, response)
 
+    def _create_ticket(self):
+        payload = self.request.json_body
+        metadata = payload.get('metadata', None)
+        filename = payload.get('filename', None)
+
+        if not (metadata or filename):
+            self.abort(404, 'metadata and filename are required')
+
+        tempdir = str(uuid.uuid4())
+        # Upload into a temp folder, so we will be able to cleanup
+        signed_url = files.get_signed_url(fs.path.join('tmp', tempdir, filename), config.fs, purpose='upload')
+
+        if not signed_url:
+            self.abort(405, 'Signed URLs are not supported with the current storage backend')
+
+        ticket = util.upload_ticket(self.request.client_addr, self.origin, tempdir, filename, metadata)
+        return {'ticket': config.db.uploads.insert_one(ticket).inserted_id,
+                'upload_url': signed_url}
+
     def _check_ticket(self, ticket_id, _id, filename):
         ticket = config.db.downloads.find_one({'_id': ticket_id})
         if not ticket:
             self.abort(404, 'no such ticket')
         if ticket['target'] != _id or ticket['filename'] != filename or ticket['ip'] != self.request.client_addr:
+            self.abort(400, 'ticket not for this resource or source IP')
+        return ticket
+
+    def _check_upload_ticket(self, ticket_id):
+        ticket = config.db.uploads.find_one({'_id': ticket_id})
+        if not ticket:
+            self.abort(404, 'no such ticket')
+        if ticket['ip'] != self.request.client_addr:
             self.abort(400, 'ticket not for this resource or source IP')
         return ticket
 
@@ -552,7 +581,29 @@ class FileListHandler(ListHandler):
         permchecker, _, _, _, _ = self._initialize_request(containerutil.pluralize(cont_name), list_name, _id)
         permchecker(noop)('POST', _id=_id)
 
-        return upload.process_upload(self.request, upload.Strategy.targeted, container_type=containerutil.singularize(cont_name), id_=_id, origin=self.origin)
+        # Request for upload ticket
+        if self.get_param('ticket') == '':
+            return self._create_ticket()
+
+        # Check ticket id and skip permissions check if it clears
+        ticket_id = self.get_param('ticket')
+        if ticket_id:
+            ticket = self._check_upload_ticket(ticket_id)
+            if not self.origin.get('id'):
+                # If we don't have an origin with this request, use the ticket's origin
+                self.origin = ticket.get('origin')
+
+            file_fields = [
+                util.dotdict({
+                    'filename': ticket['filename']
+                })
+            ]
+
+            return upload.process_upload(self.request, upload.Strategy.targeted, metadata=ticket['metadata'], origin=self.origin,
+                                         container_type=containerutil.singularize(cont_name),
+                                         id_=_id, file_fields=file_fields, tempdir=ticket['tempdir'])
+        else:
+            return upload.process_upload(self.request, upload.Strategy.targeted, container_type=containerutil.singularize(cont_name), id_=_id, origin=self.origin)
 
     @validators.verify_payload_exists
     def put(self, cont_name, list_name, **kwargs):

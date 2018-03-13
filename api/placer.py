@@ -547,7 +547,7 @@ class PackfilePlacer(Placer):
         })
 
         # Similarly, create the attributes map that is consumed by helper funcs. Clear duplication :(
-        # This could be coalesced into a single map thrown on file fields, for example.
+        # This could be coalesced into a  co    single map thrown on file fields, for example.
         # Used in the API return.
         cgi_attrs = {
             '_id': cgi_field.uuid,

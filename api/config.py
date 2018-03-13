@@ -248,7 +248,7 @@ def initialize_db():
         log_db.access_log.create_index([('timestamp', pymongo.DESCENDING)])
 
     create_or_recreate_ttl_index('authtokens', 'timestamp', 2592000)
-    create_or_recreate_ttl_index('uploads', 'timestamp', 60)
+    #create_or_recreate_ttl_index('uploads', 'timestamp', 60)
     create_or_recreate_ttl_index('downloads', 'timestamp', 60)
     create_or_recreate_ttl_index('job_tickets', 'timestamp', 3600) # IMPORTANT: this controls job orphan logic. Ref queue.py
 

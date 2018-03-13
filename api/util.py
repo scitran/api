@@ -163,6 +163,18 @@ def download_ticket(ip, origin, type_, target, filename, size, projects = None):
     }
 
 
+def upload_ticket(ip, origin, tempdir, filename, metadata):
+    return {
+        '_id': str(uuid.uuid4()),
+        'timestamp': datetime.datetime.utcnow(),
+        'ip': ip,
+        'tempdir': tempdir,
+        'filename': filename,
+        'metadata': metadata,
+        'origin': origin
+    }
+
+
 def guess_mimetype(filepath):
     """Guess MIME type based on filename."""
     mime, _ = mimetypes.guess_type(filepath)
@@ -355,3 +367,8 @@ def parse_range_header(range_header_val, valid_units=('bytes',)):
         ranges.append((first, last))
 
     return ranges
+
+
+class dotdict(dict):
+    def __getattr__(self, name):
+        return self[name]

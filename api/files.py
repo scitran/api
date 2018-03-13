@@ -15,9 +15,12 @@ from . import config, util
 DEFAULT_HASH_ALG = 'sha384'
 
 class FileProcessor(object):
-    def __init__(self, base, presistent_fs):
+    def __init__(self, base, presistent_fs, tempdir_name=None):
         self.base = base
-        self._tempdir_name = str(uuid.uuid4())
+        if not tempdir_name:
+            self._tempdir_name = str(uuid.uuid4())
+        else:
+            self._tempdir_name = tempdir_name
         self._presistent_fs = presistent_fs
         self._presistent_fs.makedirs(fs.path.join('tmp', self._tempdir_name), recreate=True)
         self._temp_fs = fs.subfs.SubFS(presistent_fs, fs.path.join('tmp', self._tempdir_name))
@@ -196,10 +199,10 @@ def get_valid_file(file_info):
         raise fs.errors.ResourceNotFound('File not found: %s', file_info['name'])
 
 
-def get_signed_url(file_path, file_system, filename=None):
+def get_signed_url(file_path, file_system, filename=None, purpose='download'):
     try:
         if hasattr(file_system, 'get_signed_url'):
-            return file_system.get_signed_url(file_path, filename=filename)
+            return file_system.get_signed_url(file_path, filename=filename, purpose=purpose)
     except fs.errors.NoURL:
         return None
 
