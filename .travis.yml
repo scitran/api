@@ -39,7 +39,10 @@ after_success:
   - if [ "$TRAVIS_EVENT_TYPE" == "push" -a "$TRAVIS_BRANCH" == "master" ]; then
         ./docker/build-trigger.sh Branch "$TRAVIS_BRANCH" "$BUILD_TRIGGER_URL";
     fi
+  - if [ "$TRAVIS_EVENT_TYPE" == "push" -a "$TRAVIS_BRANCH" == "generic-storage" ]; then
+        ./docker/build-trigger.sh Branch "$TRAVIS_BRANCH" "$BUILD_TRIGGER_URL";
+    fi
   - if [ "$TRAVIS_EVENT_TYPE" == "push" -a -z "$TRAVIS_TAG" ]; then
         ./bin/push-docs.sh "$GIT_REMOTE" branches "$TRAVIS_BRANCH" "Travis Core Docs Build - ${TRAVIS_BUILD_NUMBER}";
     fi
-  
+

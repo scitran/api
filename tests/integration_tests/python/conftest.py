@@ -7,10 +7,13 @@ import os
 
 import attrdict
 import bson
+import fs.move
+import fs.path
 import pymongo
 import pytest
 import requests
 
+from api import config, files, util
 
 # load required envvars w/ the same name
 SCITRAN_CORE_DRONE_SECRET = os.environ['SCITRAN_CORE_DRONE_SECRET']
@@ -206,6 +209,38 @@ def with_user(data_builder, randstr, as_public):
     session.headers.update({'Authorization': 'scitran-user ' + api_key})
     return attrdict.AttrDict(user=user, api_key=api_key, session=session)
 
+
+@pytest.yield_fixture(scope='function')
+def legacy_cas_file(as_admin, api_db, data_builder, randstr, file_form):
+    """Yield legacy CAS file"""
+    project = data_builder.create_project()
+    file_name = '%s.csv' % randstr()
+    file_content = randstr()
+    as_admin.post('/projects/' + project + '/files', files=file_form((file_name, file_content)))
+
+    file_info = api_db['projects'].find_one(
+        {'files.name': file_name}
+    )['files'][0]
+    file_id = file_info['_id']
+    file_hash = file_info['hash']
+    # verify cas backward compatibility
+    api_db['projects'].find_one_and_update(
+        {'files.name': file_name},
+        {'$unset': {'files.$._id': ''}}
+    )
+
+    file_path = unicode(util.path_from_hash(file_hash))
+    target_dir = fs.path.dirname(file_path)
+    if not config.legacy_fs.exists(target_dir):
+        config.legacy_fs.makedirs(target_dir)
+    fs.move.move_file(src_fs=config.fs, src_path=util.path_from_uuid(file_id), dst_fs=config.legacy_fs, dst_path=file_path)
+
+    yield (project, file_name, file_content)
+
+    # clean up
+    config.legacy_fs.remove(file_path)
+    config.legacy_fs.removetree(target_dir)
+    api_db['projects'].delete_one({'_id': project})
 
 class BaseUrlSession(requests.Session):
     """Requests session subclass using core api's base url"""

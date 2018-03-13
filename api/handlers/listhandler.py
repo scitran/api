@@ -8,10 +8,7 @@ import uuid
 import zipfile
 
 from ..web import base
-from .. import config
-from .. import upload
-from .. import util
-from .. import validators
+from .. import config, files, upload, util, validators
 from ..auth import listauth, always_ok
 from ..dao import noop
 from ..dao import liststorage
@@ -360,24 +357,25 @@ class FileListHandler(ListHandler):
         return ticket
 
     @staticmethod
-    def build_zip_info(filepath):
+    def build_zip_info(file_path, file_system):
         """
         Builds a json response containing member and comment info for a zipfile
         """
-        with zipfile.ZipFile(filepath) as zf:
-            info = {}
-            info['comment'] = zf.comment
-            info['members'] = []
-            for zi in zf.infolist():
-                m = {}
-                m['path']      = zi.filename
-                m['size']      = zi.file_size
-                m['timestamp'] = datetime.datetime(*zi.date_time)
-                m['comment']   = zi.comment
+        with file_system.open(file_path, 'rb') as f:
+            with zipfile.ZipFile(f) as zf:
+                info = {
+                    'comment': zf.comment,
+                    'members': []
+                }
+                for zi in zf.infolist():
+                    info['members'].append({
+                        'path': zi.filename,
+                        'size': zi.file_size,
+                        'timestamp': datetime.datetime(*zi.date_time),
+                        'comment': zi.comment
+                    })
 
-                info['members'].append(m)
-
-            return info
+                return info
 
     def get(self, cont_name, list_name, **kwargs):
         _id = kwargs.pop('cid')
@@ -406,7 +404,8 @@ class FileListHandler(ListHandler):
         hash_ = self.get_param('hash')
         if hash_ and hash_ != fileinfo['hash']:
             self.abort(409, 'file exists, hash mismatch')
-        filepath = os.path.join(config.get_item('persistent', 'data_path'), util.path_from_hash(fileinfo['hash']))
+
+        file_path, file_system = files.get_valid_file(fileinfo)
 
         # Request for download ticket
         if self.get_param('ticket') == '':
@@ -416,18 +415,19 @@ class FileListHandler(ListHandler):
         # Request for info about zipfile
         elif self.is_true('info'):
             try:
-                info = self.build_zip_info(filepath)
+                info = self.build_zip_info(file_path, file_system)
+                return info
             except zipfile.BadZipfile:
                 self.abort(400, 'not a zip file')
-            return info
 
         # Request to download zipfile member
         elif self.get_param('member') is not None:
             zip_member = self.get_param('member')
             try:
-                with zipfile.ZipFile(filepath) as zf:
-                    self.response.headers['Content-Type'] = util.guess_mimetype(zip_member)
-                    self.response.write(zf.open(zip_member).read())
+                with file_system.open(file_path, 'rb') as f:
+                    with zipfile.ZipFile(f) as zf:
+                        self.response.headers['Content-Type'] = util.guess_mimetype(zip_member)
+                        self.response.write(zf.open(zip_member).read())
             except zipfile.BadZipfile:
                 self.abort(400, 'not a zip file')
             except KeyError:
@@ -442,67 +442,71 @@ class FileListHandler(ListHandler):
 
         # Authenticated or ticketed download request
         else:
-            range_header = self.request.headers.get('Range', '')
-            try:
-                if not self.is_true('view'):
-                    raise util.RangeHeaderParseError('Feature flag not set')
-
-                ranges = util.parse_range_header(range_header)
-                for first, last in ranges:
-                    if first > fileinfo['size'] - 1:
-                        self.abort(416, 'Invalid range')
-
-                    if last > fileinfo['size'] - 1:
-                        raise util.RangeHeaderParseError('Invalid range')
-
-            except util.RangeHeaderParseError:
-                self.response.app_iter = open(filepath, 'rb')
-                self.response.headers['Content-Length'] = str(fileinfo['size'])  # must be set after setting app_iter
-
-                if self.is_true('view'):
-                    self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
-                else:
-                    self.response.headers['Content-Type'] = 'application/octet-stream'
-                    self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+            signed_url = files.get_signed_url(file_path, file_system, filename=filename)
+            if signed_url:
+                self.redirect(signed_url)
             else:
-                self.response.status = 206
-                if len(ranges) > 1:
-                    self.response.headers['Content-Type'] = 'multipart/byteranges; boundary=%s' % self.request.id
-                else:
-                    self.response.headers['Content-Type'] = str(
-                        fileinfo.get('mimetype', 'application/octet-stream'))
-                    self.response.headers['Content-Range'] = 'bytes %s-%s/%s' % (str(ranges[0][0]),
-                                                                                 str(ranges[0][1]),
-                                                                                 str(fileinfo['size']))
-                with open(filepath, 'rb') as f:
+                range_header = self.request.headers.get('Range', '')
+                try:
+                    if not self.is_true('view'):
+                        raise util.RangeHeaderParseError('Feature flag not set')
+
+                    ranges = util.parse_range_header(range_header)
                     for first, last in ranges:
-                        mode = os.SEEK_SET
-                        if first < 0:
-                            mode = os.SEEK_END
-                            length = abs(first)
-                        elif last is None:
-                            length = fileinfo['size'] - first
-                        else:
-                            if last > fileinfo['size']:
+                        if first > fileinfo['size'] - 1:
+                            self.abort(416, 'Invalid range')
+
+                        if last > fileinfo['size'] - 1:
+                            raise util.RangeHeaderParseError('Invalid range')
+
+                except util.RangeHeaderParseError:
+                    self.response.app_iter = file_system.open(file_path, 'rb')
+                    self.response.headers['Content-Length'] = str(fileinfo['size'])  # must be set after setting app_iter
+
+                    if self.is_true('view'):
+                        self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
+                    else:
+                        self.response.headers['Content-Type'] = 'application/octet-stream'
+                        self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+                else:
+                    self.response.status = 206
+                    if len(ranges) > 1:
+                        self.response.headers['Content-Type'] = 'multipart/byteranges; boundary=%s' % self.request.id
+                    else:
+                        self.response.headers['Content-Type'] = str(
+                            fileinfo.get('mimetype', 'application/octet-stream'))
+                        self.response.headers['Content-Range'] = 'bytes %s-%s/%s' % (str(ranges[0][0]),
+                                                                                     str(ranges[0][1]),
+                                                                                     str(fileinfo['size']))
+                    with file_system.open(file_path, 'rb') as f:
+                        for first, last in ranges:
+                            mode = os.SEEK_SET
+                            if first < 0:
+                                mode = os.SEEK_END
+                                length = abs(first)
+                            elif last is None:
                                 length = fileinfo['size'] - first
                             else:
-                                length = last - first + 1
+                                if last > fileinfo['size']:
+                                    length = fileinfo['size'] - first
+                                else:
+                                    length = last - first + 1
 
-                        f.seek(first, mode)
-                        data = f.read(length)
+                            f.seek(first, mode)
+                            data = f.read(length)
 
-                        if len(ranges) > 1:
-                            self.response.write('--%s\n' % self.request.id)
-                            self.response.write('Content-Type: %s\n' % str(
-                                fileinfo.get('mimetype', 'application/octet-stream')))
-                            self.response.write('Content-Range: %s' % 'bytes %s-%s/%s\n' % (str(first),
-                                                                                            str(last),
-                                                                                            str(fileinfo['size'])))
-                            self.response.write('\n')
-                            self.response.write(data)
-                            self.response.write('\n')
-                        else:
-                            self.response.write(data)
+                            if len(ranges) > 1:
+                                self.response.write('--%s\n' % self.request.id)
+                                self.response.write('Content-Type: %s\n' % str(
+                                    fileinfo.get('mimetype', 'application/octet-stream')))
+                                self.response.write('Content-Range: %s' % 'bytes %s-%s/%s\n' % (str(first),
+                                                                                                str(last),
+                                                                                                str(fileinfo['size'])))
+                                self.response.write('\n')
+                                self.response.write(data)
+                                self.response.write('\n')
+                            else:
+                                self.response.write(data)
 
             # log download if we haven't already for this ticket
             if ticket:

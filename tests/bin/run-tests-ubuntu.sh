@@ -78,6 +78,8 @@ function main() {
     export SCITRAN_PERSISTENT_DB_LOG_URI=${SCITRAN_PERSISTENT_DB_LOG_URI:-"mongodb://localhost:$SCITRAN_PERSISTENT_DB_PORT/logs"}
     export SCITRAN_PERSISTENT_PATH=`mktemp -d`
     export SCITRAN_PERSISTENT_DATA_PATH="$SCITRAN_PERSISTENT_PATH/data"
+    mkdir -p "$SCITRAN_PERSISTENT_DATA_PATH/v1"
+    export SCITRAN_PERSISTENT_FS_URL="osfs://$SCITRAN_PERSISTENT_PATH/data/v1"
     export SCITRAN_CORE_DRONE_SECRET=${SCITRAN_CORE_DRONE_SECRET:-$( openssl rand -base64 32 )}
 
     if ${RUN_LINT}; then

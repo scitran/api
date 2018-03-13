@@ -7,6 +7,8 @@ import pymongo
 import datetime
 import elasticsearch
 
+from fs import open_fs
+
 from . import util
 from .dao.dbutil import try_replace_one
 
@@ -21,7 +23,7 @@ logging.getLogger('MARKDOWN').setLevel(logging.WARNING) # silence Markdown libra
 logging.getLogger('requests').setLevel(logging.WARNING) # silence Requests library
 logging.getLogger('paste.httpserver').setLevel(logging.WARNING) # silence Paste library
 logging.getLogger('elasticsearch').setLevel(logging.WARNING) # silence Elastic library
-
+logging.getLogger('urllib3').setLevel(logging.WARNING) # silence urllib3 library
 
 # NOTE: Keep in sync with environment variables in sample.config file.
 DEFAULT_CONFIG = {
@@ -63,6 +65,8 @@ DEFAULT_CONFIG = {
         'db_server_selection_timeout': '3000',
         'data_path': os.path.join(os.path.dirname(__file__), '../persistent/data'),
         'elasticsearch_host': 'localhost:9200',
+        'fs_url': 'osfs://' + os.path.join(os.path.dirname(__file__), '../persistent/data'),
+        'support_legacy_fs': True
     },
 }
 
@@ -321,3 +325,9 @@ def mongo_pipeline(table, pipeline):
 
 def get_auth(auth_type):
     return get_config()['auth'][auth_type]
+
+
+# Storage configuration
+fs = open_fs(__config['persistent']['fs_url'])
+legacy_fs = open_fs('osfs://' + __config['persistent']['data_path'])
+support_legacy_fs = __config['persistent']['support_legacy_fs']

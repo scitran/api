@@ -1,6 +1,5 @@
 import datetime
 import enum as baseEnum
-import errno
 import hashlib
 import json
 import mimetypes
@@ -10,6 +9,9 @@ import re
 import requests
 import string
 import uuid
+
+import fs.path
+import fs.errors
 
 import django
 from django.conf import settings
@@ -197,20 +199,6 @@ def obj_from_map(_map):
 
     return type('',(object,),_map)()
 
-def path_from_hash(hash_):
-    """
-    create a filepath from a hash
-    e.g.
-    hash_ = v0-sha384-01b395a1cbc0f218
-    will return
-    v0/sha384/01/b3/v0-sha384-01b395a1cbc0f218
-    """
-    hash_version, hash_alg, actual_hash = hash_.split('-')
-    first_stanza = actual_hash[0:2]
-    second_stanza = actual_hash[2:4]
-    path = (hash_version, hash_alg, first_stanza, second_stanza, hash_)
-    return os.path.join(*path)
-
 def set_for_download(response, stream=None, filename=None, length=None):
     """Takes a self.response, and various download options."""
 
@@ -268,14 +256,11 @@ class Enum(baseEnum.Enum):
         else:
             return super.__eq__(other)
 
-def mkdir_p(path):
+def mkdir_p(path, file_system):
     try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+        file_system.makedirs(path)
+    except fs.errors.DirectoryExists:
+        pass
 
 NONCE_CHARS  = string.ascii_letters + string.digits
 NONCE_LENGTH = 18
@@ -288,6 +273,36 @@ def create_nonce():
     randrange = random.SystemRandom().randrange
 
     return ''.join([NONCE_CHARS[randrange(x)] for _ in range(NONCE_LENGTH)])
+
+
+def path_from_uuid(uuid_):
+    """
+    create a filepath from a UUID
+    e.g.
+    uuid_ = cbb33a87-6754-4dfd-abd3-7466d4463ebc
+    will return
+    cb/b3/cbb33a87-6754-4dfd-abd3-7466d4463ebc
+    """
+    uuid_1 = uuid_.split('-')[0]
+    first_stanza = uuid_1[0:2]
+    second_stanza = uuid_1[2:4]
+    path = (first_stanza, second_stanza, uuid_)
+    return fs.path.join(*path)
+
+
+def path_from_hash(hash_):
+    """
+    create a filepath from a hash
+    e.g.
+    hash_ = v0-sha384-01b395a1cbc0f218
+    will return
+    v0/sha384/01/b3/v0-sha384-01b395a1cbc0f218
+    """
+    hash_version, hash_alg, actual_hash = hash_.split('-')
+    first_stanza = actual_hash[0:2]
+    second_stanza = actual_hash[2:4]
+    path = (hash_version, hash_alg, first_stanza, second_stanza, hash_)
+    return os.path.join(*path)
 
 
 class RangeHeaderParseError(ValueError):

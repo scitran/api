@@ -297,11 +297,6 @@ def test_get_container(data_builder, default_payload, file_form, as_drone, as_ad
     r = as_public.get('/projects/' + project)
     assert r.ok
 
-    # get container w/ ?paths=true
-    r = as_public.get('/projects/' + project, params={'paths': 'true'})
-    assert r.ok
-    assert all('path' in f for f in r.json()['files'])
-
     # get container w/ ?join=origin&join=origin_job_gear_name
     r = as_public.get('/projects/' + project, params={'join': ['origin', 'origin_job_gear_name']})
     assert r.ok

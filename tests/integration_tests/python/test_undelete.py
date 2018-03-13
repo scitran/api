@@ -116,7 +116,7 @@ def test_undelete_scope(undelete, containers, as_admin, api_db):
 
 
 def test_undelete_options(undelete, containers):
-    with pytest.raises(RuntimeError, match=r'use --include-parents'):
+    with pytest.raises(RuntimeError, match=r'use `--include-parents`'):
         undelete('acquisitions', containers.ac_1_1_1, filename='f_1_1_1_1')
 
     undelete('acquisitions', containers.ac_1_1_1, filename='f_1_1_1_1', include_parents=True)

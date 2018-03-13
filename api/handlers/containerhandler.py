@@ -108,10 +108,6 @@ class ContainerHandler(base.RequestHandler):
             self._filter_permissions(result, self.uid)
         if self.is_true('join_avatars'):
             self.join_user_info([result])
-        # build and insert file paths if they are requested
-        if self.is_true('paths'):
-            for fileinfo in result['files']:
-                fileinfo['path'] = util.path_from_hash(fileinfo['hash'])
 
         inflate_job_info = cont_name == 'sessions'
         result['analyses'] = AnalysisStorage().get_analyses(cont_name, _id, inflate_job_info)

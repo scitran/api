@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "definitions":{
+        "_id":            { "type": "string" },
         "name":           { "type": "string" },
         "file-type":      { "type": "string" },
         "mimetype":       { "type": "string" },
@@ -44,6 +45,7 @@
         "file": {
           "type": "object",
           "properties": {
+            "_id":           {"$ref":"#/definitions/_id"},
             "name":           {"$ref":"#/definitions/name"},
             "type":           {"$ref":"#/definitions/file-type"},
             "mimetype":       {"$ref":"#/definitions/mimetype"},

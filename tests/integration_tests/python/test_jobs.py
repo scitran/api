@@ -289,6 +289,8 @@ def test_jobs(data_builder, default_payload, as_public, as_user, as_admin, as_ro
     r = as_admin.post('/jobs/add', json=job6)
     assert r.status_code == 500
 
+    assert as_root.delete('/gears/' + gear3).ok
+
     # Attempt to set a malformed file reference as input
     job7 = copy.deepcopy(job_data)
     job7['inputs'] = {
