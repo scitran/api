@@ -41,7 +41,7 @@ routing_regexes = {
     'tag': '[^/]{1,32}',
 
     # Filename
-    'fname': '[^/]+',
+    'fname': '.+',
 
     # Note ID
     'nid': '[0-9a-f]{24}',
@@ -272,9 +272,9 @@ endpoints = [
                 route('/packfile',                              FileListHandler, h='packfile',       m=['POST']),
                 route('/packfile-end',                          FileListHandler, h='packfile_end'),
                 route('/<list_name:files>',                     FileListHandler,                     m=['POST']),
+                route('/<list_name:files>/info/<name:{fname}>', FileListHandler, h='get_info',       m=['GET']),
+                route('/<list_name:files>/info/<name:{fname}>', FileListHandler, h='modify_info',    m=['POST']),
                 route('/<list_name:files>/<name:{fname}>',      FileListHandler,                     m=['GET', 'PUT', 'DELETE']),
-                route('/<list_name:files>/<name:{fname}>/info', FileListHandler, h='get_info',       m=['GET']),
-                route('/<list_name:files>/<name:{fname}>/info', FileListHandler, h='modify_info',    m=['POST']),
 
                 route( '/<sub_cont_name:{cname}|all>/analyses',         AnalysesHandler, h='get_all',       m=['GET']),
                 route( '/analyses',                                     AnalysesHandler, h='get_all',       m=['GET']),

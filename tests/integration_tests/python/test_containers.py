@@ -612,7 +612,7 @@ def test_edit_file_attributes(data_builder, as_admin, file_form):
 
     assert as_admin.put('/projects/' + project + '/files/' + file_name, json=payload).ok
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
 
     file_object = r.json()
@@ -786,33 +786,33 @@ def test_edit_file_info(data_builder, as_admin, file_form):
 
 
     # Assert getting file info 404s properly
-    r = as_admin.get('/projects/' + project + '/files/' + 'not_real.txt' + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + 'not_real.txt')
     assert r.status_code == 404
-    r = as_admin.get('/projects/' + '000000000000000000000000' + '/files/' + 'not_real.txt' + '/info')
+    r = as_admin.get('/projects/' + '000000000000000000000000' + '/files/info/' + 'not_real.txt')
     assert r.status_code == 404
 
     r = as_admin.post('/projects/' + project + '/files', files=file_form(file_name))
     assert r.ok
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == {}
 
     # Send improper payload
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'delete': ['map'],
         'replace': {'not_going': 'to_happen'}
     })
     assert r.status_code == 400
 
     # Send improper payload
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'delete': {'a': 'map'},
     })
     assert r.status_code == 400
 
     # Send improper payload
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'set': 'cannot do this',
     })
     assert r.status_code == 400
@@ -828,60 +828,60 @@ def test_edit_file_info(data_builder, as_admin, file_form):
     }
 
 
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'replace': file_info
     })
     assert r.ok
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == file_info
 
 
     # Use 'set' to add new key
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'set': {'map': 'no longer a map'}
     })
     assert r.ok
 
     file_info['map'] = 'no longer a map'
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == file_info
 
 
     # Use 'set' to do full replace of "map" key
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'set': {'map': 'no longer a map'}
     })
     assert r.ok
 
     file_info['map'] = 'no longer a map'
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == file_info
 
 
     # Use 'delete' to unset "map" key
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'delete': ['map', 'a']
     })
     assert r.ok
 
     file_info.pop('map')
     file_info.pop('a')
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == file_info
 
 
     # Use 'delete' on keys that do not exist
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'delete': ['madeup', 'keys']
     })
     assert r.ok
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == file_info
 
@@ -895,7 +895,7 @@ def test_edit_file_info(data_builder, as_admin, file_form):
 
     # Add reserved key and ensure it is returned
     BIDS_map = {'BIDS':{'project_label': 'TEST'}}
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'set': BIDS_map
     })
     assert r.ok
@@ -909,12 +909,12 @@ def test_edit_file_info(data_builder, as_admin, file_form):
 
 
     # Use 'replace' to set file info to {}
-    r = as_admin.post('/projects/' + project + '/files/' + file_name + '/info', json={
+    r = as_admin.post('/projects/' + project + '/files/info/' + file_name, json={
         'replace': {}
     })
     assert r.ok
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['info'] == {}
 

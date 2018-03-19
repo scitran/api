@@ -256,7 +256,7 @@ def test_access_log_succeeds(data_builder, as_admin, log_db):
 
     log_records_count_before = log_db.access_log.count({})
 
-    r = as_admin.get('/projects/' + project + '/files/' + file_name + '/info')
+    r = as_admin.get('/projects/' + project + '/files/info/' + file_name)
     assert r.ok
     assert r.json()['name'] == file_name
 

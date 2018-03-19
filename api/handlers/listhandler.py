@@ -467,7 +467,7 @@ class FileListHandler(ListHandler):
                         self.response.headers['Content-Type'] = str(fileinfo.get('mimetype', 'application/octet-stream'))
                     else:
                         self.response.headers['Content-Type'] = 'application/octet-stream'
-                        self.response.headers['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+                        self.response.headers['Content-Disposition'] = 'attachment; filename="' + os.path.basename(filename) + '"'
                 else:
                     self.response.status = 206
                     if len(ranges) > 1:
