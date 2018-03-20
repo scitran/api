@@ -47,13 +47,13 @@ after_success:
       bash <(curl -s https://codecov.io/bash) -cF python;
   fi
 - if [ "$TRAVIS_TAG" ]; then
-      docker tag core:dist scitran/core:$TRAVIS_TAG;
-      docker push scitran/core:$TRAVIS_TAG;
+      docker tag core:dist $DOCKER_HUB_ORG/core:$TRAVIS_TAG;
+      docker push $DOCKER_HUB_ORG/core:$TRAVIS_TAG;
       ./bin/push-docs.sh "$GIT_REMOTE" tags "$TRAVIS_TAG" "Travis Core Docs Build - $TRAVIS_BUILD_NUMBER";
   elif [ "$TRAVIS_EVENT_TYPE" == "push" ]; then
       ./bin/push-docs.sh "$GIT_REMOTE" branches "$TRAVIS_BRANCH" "Travis Core Docs Build - $TRAVIS_BUILD_NUMBER";
   fi
 - if [ "$TRAVIS_EVENT_TYPE" == "push" -a "$TRAVIS_BRANCH" == "master" ]; then
-      docker tag core:dist scitran/core:latest;
-      docker push scitran/core:latest;
+      docker tag core:dist $DOCKER_HUB_ORG/core:latest;
+      docker push $DOCKER_HUB_ORG/core:latest;
   fi
