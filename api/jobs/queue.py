@@ -157,7 +157,7 @@ class Queue(object):
         if gear.get('gear', {}).get('custom', {}).get('flywheel', {}).get('invalid', False):
             raise InputValidationException('Gear marked as invalid, will not run!')
 
-        config_ = fill_gear_default_values(gear, job_map.get('config', {}))
+        config_ = job_map.get('config', {})
         validate_gear_config(gear, config_)
 
         # Translate maps to FileReferences
@@ -194,7 +194,7 @@ class Queue(object):
 
         # Config options are stored on the job object under the "config" key
         config_ = {
-            'config': config_,
+            'config': fill_gear_default_values(gear, config_),
             'inputs': { },
             'destination': {
                 'type': destination.type,

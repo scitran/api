@@ -60,7 +60,7 @@ def test_jobs(data_builder, default_payload, as_public, as_user, as_admin, as_ro
     job0 = copy.deepcopy(job_data)
     job0['gear_id'] = '000000000000000000000000'
     r = as_admin.post('/jobs/add', json=job0)
-    assert r.status_code == 400
+    assert r.status_code == 404
 
     # add job with explicit destination
     r = as_admin.post('/jobs/add', json=job_data)
@@ -358,7 +358,6 @@ def test_failed_job_output(data_builder, default_payload, as_user, as_admin, as_
     }
     gear = data_builder.create_gear(gear=gear_doc)
     gear2 = data_builder.create_gear()
-    gear2_name = as_admin.get('/gears/' + gear2).json()['gear']['name']
     project = data_builder.create_project()
     session = data_builder.create_session()
     acquisition = data_builder.create_acquisition()
@@ -366,7 +365,7 @@ def test_failed_job_output(data_builder, default_payload, as_user, as_admin, as_
 
     # create rule for text files
     r = as_admin.post('/projects/' + project + '/rules', json={
-        'alg': gear2_name,
+        'gear_id': gear2,
         'name': 'text-trigger',
         'any': [],
         'all': [{'type': 'file.type', 'value': 'text'}]

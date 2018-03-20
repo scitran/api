@@ -24,7 +24,7 @@ from ..web.encoder import pseudo_consistent_json_encode
 from ..web.errors import APIPermissionException, APINotFoundException, InputValidationException
 from ..web.request import AccessType
 
-from .gears import validate_gear_config, get_gears, get_gear, get_invocation_schema, remove_gear, upsert_gear, suggest_container, get_gear_by_name, check_for_gear_insertion
+from .gears import validate_gear_config, get_gears, get_gear, get_invocation_schema, remove_gear, upsert_gear, suggest_container, check_for_gear_insertion
 from .jobs import Job, JobTicket, Logs
 from .batch import check_state, update
 from .queue import Queue
@@ -147,10 +147,7 @@ class RulesHandler(base.RequestHandler):
 
         validate_data(payload, 'rule-new.json', 'input', 'POST', optional=True)
         validate_regexes(payload)
-        try:
-            get_gear_by_name(payload['alg'])
-        except APINotFoundException:
-            self.abort(400, 'Cannot find gear for alg {}, alg not valid'.format(payload['alg']))
+        validate_gear_config(get_gear(payload['gear_id']), payload.get('config'))
 
         payload['project_id'] = cid
 
@@ -200,11 +197,9 @@ class RuleHandler(base.RequestHandler):
         updates = self.request.json
         validate_data(updates, 'rule-update.json', 'input', 'POST', optional=True)
         validate_regexes(updates)
-        if updates.get('alg'):
-            try:
-                get_gear_by_name(updates['alg'])
-            except APINotFoundException:
-                self.abort(400, 'Cannot find gear for alg {}, alg not valid'.format(updates['alg']))
+        gear_id = updates.get('gear_id', doc['gear_id'])
+        config_ = updates.get('config', doc.get('config'))
+        validate_gear_config(get_gear(gear_id), config_)
 
         doc.update(updates)
         config.db.project_rules.replace_one({'_id': bson.ObjectId(rid)}, doc)

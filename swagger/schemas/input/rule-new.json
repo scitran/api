@@ -3,5 +3,5 @@
     "title": "Rule",
     "type": "object",
     "allOf": [{"$ref": "../definitions/rule.json#/definitions/rule-input"}],
-    "required": ["alg", "name", "any", "all"]
+    "required": ["gear_id", "name", "any", "all"]
 }

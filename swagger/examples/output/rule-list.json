@@ -1,6 +1,6 @@
 [
   {
-    "alg": "dcm2niix",
+    "gear_id": "580925ce9e512c57dc8a103b",
     "all": [
       {
         "regex": true,
@@ -17,7 +17,7 @@
     "any": []
   },
   {
-    "alg": "dicom-mr-classifier",
+    "gear_id": "580925ce9e512c57dc8a103c",
     "all": [
       {
         "type": "file.type",
@@ -34,7 +34,7 @@
     "any": []
   },
   {
-    "alg": "mriqc",
+    "gear_id": "580925ce9e512c57dc8a103d",
     "all": [
       {
         "type": "file.type",

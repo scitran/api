@@ -5,10 +5,10 @@ Gears
 from __future__ import absolute_import
 
 import bson.objectid
+import copy
 import datetime
 from jsonschema import Draft4Validator, ValidationError
 import gears as gear_tools
-import pymongo
 
 from .. import config
 from .jobs import Job
@@ -39,17 +39,10 @@ def get_gears():
     return map(lambda x: x['original'], cursor)
 
 def get_gear(_id):
-    return config.db.gears.find_one({'_id': bson.ObjectId(_id)})
-
-def get_gear_by_name(name):
-
-    # Find a gear from the list by name
-    gear_doc = list(config.db.gears.find({'gear.name': name}).sort('created', pymongo.DESCENDING))
-
-    if len(gear_doc) == 0 :
-        raise APINotFoundException('Unknown gear ' + name)
-
-    return gear_doc[0]
+    gear = config.db.gears.find_one({'_id': bson.ObjectId(_id)})
+    if gear is None:
+        raise APINotFoundException('Cannot find gear {}'.format(_id))
+    return gear
 
 def get_invocation_schema(gear):
     return gear_tools.derive_invocation_schema(gear['gear'])
@@ -104,13 +97,13 @@ def suggest_for_files(gear, files):
     return suggested_files
 
 def validate_gear_config(gear, config_):
-    if len(gear.get('manifest', {}).get('config', {})) > 0:
-        invocation = gear_tools.derive_invocation_schema(gear['manifest'])
+    if len(gear.get('gear', {}).get('config', {})) > 0:
+        invocation = gear_tools.derive_invocation_schema(gear['gear'])
         ci = gear_tools.isolate_config_invocation(invocation)
         validator = Draft4Validator(ci)
 
         try:
-            validator.validate(config_)
+            validator.validate(fill_gear_default_values(gear, config_))
         except ValidationError as err:
             key = None
             if len(err.relative_path) > 0:
@@ -128,8 +121,7 @@ def fill_gear_default_values(gear, config_):
     Given a gear and a config map, fill any missing keys using defaults from the gear's config
     """
 
-    if config_ is None:
-        config_ = {}
+    config_ = copy.deepcopy(config_) or {}
 
     for k,v in gear['gear'].get('config', {}).iteritems():
         if 'default' in v:

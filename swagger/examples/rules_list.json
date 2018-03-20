@@ -1,6 +1,6 @@
 [
     {
-        "alg" : "dicom_mr_classifier",
+        "gear_id": "580925ce9e512c57dc8a103c",
         "all" : [
             [
                 "file.type",
