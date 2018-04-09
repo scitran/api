@@ -331,6 +331,8 @@ class EnginePlacer(Placer):
             job_ticket = JobTicket.get(self.context.get('job_ticket_id'))
             job = Job.get(job_ticket['job'])
             success = job_ticket['success']
+        elif self.context.get('job_id'):
+            job = Job.get(self.context.get('job_id'))
 
         if self.metadata is not None:
             bid = bson.ObjectId(self.id_)
@@ -350,23 +352,11 @@ class EnginePlacer(Placer):
                 hierarchy.update_container_hierarchy(self.metadata, bid, self.container_type)
 
         if job_ticket is not None:
-            if success:
-                Queue.mutate(job, {
-                    'state': 'complete',
-                    'profile': {
-                        'elapsed': job_ticket['elapsed']
-                    }
-                })
-            else:
-                Queue.mutate(job, {
-                    'state': 'failed',
-                    'profile': {
-                        'elapsed': job_ticket['elapsed']
-                    }
-                })
+            Queue.mutate(job, {'state': 'complete' if success else 'failed',
+                               'profile': {'elapsed': job_ticket['elapsed']}})
+            job = Job.get(job.id_)
 
-        if self.context.get('job_id'):
-            job = Job.get(self.context.get('job_id'))
+        if job is not None:
             job.saved_files = [f['name'] for f in self.saved]
             job.produced_metadata = self.metadata
             job.save()
@@ -725,8 +715,7 @@ class AnalysisPlacer(Placer):
 
 class AnalysisJobPlacer(Placer):
     def check(self):
-        if self.id_ is None:
-            raise Exception('Must specify a target analysis')
+        self.requireTarget()
 
         # Check that required state exists
         if self.context.get('job_id'):
@@ -743,27 +732,45 @@ class AnalysisJobPlacer(Placer):
                     file_attrs.update(file_md)
                     break
 
+        if self.context.get('job_ticket_id'):
+            job_ticket = JobTicket.get(self.context.get('job_ticket_id'))
+
+            if not job_ticket['success']:
+                file_attrs['from_failed_job'] = True
+
         file_attrs['created'] = file_attrs['modified']
         self.save_file(field)
         self.saved.append(file_attrs)
 
     def finalize(self):
-        # Search the sessions table for analysis, replace file field
-        if self.saved:
-            q = {'_id': self.id_}
-            u = {'$push': {'files': {'$each': self.saved}}}
-            job_id = self.context.get('job_id')
-            if job_id:
-                # If the original job failed, update the analysis with the job that succeeded
-                u['$set'] = {'job': job_id}
+        job = None
+        job_ticket = None
+        success = True
 
-                # Update the job with saved files list
-                job = Job.get(job_id)
-                job.saved_files = [f['name'] for f in self.saved]
-                job.save()
+        if self.context.get('job_ticket_id'):
+            job_ticket = JobTicket.get(self.context.get('job_ticket_id'))
+            job = Job.get(job_ticket['job'])
+            success = job_ticket['success']
+        elif self.context.get('job_id'):
+            job = Job.get(self.context.get('job_id'))
 
-            config.db.analyses.update_one(q, u)
-            return self.saved
+        # Replace analysis files (and job in case it's re-run)
+        query = {'_id': self.id_}
+        update = {'$set': {'files': self.saved}}
+        if job is not None:
+            update['$set']['job'] = job.id_
+        config.db.analyses.update_one(query, update)
+
+        if job_ticket is not None:
+            Queue.mutate(job, {'state': 'complete' if success else 'failed',
+                               'profile': {'elapsed': job_ticket['elapsed']}})
+            job = Job.get(job.id_)
+
+        if job is not None:
+            job.saved_files = [f['name'] for f in self.saved]
+            job.save()
+
+        return self.saved
 
 
 class GearPlacer(Placer):
