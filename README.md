@@ -18,7 +18,7 @@ API documentation for branches and tags can be found at `https://scitran.github.
 
 ### [Contributing](https://github.com/scitran/core/blob/master/CONTRIBUTING.md)
 
-### [Testing](https://github.com/scitran/core/blob/master/TESTING.md)
+### [Testing](https://github.com/scitran/core/blob/master/tests/README.md)
 
 ### [License](https://github.com/scitran/core/blob/master/LICENSE)
 

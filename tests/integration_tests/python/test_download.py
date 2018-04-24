@@ -110,7 +110,7 @@ def test_download(data_builder, file_form, as_admin, api_db):
     # Try to perform the download from a different IP
     update_result = api_db.downloads.update_one(
         {'_id': ticket},
-        {'$set': {'ip': '0.0.0.0'}})
+        {'$set': {'ip': '255.255.255.255'}})
     assert update_result.modified_count == 1
 
     r = as_admin.get('/download', params={'ticket': ticket})

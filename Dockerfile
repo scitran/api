@@ -1,103 +1,90 @@
-#
-# Image used for hosting scitran core with uwsgi.
-#
-# Example usage is in README.md
-#
+FROM ubuntu:14.04 as base
+ENV TERM=xterm
+RUN set -eux \
+    && apt-get -yqq update \
+    && apt-get -yqq install \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        libatlas3-base \
+        libffi-dev \
+        libpcre3 \
+        libpcre3-dev \
+        libssl-dev \
+        numactl \
+        python-dev \
+        python-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install -qq --upgrade pip setuptools wheel \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && KEYSERVERS="\
+        ha.pool.sks-keyservers.net \
+        hkp://keyserver.ubuntu.com:80 \
+        hkp://p80.pool.sks-keyservers.net:80 \
+        keyserver.ubuntu.com \
+        pgp.mit.edu" \
+    && for server in $(shuf -e $KEYSERVERS); do \
+           gpg --keyserver "$server" --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 && break || true; \
+       done \
+    && curl -LSso /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.6/gosu-$(dpkg --print-architecture)" \
+    && curl -LSso /tmp/gosu.asc "https://github.com/tianon/gosu/releases/download/1.6/gosu-$(dpkg --print-architecture).asc" \
+    && gpg --batch --verify /tmp/gosu.asc /usr/local/bin/gosu \
+    && chmod +x /usr/local/bin/gosu \
+    && rm -rf "$GNUPGHOME" /tmp/gosu.asc \
+    && mkdir -p \
+        /var/scitran/code/api \
+        /var/scitran/config \
+        /var/scitran/data \
+        /var/scitran/keys \
+        /var/scitran/logs
 
-FROM ubuntu:14.04
-
-
-# Install pre-requisites
-RUN apt-get update \
-	&& apt-get install -y \
-		build-essential \
-		ca-certificates curl \
-		libatlas3-base \
-		numactl \
-		python-dev \
-		python-pip \
-		libffi-dev \
-		libssl-dev \
-		libpcre3 \
-		libpcre3-dev \
-		git \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& pip install -U pip
-
-
-# Grab gosu for easy step-down from root in a docker-friendly manner
-# https://github.com/tianon/gosu
-#
-# Alternate key servers are due to reliability issues with ha.pool.sks-keyservers.net
-RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.6/gosu-$(dpkg --print-architecture)" \
-	&& curl -o /tmp/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/1.6/gosu-$(dpkg --print-architecture).asc" \
-	&& export GNUPGHOME="$(mktemp -d)" \
-	&& for server in $(shuf -e ha.pool.sks-keyservers.net \
-	                            hkp://p80.pool.sks-keyservers.net:80 \
-	                            keyserver.ubuntu.com \
-	                            hkp://keyserver.ubuntu.com:80 \
-	                            pgp.mit.edu) ; do \
-	        gpg --keyserver "$server" --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 && break || : ; \
-	    done \
-	&& gpg --batch --verify /tmp/gosu.asc /usr/local/bin/gosu \
-	&& rm -r "$GNUPGHOME" /tmp/gosu.asc \
-	&& chmod +x /usr/local/bin/gosu
-
-
-# Setup environment
-WORKDIR /var/scitran
-
-RUN mkdir -p \
-      /var/scitran/config \
-      /var/scitran/data \
-      /var/scitran/code/api \
-      /var/scitran/logs \
-      /var/scitran/keys
-
-# Declaring a volume makes the intent to map externally explicit. This enables
-# the contents to survive/persist across container versions, and easy access
-# to the contents outside the container.
-#
-# Declaring the VOLUME in the Dockerfile guarantees the contents are empty
-# for any new container that doesn't specify a volume map via 'docker run -v '
-# or similar option.
-#
-VOLUME /var/scitran/keys
-VOLUME /var/scitran/data
-VOLUME /var/scitran/logs
-
-
-# Install pip modules
-#
-# Split this out for better cache re-use.
-#
-COPY requirements.txt docker/requirements-docker.txt /var/scitran/code/api/
-
-RUN pip install --upgrade pip wheel setuptools \
-  && pip install -r /var/scitran/code/api/requirements-docker.txt \
-  && pip install -r /var/scitran/code/api/requirements.txt
-
-COPY tests /var/scitran/code/api/tests/
-RUN bash -e -x /var/scitran/code/api/tests/bin/setup-integration-tests-ubuntu.sh
-
-
-# Copy full repo
-#
-COPY . /var/scitran/code/api/
+VOLUME ["/var/scitran/keys", "/var/scitran/data", "/var/scitran/logs"]
+WORKDIR /var/scitran/code/api
 
 COPY docker/uwsgi-entrypoint.sh /var/scitran/
-COPY docker/uwsgi-config.ini /var/scitran/config/
-
-
-
-# Inject build information into image so the source of the container can be
-# determined from within it.
-ARG BRANCH_LABEL=NULL
-ARG COMMIT_HASH=0
-COPY docker/inject_build_info.sh /
-RUN /inject_build_info.sh ${BRANCH_LABEL} ${COMMIT_HASH} \
-  && rm /inject_build_info.sh
-
-
+COPY docker/uwsgi-config.ini    /var/scitran/config/
 ENTRYPOINT ["/var/scitran/uwsgi-entrypoint.sh"]
-CMD ["uwsgi", "--ini", "/var/scitran/config/uwsgi-config.ini", "--http", "0.0.0.0:8080", "--http-keepalive", "--so-keepalive", "--add-header", "Connection: Keep-Alive" ]
+CMD ["uwsgi", "--ini=/var/scitran/config/uwsgi-config.ini", "--http=[::]:9000", \
+              "--http-keepalive", "--so-keepalive", "--add-header", "Connection: Keep-Alive"]
+
+
+FROM base as dist
+COPY requirements.txt /var/scitran/code/api/requirements.txt
+RUN set -eux \
+    && pip install -qq --requirement /var/scitran/code/api/requirements.txt
+
+COPY . /var/scitran/code/api/
+RUN set -eux \
+    && pip install -qq --no-deps --editable /var/scitran/code/api
+
+ARG VCS_BRANCH=NULL
+ARG VCS_COMMIT=NULL
+RUN set -eux \
+    && /var/scitran/code/api/bin/build_info.sh $VCS_BRANCH $VCS_COMMIT > /var/scitran/version.json \
+    && cat /var/scitran/version.json
+
+
+FROM base as testing
+ENV MONGO_MAJOR=3.2 \
+    MONGO_VERSION=3.2.9
+RUN set -eux \
+    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 \
+    && echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/$MONGO_MAJOR multiverse" > /etc/apt/sources.list.d/mongodb-org-$MONGO_MAJOR.list \
+    && apt-get -yqq update \
+    && apt-get -yqq install \
+        mongodb-org=$MONGO_VERSION \
+        mongodb-org-server=$MONGO_VERSION \
+        mongodb-org-shell=$MONGO_VERSION \
+        mongodb-org-mongos=$MONGO_VERSION \
+        mongodb-org-tools=$MONGO_VERSION \
+    && rm -rf /var/lib/apt/lists/* /var/lib/mongodb \
+    && mkdir -p /data/db
+
+COPY --from=dist /usr/local /usr/local
+
+COPY tests/requirements.txt /var/scitran/code/api/tests/requirements.txt
+RUN set -eux \
+    && pip install -qq --requirement /var/scitran/code/api/tests/requirements.txt
+
+COPY --from=dist /var/scitran /var/scitran
