@@ -1382,3 +1382,34 @@ def test_container_delete_tag(data_builder, default_payload, as_root, as_admin, 
     # test that the (now) empty group can be deleted
     assert as_root.delete('/groups/' + group).ok
 
+def test_abstract_containers(data_builder, as_admin, file_form):
+    group = data_builder.create_group()
+    project = data_builder.create_project()
+    session = data_builder.create_session()
+    acquisition = data_builder.create_acquisition()
+    analysis = as_admin.post('/sessions/' + session + '/analyses', files=file_form(
+        'analysis.csv', meta={'label': 'no-job', 'inputs': [{'name': 'analysis.csv'}]})).json()['_id']
+    collection = data_builder.create_collection()
+
+    for cont in (collection, analysis, acquisition, session, project, group):
+        r = as_admin.post('/containers/' + cont + '/tags', json={'value': 'abstract1'})
+        assert r.ok
+
+        r = as_admin.get('/containers/' + cont)
+        assert r.ok
+        assert r.json()['tags'] == ['abstract1']
+
+        r = as_admin.put('/containers/' + cont + '/tags/abstract1', json={'value': 'abstract2'})
+        assert r.ok
+
+        r = as_admin.get('/containers/' + cont + '/tags/abstract2')
+        assert r.ok
+        assert r.json() == 'abstract2'
+
+    # /analyses/x does not support DELETE (yet?)
+    for cont in (collection, acquisition, session, project, group):
+        r = as_admin.delete('/containers/' + cont)
+        assert r.ok
+
+        r = as_admin.get('/containers/' + cont)
+        assert r.status_code == 404

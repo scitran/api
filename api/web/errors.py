@@ -62,4 +62,3 @@ class FileFormException(Exception):
 # Payload for a POST or PUT does not match input json schema
 class InputValidationException(Exception):
     pass
-

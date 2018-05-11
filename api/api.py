@@ -1,23 +1,24 @@
 import webapp2
 import webapp2_extras.routes
 
-from .download                      import Download
-from .handlers.collectionshandler   import CollectionsHandler
-from .handlers.confighandler        import Config, Version
-from .handlers.containerhandler     import ContainerHandler
-from .handlers.dataexplorerhandler  import DataExplorerHandler
-from .handlers.devicehandler        import DeviceHandler
-from .handlers.grouphandler         import GroupHandler
-from .handlers.listhandler          import FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
-from .handlers.refererhandler       import AnalysesHandler
-from .handlers.reporthandler        import ReportHandler
-from .handlers.resolvehandler       import ResolveHandler
-from .handlers.roothandler          import RootHandler
-from .handlers.schemahandler        import SchemaHandler
-from .handlers.userhandler          import UserHandler
-from .jobs.handlers                 import BatchHandler, JobsHandler, JobHandler, GearsHandler, GearHandler, RulesHandler, RuleHandler
-from .upload                        import Upload
-from .web.base                      import RequestHandler
+from .download                          import Download
+from .handlers.abstractcontainerhandler import AbstractContainerHandler
+from .handlers.collectionshandler       import CollectionsHandler
+from .handlers.confighandler            import Config, Version
+from .handlers.containerhandler         import ContainerHandler
+from .handlers.dataexplorerhandler      import DataExplorerHandler
+from .handlers.devicehandler            import DeviceHandler
+from .handlers.grouphandler             import GroupHandler
+from .handlers.listhandler              import FileListHandler, NotesListHandler, PermissionsListHandler, TagsListHandler
+from .handlers.refererhandler           import AnalysesHandler
+from .handlers.reporthandler            import ReportHandler
+from .handlers.resolvehandler           import ResolveHandler
+from .handlers.roothandler              import RootHandler
+from .handlers.schemahandler            import SchemaHandler
+from .handlers.userhandler              import UserHandler
+from .jobs.handlers                     import BatchHandler, JobsHandler, JobHandler, GearsHandler, GearHandler, RulesHandler, RuleHandler
+from .upload                            import Upload
+from .web.base                          import RequestHandler
 from . import config
 
 
@@ -181,6 +182,11 @@ endpoints = [
 
         route('/<cid:site>/rules',              RulesHandler,          m=['GET', 'POST']),
         route('/<cid:site>/rules/<rid:{cid}>',  RuleHandler,           m=['GET', 'PUT', 'DELETE']),
+
+
+        # Abstract container
+
+        route('/containers/<cid:{fname}><extra:.*>', AbstractContainerHandler, h='handle'),
 
 
         # Groups
